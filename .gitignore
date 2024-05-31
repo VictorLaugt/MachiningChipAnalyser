@@ -1,2 +1,8 @@
+imgs
+
 __pycache__
 .vscode
+
+*.avi
+*.mp4
+
