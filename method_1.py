@@ -17,6 +17,7 @@ loader = image_loader.ImageLoaderColorConverter(dir_path, cv.COLOR_RGB2GRAY)
 
 
 binary = [cv.threshold(img, 45, 255, cv.THRESH_BINARY)[1] for img in loader]
+# binary = [cv.threshold(img, 50, 255, cv.THRESH_BINARY)[1] for img in loader]
 
 structure = cv.getStructuringElement(cv.MORPH_CROSS, (3, 3))
 # edge = [cv.morphologyEx(img, cv.MORPH_GRADIENT, structure) for img in binary]
