@@ -10,8 +10,9 @@ import numpy as np
 import cv2 as cv
 
 import image_loader
-import video
 import utils
+
+import connected_components
 
 
 dir_path = Path("imgs", "vertical")
@@ -19,7 +20,9 @@ dir_path = Path("imgs", "vertical")
 loader = image_loader.ImageLoaderColorConverter(dir_path, cv.COLOR_RGB2GRAY)
 
 
-log_kernel = np.array([
+p = utils.Pipeline()
+
+log_kernel = 2 * np.array([
     [0, 1, 1, 2, 2, 2, 1, 1, 0],
     [1, 2, 4, 5, 5, 5, 4, 2, 1],
     [1, 4, 5, 3, 0, 3, 5, 4, 1],
@@ -31,38 +34,14 @@ log_kernel = np.array([
     [0, 1, 1, 2, 2, 2, 1, 1, 0]
 ])
 
+p.add("edge", lambda img: cv.filter2D(img, -1, log_kernel))
+p.add("binary", lambda img: cv.threshold(img, 240, 255, cv.THRESH_BINARY)[1])
+p.add("clean", lambda img: connected_components.remove_small_components(img, min_area=20))
+p.add("erode", lambda img: cv.erode(img, cv.getStructuringElement(cv.MORPH_CROSS, (3, 3)), iterations=2))
 
-#  detection
-log_kernel_ = 2 * log_kernel
-
-edge = [cv.filter2D(img, -1, log_kernel_) for img in loader]
-
-binary = [cv.threshold(img, 240, 255, cv.THRESH_BINARY)[1] for img in edge]
-
-morph = [cv.erode(img, cv.getStructuringElement(cv.MORPH_CROSS, (5, 5))) for img in binary]
+# p.add("morph", lambda img: cv.erode(img, cv.getStructuringElement(cv.MORPH_CROSS, (5, 5))))
 
 
-# image display
-sample_idx = 20
-cv.imshow("original", loader[sample_idx])
-
-cv.imshow("edge", edge[sample_idx])
-cv.imshow("binary", binary[sample_idx])
-cv.imshow("morph", morph[sample_idx])
-cv.imwrite("morph.png", morph[sample_idx])
-while cv.waitKey(30) != 113:
-    pass
-cv.destroyAllWindows()
-
-
-# video display
-video.create_from_gray(loader, "original.avi")
-
-video.create_from_gray(edge, "edge.avi")
-video.create_from_gray(binary, "binary.avi")
-video.create_from_gray(morph, "morph.avi")
-
-video.play("original.avi")
-video.play("edge.avi")
-video.play("binary.avi")
-video.play("morph.avi")
+p.run(loader)
+p.show_samples(20)
+p.show_videos()
