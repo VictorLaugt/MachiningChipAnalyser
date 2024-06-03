@@ -26,8 +26,8 @@ log_kernel = np.array([
     [2, 5, 3, -12, -24, -12, 3, 5, 2],
     [2, 5, 0, -24, -40, -24, 0, 5, 2],
     [2, 5, 3, -12, -24, -12, 3, 5, 2],
-    [1, 4, 5, 3, 0, 3, 5, 4, 1],
     [1, 2, 4, 5, 5, 5, 4, 2, 1],
+    [1, 4, 5, 3, 0, 3, 5, 4, 1],
     [0, 1, 1, 2, 2, 2, 1, 1, 0]
 ])
 
@@ -49,7 +49,7 @@ cv.imshow("original", loader[sample_idx])
 cv.imshow("edge", edge[sample_idx])
 cv.imshow("binary", binary[sample_idx])
 cv.imshow("morph", morph[sample_idx])
-
+cv.imwrite("morph.png", morph[sample_idx])
 while cv.waitKey(30) != 113:
     pass
 cv.destroyAllWindows()

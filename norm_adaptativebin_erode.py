@@ -37,6 +37,7 @@ cv.imshow("blur", blur[sample_idx])
 cv.imshow("norm", norm[sample_idx])
 cv.imshow("binary", binary[sample_idx])
 cv.imshow("morph", morph[sample_idx])
+cv.imwrite("morph.png", morph[sample_idx])
 while cv.waitKey(30) != 113:
     pass
 cv.destroyAllWindows()
