@@ -1,6 +1,6 @@
 """
 Normalization
-Binarisation using a gaussian adaptative threshold
+Binarisation using an adaptative threshold
 Moprhological erosion
 """
 
