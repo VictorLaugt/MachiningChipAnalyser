@@ -39,7 +39,7 @@ edge = [cv.filter2D(img, -1, log_kernel_) for img in loader]
 
 binary = [cv.threshold(img, 240, 255, cv.THRESH_BINARY)[1] for img in edge]
 
-morph = [cv.morphologyEx(img, cv.MORPH_ERODE, cv.getStructuringElement(cv.MORPH_CROSS, (5, 5))) for img in binary]
+morph = [cv.erode(img, cv.getStructuringElement(cv.MORPH_CROSS, (5, 5))) for img in binary]
 
 
 # image display
