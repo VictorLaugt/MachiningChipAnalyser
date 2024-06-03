@@ -1,4 +1,5 @@
 """
+Gaussian blur
 Normalization
 Binarisation using an adaptative threshold
 Moprhological erosion
