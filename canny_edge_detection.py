@@ -29,7 +29,7 @@ cv.destroyAllWindows()
 
 # video display
 video.create_from_gray(loader, "original.avi")
-video.create_from_gray(edge, "meth3_edge.avi")
+video.create_from_gray(edge, "edge.avi")
 
 video.play("original.avi")
-video.play("meth3_edge.avi")
+video.play("edge.avi")
