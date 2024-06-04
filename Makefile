@@ -7,10 +7,14 @@ debug:
 	@echo "PREPROCESSING_DIR = $(PREPROCESSING_DIR)"
 	@echo "PREPROCESSING_SRC = $(PREPROCESSING_SRC)"
 
-preprocessing_test:
+preprocessing_all:
 	@$(foreach SCRIPT,$(PREPROCESSING_SRC),\
 		printf "\n======= running $(SCRIPT) =======\n";\
 		python3 $(SCRIPT);)
+
+preprocessing_%:
+	@printf "\n======= running $(PREPROCESSING_DIR)/$*.py =======\n"
+	@python3 $(PREPROCESSING_DIR)/$*.py
 
 clean:
 	rm -rf results/*
