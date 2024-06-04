@@ -22,8 +22,9 @@ if __name__ == '__main__':
 
     input_dir = Path("imgs", "vertical")
     # input_dir = Path("imgs", "diagonal")
+    output_dir = Path("results", "norm_tresh_morphedge")
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
-    pipeline.run(loader)
+    pipeline.run(loader, output_dir)
     pipeline.show_samples(20)
     pipeline.show_videos()
