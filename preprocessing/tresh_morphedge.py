@@ -8,11 +8,11 @@ import cv2 as cv
 import utils
 
 
-p = utils.Pipeline()
+pipeline = utils.Pipeline()
 
-p.add("binary", lambda img: cv.threshold(img, 45, 255, cv.THRESH_BINARY)[1])
-# p.add("binary", lambda img: cv.threshold(img, 50, 255, cv.THRESH_BINARY)[1])
-p.add("edge", lambda img: cv.morphologyEx(img, cv.MORPH_GRADIENT, cv.getStructuringElement(cv.MORPH_CROSS, (3, 3))))
+pipeline.add("binary", lambda img: cv.threshold(img, 45, 255, cv.THRESH_BINARY)[1])
+# pipeline.add("binary", lambda img: cv.threshold(img, 50, 255, cv.THRESH_BINARY)[1])
+pipeline.add("edge", lambda img: cv.morphologyEx(img, cv.MORPH_GRADIENT, cv.getStructuringElement(cv.MORPH_CROSS, (3, 3))))
 
 
 if __name__ == '__main__':
@@ -23,6 +23,6 @@ if __name__ == '__main__':
     # dir_path = Path("imgs", "diagonal")
     loader = image_loader.ImageLoaderColorConverter(dir_path, cv.COLOR_RGB2GRAY)
 
-    p.run(loader)
-    p.show_samples(40)
-    p.show_videos()
+    pipeline.run(loader)
+    pipeline.show_samples(40)
+    pipeline.show_videos()
