@@ -13,7 +13,7 @@ preprocessing_test:
 		python3 $(SCRIPT);)
 
 clean:
-	rm -f *.avi
+	rm -rf results/*
 	rm -rf __pycache__
 
 
