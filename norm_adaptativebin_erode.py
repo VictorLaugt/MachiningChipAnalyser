@@ -5,17 +5,9 @@ Binarisation using an adaptative threshold
 Moprhological erosion
 """
 
-from pathlib import Path
-
 import cv2 as cv
 
-import image_loader
 import utils
-
-
-dir_path = Path("imgs", "vertical")
-# dir_path = Path("imgs", "diagonal")
-loader = image_loader.ImageLoaderColorConverter(dir_path, cv.COLOR_RGB2GRAY)
 
 
 p = utils.Pipeline()
@@ -28,6 +20,14 @@ p.add("morph", lambda img: cv.erode(img, cv.getStructuringElement(cv.MORPH_CROSS
 # p.add("morph", lambda img: cv.morphologyEx(img, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_CROSS, (5, 5)), iterations=2))
 
 
-p.run(loader)
-p.show_samples(20)
-p.show_videos()
+if __name__ == '__main__':
+    from pathlib import Path
+    import image_loader
+    
+    dir_path = Path("imgs", "vertical")
+    # dir_path = Path("imgs", "diagonal")
+    loader = image_loader.ImageLoaderColorConverter(dir_path, cv.COLOR_RGB2GRAY)
+
+    p.run(loader)
+    p.show_samples(20)
+    p.show_videos()
