@@ -18,7 +18,7 @@ preprocessing_%:
 
 clean:
 	rm -rf results/*
-	rm -rf __pycache__
+	find . -name __pycache__ -type d | while read -r pycachepath; do rm -rf $$pycachepath; done
 
 
 .PHONY: debug clean
