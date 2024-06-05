@@ -7,10 +7,9 @@ import cv2 as cv
 def extract_chip_curve(binary):
     extracted_shape = binary.copy()
     contours, _hierarchy = cv.findContours(binary[:, :967], cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
-    every_contours = np.vstack(contours)  # ~ (n, 1, 2)
-    hull = cv.convexHull(every_contours)  # ~ (p, 1, 2)
+    points = np.vstack(contours)  # ~ (n, 1, 2)
+    hull = cv.convexHull(points)  # ~ (p, 1, 2)
 
-    cv.drawContours(extracted_shape, contours, -1, 255, 2)
     cv.drawContours(extracted_shape, (hull,), 0, 127, 0)
 
     return extracted_shape
