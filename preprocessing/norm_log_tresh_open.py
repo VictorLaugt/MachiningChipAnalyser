@@ -52,8 +52,8 @@ if __name__ == '__main__':
     pipeline_contact.run(loader, output_dir)
     pipeline_spikes.run(loader, output_dir)
 
-    pipeline_contact.show_samples(20)
-    pipeline_contact.show_videos()
+    pipeline_contact.show_frame(20)
+    pipeline_contact.show_video()
 
-    pipeline_spikes.show_samples(20)
-    pipeline_spikes.show_videos()
+    pipeline_spikes.show_frame(20)
+    pipeline_spikes.show_video()

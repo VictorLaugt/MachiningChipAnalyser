@@ -21,5 +21,5 @@ if __name__ == '__main__':
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
     pipeline.run(loader, output_dir)
-    pipeline.show_samples(43)
-    pipeline.show_videos()
+    pipeline.show_frame(43)
+    pipeline.show_video()

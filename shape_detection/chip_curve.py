@@ -47,8 +47,6 @@ def extract_chip_curve(binary):
     curve_points = filter_curve(hull_points, maximum_angle=np.pi/4, lateral_margin=20)
 
     cv.polylines(extracted_shape, (curve_points,), isClosed=False, color=127, thickness=0)
-
-
     # cv.drawContours(extracted_shape, (hull_points,), 0, 127, 0)
 
     return extracted_shape
@@ -58,30 +56,19 @@ if __name__ == '__main__':
     import utils
     import image_loader
 
-    from preprocessing.log_tresh_erode import pipeline as preprocessing
+    import preprocessing.log_tresh_erode
 
-    # binary = cv.cvtColor(cv.imread('morph2.png'), cv.COLOR_RGB2GRAY)
+    shape_detection = utils.Pipeline()
+    shape_detection.add("chipcurve", extract_chip_curve)
 
-    pipeline = utils.Pipeline()
-    pipeline.add("chip_curve", extract_chip_curve)
+    pipeline = preprocessing.log_tresh_erode.pipeline.then(shape_detection)
 
     input_dir = Path("imgs", "vertical")
     # input_dir = Path("imgs", "diagonal")
-    output_dir = Path("results", "chip_curve")
+    output_dir = Path("results", "chipcurve")
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
-    preprocessing.run(loader)
-
-    pipeline.run(preprocessing.get_output(), output_dir)
-    pipeline.show_samples(20)
-    pipeline.show_videos()
-
-
-
-
-# cv.imshow('img', binary)
-# cv.imshow('extracted_contours', extracted_shape)
-# while cv.waitKey(30) != 113:
-#     pass
-# cv.destroyAllWindows()
-
+    pipeline.run(loader, output_dir)
+    pipeline.compare_frames(20, ("input", "chipcurve"))
+    pipeline.show_video()
+    pipeline.compare_videos(("input", "chipcurve"))
