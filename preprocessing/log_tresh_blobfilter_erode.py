@@ -44,5 +44,6 @@ if __name__ == '__main__':
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
     processing.run(loader, output_dir)
-    processing.show_frame(20)
+    # processing.show_frame(20)
+    processing.show_frame(85)
     processing.show_video()
