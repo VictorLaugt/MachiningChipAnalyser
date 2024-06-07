@@ -18,14 +18,14 @@ def img_seq_equals(img_itr_1: Iterable[Image], img_itr_2: Iterable[Image]) -> bo
     return all(np.array_equal(img_1, img_2) for img_1, img_2 in zip(img_itr_1, img_itr_2))
 
 
-class PipelineError(Exception):
+class DagError(Exception):
     pass
 
-class PipelineNotFinishedError(PipelineError):
+class PipelineNotFinishedError(DagError):
     def __init__(self):
         super().__init__("Pipeline execution not finished")
 
-class InvalidStepNameError(PipelineError):
+class InvalidStepNameError(DagError):
     pass
 
 class AlreadyExistingStepNameError(InvalidStepNameError):
@@ -36,74 +36,85 @@ class NotExistingStepNameError(InvalidStepNameError):
     def __init__(self, step_name: str):
         super().__init__(f"Step name '{step_name}' does not exist")
 
-class InvalidResultDirError(PipelineError, FileExistsError):
+class InvalidResultDirError(DagError, FileExistsError):
     def __init__(self, result_dir: Path):
         super().__init__(f"Result directory '{result_dir}' is not a directory")
 
 
-class Pipeline:
-    _INPUT_STEP_NAME = "input"
+class DagProcessNode:
+    def __init__(self, operation: Callable, node_input_ids: Sequence[int]):
+        self.operation = operation
+        self.node_input_ids = node_input_ids
 
+
+# len(self) == len(self.node_lists) == n
+# len(self.steps) == len(self.image_sequences) == self.next_id == n + 1
+class DagProcess:
     def __init__(self):
-        self.steps = OrderedDict()
-        self.operations = []
+        self.next_id = 1
+        self.steps = OrderedDict((("input", 0),))
+        self.node_list: list[DagProcessNode] = []
 
-        self.input_image_sequence = None
-        self.image_sequences = []
+        self.image_sequences: list[Sequence[Image]] = []
         self.result_dir = Path()
         self.finished = False
 
-    def copy(self) -> Pipeline:
-        copy = super().__new__(Pipeline)
-
-        copy.steps = self.steps.copy()
-        copy.operations = self.operations.copy()
-
-        copy.input_image_sequence = self.input_image_sequence
-        copy.image_sequences = []
-        copy.result_dir = self.result_dir
-        copy.finished = False
-
-        return copy
-
+    def __repr__(self) -> str:
+        return (
+            f"DagProcess(\n"
+            f"\tnext_id = {self.next_id}\n"
+            f"\tsteps = {self.steps}\n"
+            f"\tlen(node_list) = {len(self.node_list)}\n"
+            f"\tlen(image_sequences) = {len(self.image_sequences)}\n"
+            ")"
+        )
 
     def __len__(self) -> int:
-        return len(self.operations)
+        return len(self.node_list)
 
-    def add(self, name: str, operation: Callable[[Image], Image]) -> None:
+    def _get_new_id(self) -> int:
+        new_id = self.next_id
+        self.next_id += 1
+        return new_id
+
+    def add(self, name: str, operation: Callable, node_input_steps: Iterable[str] = None) -> None:
         if name in self.steps.keys():
             raise AlreadyExistingStepNameError(name)
 
-        self.steps[name] = len(self)
-        self.operations.append(operation)
+        step_id = self._get_new_id()
+        if node_input_steps is None:
+            node_input_ids = [step_id-1]
+        else:
+            node_input_ids = [self.steps[step_name] for step_name in node_input_steps]
+        node = DagProcessNode(operation, node_input_ids)
 
-    def then(self, other: Pipeline) -> Pipeline:
-        pipe = self.copy()
-        for name, operation in zip(other.steps.keys(), other.operations):
-            pipe.add(name, operation)
-        return pipe
+        self.steps[name] = step_id
+        self.node_list.append(node)
 
 
-    def run(self, input_image_sequence: Sequence[Image], result_dir_path: Path = None) -> None:
+    def run(self, input_image_sequence: Sequence[Image], result_dir_path: Path) -> None:
         if result_dir_path is not None:
             self.result_dir = result_dir_path
 
         self.finished = False
-        self.input_image_sequence = input_image_sequence
 
-        running_img_seq = self.input_image_sequence
-        for step_name, step_id in self.steps.items():
+        step_iterator = iter(self.steps.items())
+        next(step_iterator)
+
+        image_sequences = [None] * self.next_id
+        image_sequences[0] = input_image_sequence
+        for step_name, step_id in step_iterator:
             print(f"Running {step_name} ...")
-            op = self.operations[step_id]
-            running_img_seq = [op(img) for img in running_img_seq]
-            self.image_sequences.append(running_img_seq)
+            node = self.node_list[step_id - 1]
+            node_inputs = [image_sequences[i] for i in node.node_input_ids]
+            node_operation = node.operation
+            image_sequences[step_id] = [node_operation(*imgs) for imgs in zip(*node_inputs)]
 
+        self.image_sequences = image_sequences
         self.finished = True
 
 
     def _get(self, step_name: str) -> Sequence[Image]:
-        if step_name == self._INPUT_STEP_NAME:
-            return self.input_image_sequence
         step_id = self.steps.get(step_name)
         if step_id is None:
             raise NotExistingStepNameError(step_name)
@@ -131,7 +142,6 @@ class Pipeline:
         if not self.finished:
             raise PipelineNotFinishedError()
 
-        cv.imshow(self._INPUT_STEP_NAME, self.input_image_sequence[frame_index])
         for step_name, step_id in self.steps.items():
             cv.imshow(step_name, self.image_sequences[step_id][frame_index])
 
@@ -148,17 +158,12 @@ class Pipeline:
         elif not self.result_dir.is_dir():
             raise InvalidResultDirError(self.result_dir)
 
-        video.create_from_gray(
-            self.input_image_sequence,
-            str(self.result_dir.joinpath(f"{self._INPUT_STEP_NAME}.avi"))
-        )
         for step_name, step_id in self.steps.items():
             video.create_from_gray(
                 self.image_sequences[step_id],
                 str(self.result_dir.joinpath(f"{step_name}.avi"))
             )
 
-        video.play(self.result_dir.joinpath(f"{self._INPUT_STEP_NAME}.avi"))
         for step_name in self.steps.keys():
             video.play(self.result_dir.joinpath(f"{step_name}.avi"))
 

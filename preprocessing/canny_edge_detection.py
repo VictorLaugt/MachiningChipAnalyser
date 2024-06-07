@@ -4,10 +4,10 @@ Canny edge detection
 
 import cv2 as cv
 
-import utils
+import utils.pipeline_processes
 
 
-pipeline = utils.Pipeline()
+pipeline = utils.pipeline_processes.Pipeline()
 pipeline.add("edge", lambda img: cv.Canny(img, 100, 200))
 
 

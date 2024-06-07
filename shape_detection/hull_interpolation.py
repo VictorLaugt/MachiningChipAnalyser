@@ -57,29 +57,31 @@ def extract_chip_curve(binary):
     points = above_line(points, a=-1, b=0, c=967, min_distance=5)  # at the left of the tool
 
     hull_points = cv.convexHull(points, clockwise=True)  # ~ (p, 1, 2)
-    for pt in hull_points.reshape(-1, 2):
-        cv.circle(extracted_shape, pt, 5, 127, -1)
 
     x_interpolate, y_interpolate = interpolate_curve(hull_points.reshape(-1, 2), binary.shape)
+
+    # display the convex hull and its interpolation
+    for pt in hull_points.reshape(-1, 2):
+        cv.circle(extracted_shape, pt, 5, 127, -1)
     extracted_shape[y_interpolate, x_interpolate] = 127
 
     return extracted_shape
 
 
 if __name__ == '__main__':
-    import utils
+    import utils.pipeline_processes
     import image_loader
 
-    import preprocessing.log_tresh_erode
+    import preprocessing.log_tresh_blobfilter_erode
 
-    shape_detection = utils.Pipeline()
+    shape_detection = utils.pipeline_processes.Pipeline()
     shape_detection.add("chipcurve", extract_chip_curve)
 
-    pipeline = preprocessing.log_tresh_erode.pipeline.then(shape_detection)
+    pipeline = preprocessing.log_tresh_blobfilter_erode.pipeline.then(shape_detection)
 
     input_dir = Path("imgs", "vertical")
     # input_dir = Path("imgs", "diagonal")
-    output_dir = Path("results", "chipcurve")
+    output_dir = Path("results", "hull_interpolation")
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
     pipeline.run(loader, output_dir)

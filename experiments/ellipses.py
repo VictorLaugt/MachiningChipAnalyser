@@ -49,7 +49,7 @@ contours, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 output = image.copy()
 
 # Détection et dessin des ellipses
-print(f"{len(contours) = }"
+print(f"{len(contours) = }")
 for cont in contours:
     if len(cont) >= 5:  # La fonction fitEllipse requiert au moins 5 points
         ellipse = cv2.fitEllipse(cont)

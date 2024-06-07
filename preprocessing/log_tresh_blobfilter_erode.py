@@ -7,11 +7,11 @@ Morphological erosion
 import numpy as np
 import cv2 as cv
 
-import utils
+import utils.dag_processes
 import connected_components
 
 
-pipeline = utils.Pipeline()
+pipeline = utils.dag_processes.DagProcess()
 
 log_kernel = 2 * np.array([
     [0, 1, 1, 2, 2, 2, 1, 1, 0],
@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     input_dir = Path("imgs", "vertical")
     # input_dir = Path("imgs", "diagonal")
-    output_dir = Path("results", "log_thresh_erode")
+    output_dir = Path("results", "log_thresh_blobfilter_erode")
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
     pipeline.run(loader, output_dir)
