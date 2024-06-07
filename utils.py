@@ -21,7 +21,7 @@ def img_seq_equals(img_itr_1: Iterable[Image], img_itr_2: Iterable[Image]) -> bo
 class DagError(Exception):
     pass
 
-class PipelineNotFinishedError(DagError):
+class DagNotFinishedError(DagError):
     def __init__(self):
         super().__init__("Pipeline execution not finished")
 
@@ -122,17 +122,17 @@ class DagProcess:
 
     def get(self, step_name: str) -> Sequence[Image]:
         if not self.finished:
-            raise PipelineNotFinishedError()
+            raise DagNotFinishedError()
         return self._get(step_name)
 
     def get_input(self) -> Sequence[Image]:
         if not self.finished:
-            raise PipelineNotFinishedError()
+            raise DagNotFinishedError()
         return self.input_image_sequence
 
     def get_output(self) -> Sequence[Image]:
         if not self.finished:
-            raise PipelineNotFinishedError()
+            raise DagNotFinishedError()
         if len(self) == 0:
             return self.input_image_sequence
         return self.image_sequences[-1]
@@ -140,7 +140,7 @@ class DagProcess:
 
     def show_frame(self, frame_index: int) -> None:
         if not self.finished:
-            raise PipelineNotFinishedError()
+            raise DagNotFinishedError()
 
         for step_name, step_id in self.steps.items():
             cv.imshow(step_name, self.image_sequences[step_id][frame_index])
@@ -151,7 +151,7 @@ class DagProcess:
 
     def show_video(self) -> None:
         if not self.finished:
-            raise PipelineNotFinishedError()
+            raise DagNotFinishedError()
 
         if not self.result_dir.exists():
             self.result_dir.mkdir()
@@ -170,7 +170,7 @@ class DagProcess:
 
     def compare_frames(self, frame_index: int, step_names: Sequence[str]) -> None:
         if not self.finished:
-            raise PipelineNotFinishedError()
+            raise DagNotFinishedError()
 
         imgs = []
         for name in step_names:
@@ -183,7 +183,7 @@ class DagProcess:
 
     def compare_videos(self, step_names: Sequence[str]) -> None:
         if not self.finished:
-            raise PipelineNotFinishedError()
+            raise DagNotFinishedError()
 
         img_seqs = []
         for name in step_names:

@@ -60,12 +60,12 @@ def extract_chip_curve(binary):
 
 
 if __name__ == '__main__':
-    import utils.pipeline_processes
+    import utils
     import image_loader
 
     import preprocessing.log_tresh_blobfilter_erode
 
-    shape_detection = utils.pipeline_processes.Pipeline()
+    shape_detection = utils.DagProcess()
     shape_detection.add("chipcurve", extract_chip_curve)
 
     pipeline = preprocessing.log_tresh_blobfilter_erode.pipeline.then(shape_detection)

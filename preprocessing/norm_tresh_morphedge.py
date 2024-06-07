@@ -6,10 +6,10 @@ Morphological edge extraction (subtraction of eroded image from binary image)
 
 import cv2 as cv
 
-import utils.pipeline_processes
+import utils
 
 
-pipeline = utils.pipeline_processes.Pipeline()
+pipeline = utils.DagProcess()
 
 pipeline.add("norm", lambda img: cv.normalize(img, None, 0, 255, cv.NORM_MINMAX))
 pipeline.add("binary", lambda img: cv.threshold(img, 15, 255, cv.THRESH_BINARY)[1])

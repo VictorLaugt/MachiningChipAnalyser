@@ -7,10 +7,10 @@ Moprhological erosion
 
 import cv2 as cv
 
-import utils.pipeline_processes
+import utils
 
 
-pipeline = utils.pipeline_processes.Pipeline()
+pipeline = utils.DagProcess()
 
 pipeline.add("blur", lambda img: cv.GaussianBlur(img, (9, 9), 0))
 pipeline.add("norm", lambda img: cv.normalize(img, None, 0, 255, cv.NORM_MINMAX))
