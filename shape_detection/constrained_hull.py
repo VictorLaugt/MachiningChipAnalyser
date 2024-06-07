@@ -60,7 +60,6 @@ def extract_chip_curve(binary):
 
 
 if __name__ == '__main__':
-    import utils
     import image_loader
 
     import preprocessing.log_tresh_blobfilter_erode
