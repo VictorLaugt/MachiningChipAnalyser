@@ -8,11 +8,11 @@ import cv2 as cv
 import utils
 
 
-pipeline = utils.DagProcess()
+processing = utils.DagProcess()
 
-pipeline.add("binary", lambda img: cv.threshold(img, 45, 255, cv.THRESH_BINARY)[1])
-# pipeline.add("binary", lambda img: cv.threshold(img, 50, 255, cv.THRESH_BINARY)[1])
-pipeline.add("edge", lambda img: cv.morphologyEx(img, cv.MORPH_GRADIENT, cv.getStructuringElement(cv.MORPH_CROSS, (3, 3))))
+processing.add("binary", lambda img: cv.threshold(img, 45, 255, cv.THRESH_BINARY)[1])
+# processing.add("binary", lambda img: cv.threshold(img, 50, 255, cv.THRESH_BINARY)[1])
+processing.add("edge", lambda img: cv.morphologyEx(img, cv.MORPH_GRADIENT, cv.getStructuringElement(cv.MORPH_CROSS, (3, 3))))
 
 
 if __name__ == '__main__':
@@ -24,6 +24,6 @@ if __name__ == '__main__':
     output_dir = Path("results", "tresh_morphedge")
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
-    pipeline.run(loader, output_dir)
-    pipeline.show_frame(40)
-    pipeline.show_video()
+    processing.run(loader, output_dir)
+    processing.show_frame(40)
+    processing.show_video()

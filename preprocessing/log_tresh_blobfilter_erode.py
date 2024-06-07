@@ -11,7 +11,7 @@ import utils
 import connected_components
 
 
-pipeline = utils.DagProcess()
+processing = utils.DagProcess()
 
 log_kernel = 2 * np.array([
     [0, 1, 1, 2, 2, 2, 1, 1, 0],
@@ -25,13 +25,13 @@ log_kernel = 2 * np.array([
     [0, 1, 1, 2, 2, 2, 1, 1, 0]
 ])
 
-pipeline.add("edge", lambda img: cv.filter2D(img, -1, log_kernel))
-pipeline.add("binary", lambda img: cv.threshold(img, 240, 255, cv.THRESH_BINARY)[1])
-pipeline.add("clean", lambda img: connected_components.remove_small_components(img, min_area=20))
-# pipeline.add("clean", lambda img: connected_components.remove_small_components(img, min_area=45))
-pipeline.add("erode", lambda img: cv.erode(img, cv.getStructuringElement(cv.MORPH_CROSS, (3, 3)), iterations=2))
+processing.add("edge", lambda img: cv.filter2D(img, -1, log_kernel))
+processing.add("binary", lambda img: cv.threshold(img, 240, 255, cv.THRESH_BINARY)[1])
+processing.add("clean", lambda img: connected_components.remove_small_components(img, min_area=20))
+# processing.add("clean", lambda img: connected_components.remove_small_components(img, min_area=45))
+processing.add("erode", lambda img: cv.erode(img, cv.getStructuringElement(cv.MORPH_CROSS, (3, 3)), iterations=2))
 
-# pipeline.add("morph", lambda img: cv.erode(img, cv.getStructuringElement(cv.MORPH_CROSS, (5, 5))))
+# processing.add("morph", lambda img: cv.erode(img, cv.getStructuringElement(cv.MORPH_CROSS, (5, 5))))
 
 
 if __name__ == '__main__':
@@ -43,6 +43,6 @@ if __name__ == '__main__':
     output_dir = Path("results", "log_thresh_blobfilter_erode")
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
-    pipeline.run(loader, output_dir)
-    pipeline.show_frame(20)
-    pipeline.show_video()
+    processing.run(loader, output_dir)
+    processing.show_frame(20)
+    processing.show_video()

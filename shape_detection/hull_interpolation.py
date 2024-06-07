@@ -77,14 +77,14 @@ if __name__ == '__main__':
     shape_detection = utils.DagProcess()
     shape_detection.add("chipcurve", extract_chip_curve)
 
-    pipeline = preprocessing.log_tresh_blobfilter_erode.pipeline.then(shape_detection)
+    processing = preprocessing.log_tresh_blobfilter_erode.processing.then(shape_detection)
 
     input_dir = Path("imgs", "vertical")
     # input_dir = Path("imgs", "diagonal")
     output_dir = Path("results", "hull_interpolation")
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
-    pipeline.run(loader, output_dir)
-    pipeline.compare_frames(20, ("input", "chipcurve"))
-    pipeline.show_video()
-    pipeline.compare_videos(("input", "chipcurve"))
+    processing.run(loader, output_dir)
+    processing.compare_frames(20, ("input", "chipcurve"))
+    processing.show_video()
+    processing.compare_videos(("input", "chipcurve"))

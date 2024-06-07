@@ -23,7 +23,7 @@ class DagError(Exception):
 
 class DagNotFinishedError(DagError):
     def __init__(self):
-        super().__init__("Pipeline execution not finished")
+        super().__init__("processing execution not finished")
 
 class InvalidStepNameError(DagError):
     pass
@@ -59,6 +59,16 @@ class DagProcess:
         self.result_dir = Path()
         self.finished = False
 
+    def copy(self) -> DagProcess:
+        copy = super().__new__(DagProcess)
+        copy.next_id = self.next_id
+        copy.steps = self.steps.copy()
+        copy.node_list = self.node_list.copy()
+
+        copy.image_sequences = []
+        copy.result_dir = self.result_dir
+        copy.finished = False
+
     def __repr__(self) -> str:
         return (
             f"DagProcess(\n"
@@ -68,6 +78,7 @@ class DagProcess:
             f"\tlen(image_sequences) = {len(self.image_sequences)}\n"
             ")"
         )
+
 
     def __len__(self) -> int:
         return len(self.node_list)
@@ -92,7 +103,7 @@ class DagProcess:
         self.node_list.append(node)
 
 
-    def run(self, input_image_sequence: Sequence[Image], result_dir_path: Path) -> None:
+    def run(self, input_image_sequence: Sequence[Image], result_dir_path: Path = None) -> None:
         if result_dir_path is not None:
             self.result_dir = result_dir_path
 

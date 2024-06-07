@@ -25,19 +25,19 @@ log_kernel = np.array([
 
 
 # contact detection
-pipeline_contact = utils.DagProcess()
-pipeline_contact.add("norm", lambda img: cv.normalize(img, None, 0, 255, cv.NORM_MINMAX))
-pipeline_contact.add("contact_edge", lambda img: cv.filter2D(img, -1, 2 * log_kernel))
-pipeline_contact.add("contact_binary", lambda img: cv.threshold(img, 245, 255, cv.THRESH_BINARY)[1])
-pipeline_contact.add("contact_open", lambda img: cv.morphologyEx(img, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_CROSS, (3, 3))))
-pipeline_contact.add("contact_close", lambda img: cv.morphologyEx(img, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_ELLIPSE, (3, 3)), iterations=5))
+processing_contact = utils.DagProcess()
+processing_contact.add("norm", lambda img: cv.normalize(img, None, 0, 255, cv.NORM_MINMAX))
+processing_contact.add("contact_edge", lambda img: cv.filter2D(img, -1, 2 * log_kernel))
+processing_contact.add("contact_binary", lambda img: cv.threshold(img, 245, 255, cv.THRESH_BINARY)[1])
+processing_contact.add("contact_open", lambda img: cv.morphologyEx(img, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_CROSS, (3, 3))))
+processing_contact.add("contact_close", lambda img: cv.morphologyEx(img, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_ELLIPSE, (3, 3)), iterations=5))
 
 
 # spike detection
-pipeline_spikes = utils.DagProcess()
-pipeline_spikes.add("norm", lambda img: cv.normalize(img, None, 0, 255, cv.NORM_MINMAX))
-pipeline_spikes.add("spikes_edge", lambda img: cv.filter2D(img, -1, (1/3) * log_kernel))
-pipeline_spikes.add("spikes_binary", lambda img: cv.threshold(img, 245, 255, cv.THRESH_BINARY)[1])
+processing_spikes = utils.DagProcess()
+processing_spikes.add("norm", lambda img: cv.normalize(img, None, 0, 255, cv.NORM_MINMAX))
+processing_spikes.add("spikes_edge", lambda img: cv.filter2D(img, -1, (1/3) * log_kernel))
+processing_spikes.add("spikes_binary", lambda img: cv.threshold(img, 245, 255, cv.THRESH_BINARY)[1])
 
 
 if __name__ == '__main__':
@@ -49,11 +49,11 @@ if __name__ == '__main__':
     output_dir = Path("results", "norm_log_thresh_open")
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
-    pipeline_contact.run(loader, output_dir)
-    pipeline_spikes.run(loader, output_dir)
+    processing_contact.run(loader, output_dir)
+    processing_spikes.run(loader, output_dir)
 
-    pipeline_contact.show_frame(20)
-    pipeline_contact.show_video()
+    processing_contact.show_frame(20)
+    processing_contact.show_video()
 
-    pipeline_spikes.show_frame(20)
-    pipeline_spikes.show_video()
+    processing_spikes.show_frame(20)
+    processing_spikes.show_video()
