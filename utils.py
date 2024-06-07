@@ -69,6 +69,8 @@ class DagProcess:
         copy.result_dir = self.result_dir
         copy.finished = False
 
+        return copy
+
     def __repr__(self) -> str:
         return (
             f"DagProcess(\n"

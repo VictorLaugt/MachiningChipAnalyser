@@ -65,10 +65,8 @@ if __name__ == '__main__':
 
     import preprocessing.log_tresh_blobfilter_erode
 
-    shape_detection = utils.DagProcess()
-    shape_detection.add("chipcurve", extract_chip_curve)
-
-    processing = preprocessing.log_tresh_blobfilter_erode.processing.then(shape_detection)
+    processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
+    processing.add("chipcurve", extract_chip_curve)
 
     input_dir = Path("imgs", "vertical")
     # input_dir = Path("imgs", "diagonal")
