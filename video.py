@@ -25,7 +25,7 @@ def create_from_rgb(rgb_image_itr: Iterable[RGBImg], video_file_path: Path) -> N
 def create_from_gray(gray_image_itr: Iterable[GrayImg], video_file_path: Path) -> None:
     return create_from_rgb(
         map(lambda img: cv.cvtColor(img, cv.COLOR_GRAY2BGR), gray_image_itr),
-        video_file_path
+        str(video_file_path)
     )
 
 

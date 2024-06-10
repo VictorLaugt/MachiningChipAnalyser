@@ -162,49 +162,57 @@ class DagProcess:
             pass
         cv.destroyAllWindows()
 
-    def show_video(self) -> None:
+    def compare_frames(self, frame_index: int, step_names: Sequence[str], horizontal: bool=False) -> None:
         if not self.finished:
             raise DagNotFinishedError()
 
-        if not self.result_dir.exists():
-            self.result_dir.mkdir()
-        elif not self.result_dir.is_dir():
-            raise InvalidResultDirError(self.result_dir)
-
-        for step_name, step_id in self.steps.items():
-            video.create_from_gray(
-                self.image_sequences[step_id],
-                str(self.result_dir.joinpath(f"{step_name}.avi"))
-            )
-
-        for step_name in self.steps.keys():
-            video.play(self.result_dir.joinpath(f"{step_name}.avi"))
-
-
-    def compare_frames(self, frame_index: int, step_names: Sequence[str]) -> None:
-        if not self.finished:
-            raise DagNotFinishedError()
-
+        stack_function = np.hstack if horizontal else np.vstack
         imgs = []
         for name in step_names:
             imgs.append(self._get(name)[frame_index])
-        cv.imshow("_".join(step_names), np.vstack(imgs))
+        cv.imshow("_".join(step_names), stack_function(imgs))
 
         while cv.waitKey(30) != 113:
             pass
         cv.destroyAllWindows()
 
-    def compare_videos(self, step_names: Sequence[str]) -> None:
+
+    def _ensure_video_directory(self) -> None:
+        if not self.result_dir.is_dir():
+            try:
+                self.result_dir.mkdir()
+            except OSError:
+                raise InvalidResultDirError(self.result_dir)
+
+    def show_video(self) -> None:
         if not self.finished:
             raise DagNotFinishedError()
 
+        self._ensure_video_directory()
+
+        for step_name, step_id in self.steps.items():
+            video.create_from_gray(
+                self.image_sequences[step_id],
+                self.result_dir.joinpath(f"{step_name}.avi")
+            )
+
+        for step_name in self.steps.keys():
+            video.play(self.result_dir.joinpath(f"{step_name}.avi"))
+
+    def compare_videos(self, step_names: Sequence[str], horizontal: bool=False) -> None:
+        if not self.finished:
+            raise DagNotFinishedError()
+
+        self._ensure_video_directory()
+
+        stack_function = np.hstack if horizontal else np.vstack
         img_seqs = []
         for name in step_names:
             img_seqs.append(self._get(name))
         stacked_img_seq = []
         for frame_index in range(len(self.image_sequences[0])):
-            stacked_img_seq.append(np.vstack([seq[frame_index] for seq in img_seqs]))
+            stacked_img_seq.append(stack_function([seq[frame_index] for seq in img_seqs]))
 
         comparison_video_path = self.result_dir.joinpath(f"{'_'.join(step_names)}.avi")
-        video.create_from_gray(stacked_img_seq, str(comparison_video_path))
+        video.create_from_gray(stacked_img_seq, comparison_video_path)
         video.play(comparison_video_path)

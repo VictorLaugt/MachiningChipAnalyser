@@ -127,10 +127,10 @@ if __name__ == '__main__':
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
     processing.run(loader, output_dir)
-    processing.show_frame(25)
-    processing.compare_frames(25, ("erode", "chipcurve"))
+    # processing.show_frame(25)
+    processing.compare_frames(25, ("erode", "chipcurve"), horizontal=True)
     # processing.show_video()
-    processing.compare_videos(("erode", "chipcurve"))
+    processing.compare_videos(("erode", "chipcurve"), horizontal=True)
 
 
 # if __name__ == '__main__':
