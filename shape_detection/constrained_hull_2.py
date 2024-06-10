@@ -12,14 +12,6 @@ def above_line(points, a, b, c, min_distance):
     return points[mask]
 
 
-def draw_lines(img, points, color, thickness):
-    points = points.reshape(-1, 2)
-    for i in range(len(points) - 1):
-        start_point = points[i]
-        end_point = points[i + 1]
-        cv.line(img, start_point, end_point, color, thickness)
-
-
 def draw_chip_curve_mask(mask, hull_points):
     h, w = mask.shape
     pts = hull_points.reshape(-1, 2)
@@ -49,10 +41,9 @@ def extract_chip_curve(precise, rough):
     points = np.vstack((points, anchor))
     hull_points = cv.convexHull(points)  # ~ (p, 1, 2)
 
-    # remove points of the convex hull near the tool, the base, and the up border
+    # remove points of the convex hull near the tool and the base
     hull_points = above_line(hull_points, a=0, b=-1, c=385, min_distance=20)
     hull_points = above_line(hull_points, a=-1, b=0, c=967, min_distance=10)
-    # hull_points = above_line(hull_points, a=0, b=1, c=0, min_distance=5)
 
     # extract points near the hull
     mask = np.zeros((h, w), dtype=np.uint8)
