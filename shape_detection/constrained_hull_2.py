@@ -20,52 +20,17 @@ def draw_lines(img, points, color, thickness):
         cv.line(img, start_point, end_point, color, thickness)
 
 
-# def draw_chip_curve_mask(mask, hull_points):
-#     pts = hull_points.reshape(-1, 2)
-
-#     argmin = 0
-#     y_curr = mask.shape[0]
-#     for i in range(len(pts) - 1):
-#         y = pts[i, 1]
-#         if y < y_curr:
-#             y_curr = y
-#             argmin = i
-
-#     if pts[argmin-1, 0] <= pts[argmin+1, 0]:
-#         argmin -= 1
-
-#     for i in range(0, argmin):
-#         cv.line(mask, pts[i], pts[i+1], 255, 5)
-#     for i in range(argmin+1, len(pts) - 1):
-#         cv.line(mask, pts[i], pts[i+1], 255, 5)
-
-
 def draw_chip_curve_mask(mask, hull_points):
     h, w = mask.shape
     pts = hull_points.reshape(-1, 2)
 
-    def is_outside(point):
-        return not (10 < point[0] < w-10 and 10 < point[1] < h-10)
-
-    def draw(start_index):
-        i = start_index
-        for i in range(start_index, len(pts) - 1):
-            a, b = pts[i], pts[i+1]
-            if is_outside(b):
-                break
-            cv.line(mask, a, b, 255, 5)
-        return i
-
-    def skip(index):
-        while index < len(pts) and is_outside(pts[index]):
-            index += 1
-        return index
-
-    start = 0
-    for _ in range(2):
-        end = draw(start)
-        start = skip(end + 1)
-    draw(start)
+    for i in range(len(pts) - 1):
+        (x1, y1), (x2, y2) = pts[i], pts[i+1]
+        if (
+                10 < x2 < w-10 and 10 < y2 < h-10 and
+                10 < x1 < w-10 and 10 < y1 < h-10
+        ):
+            cv.line(mask, (x1, y1), (x2, y2), 255, 5)
 
 
 def extract_chip_curve(precise, rough):

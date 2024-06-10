@@ -20,35 +20,6 @@ def draw_lines(img, points, color, thickness):
         cv.line(img, start_point, end_point, color, thickness)
 
 
-# def extract_chip_curve(precise, rough):
-#     h, w = precise.shape
-
-#     contours, _hierarchy = cv.findContours(precise, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
-#     points = np.vstack(contours)  # ~ (n, 1, 2)
-
-#     # MOCK: remove the tool and the base
-#     points = above_line(points, a=0, b=-1, c=385, min_distance=5)  # above the base
-#     points = above_line(points, a=-1, b=0, c=967, min_distance=5)  # at the left of the tool
-
-#     # compute the convex hull and constrain it to cross two anchor points
-#     y_min = points[points[:, :, 1].argmin(), 0, 1]
-#     anchors = np.array([
-#         [[0, y_min]],
-#         [[0, h-1]]
-#     ])
-#     points = np.vstack((points, anchors))
-#     hull_points = cv.convexHull(points, clockwise=True)  # ~ (p, 1, 2)
-
-#     # remove points of the convex hull near the tool, the base, and the image borders
-#     hull_points = above_line(hull_points, a=0, b=-1, c=385, min_distance=20)
-#     hull_points = above_line(hull_points, a=-1, b=0, c=967, min_distance=10)
-#     hull_points = above_line(hull_points, a=0, b=1, c=0, min_distance=5)
-#     hull_points = above_line(hull_points, a=1, b=0, c=0, min_distance=5)
-
-#     mask = np.zeros((h, w), dtype=np.uint8)
-#     return mask
-
-
 def extract_chip_curve(precise, rough):
     h, w = precise.shape
 
