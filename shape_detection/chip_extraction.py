@@ -4,7 +4,6 @@ import cv2 as cv
 import geometry
 
 
-# ---- detection
 # def segment_by_angles(lines, k):
 #     """Group lines based on angles with k-means."""
 #     angles = 2 * lines[:, 0, 1].reshape(-1, 1)
@@ -70,26 +69,19 @@ def extract_chip_points(binary_img):
     return filtered_points, base_line, tool_line
 
 
-# ---- rendering
-def draw_line(img, rho, xn, yn, color, thickness):
-    """Draw on img the line whose polar parameters are
-    (rho, theta), with xn = cos(theta), yn = sin(theta).
-    """
-    x0, y0 = rho * xn, rho * yn
-    x1, y1 = int(x0 - 2000 * yn), int(y0 + 2000 * xn)
-    x2, y2 = int(x0 + 2000 * yn), int(y0 - 2000 * xn)
-    cv.line(img, (x1, y1), (x2, y2), color, thickness)
-
-def render_chip_extraction(binary_img):
-    render = np.zeros_like(binary_img)
+def render_chip_extraction(binary_img, render=None):
+    if render is None:
+        render = np.zeros_like(binary_img)
+    else:
+        render = render.copy()
 
     points, line0, line1 = extract_chip_points(binary_img)
 
     x, y = points[:, 0, 0], points[:, 0, 1]
     render[y, x] = 255
 
-    draw_line(render, *line0, color=127, thickness=1)
-    draw_line(render, *line1, color=127, thickness=1)
+    geometry.draw_line(render, *line0, color=127, thickness=1)
+    geometry.draw_line(render, *line1, color=127, thickness=1)
 
     return render
 

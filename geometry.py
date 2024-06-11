@@ -1,4 +1,6 @@
+import cv2 as cv
 import numpy as np
+
 
 def positive_rho(rho, theta):
     """Return the polar parameters (rho, theta) converted such that rho >= 0."""
@@ -36,3 +38,13 @@ def intersect_line(rho0, xn0, yn0, rho1, xn1, yn1):
         int((rho1*yn0 - rho0*yn1) / denominator),
         int((rho0*xn1 - rho1*xn0) / denominator)
     )
+
+
+def draw_line(img, rho, xn, yn, color, thickness):
+    """Draw on img the line whose polar parameters are (rho, theta),
+    with xn = cos(theta), yn = sin(theta).
+    """
+    x0, y0 = rho * xn, rho * yn
+    x1, y1 = int(x0 - 2000 * yn), int(y0 + 2000 * xn)
+    x2, y2 = int(x0 + 2000 * yn), int(y0 - 2000 * xn)
+    cv.line(img, (x1, y1), (x2, y2), color, thickness)

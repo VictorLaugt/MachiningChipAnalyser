@@ -1,7 +1,8 @@
 import sys
 
+import geometry
 from shape_detection.chip_extraction import (
-    extract_chip_points, filter_between_base_tool, draw_line
+    extract_chip_points, filter_between_base_tool
 )
 
 import numpy as np
@@ -50,16 +51,23 @@ def extract_chip_curve(precise, rough):
     if len(chip_curve_points) >= 5:
         ellipse = cv.fitEllipse(chip_curve_points)
     else:
+        ellipse = None
         print(f"Warning !: Not enough point to fit an ellipse ({len(chip_curve_points)} points)", file=sys.stderr)
 
-    # rendering
-    render = precise.copy()
-    draw_line(render, *base_line, 127, 1)
-    draw_line(render, *tool_line, 127, 1)
-    for pt in chip_curve_keys.reshape(-1, 2):
-        cv.circle(render, pt, 5, 127, -1)
-    # cv.drawContours(render, (hull_points,), 0, 127, 0)
-    if len(chip_curve_points) >= 5:
+    return ellipse, base_line, tool_line
+
+
+def render_chip_curve(precise, rough, render=None):
+    if render is None:
+        render = np.zeros_like(precise)
+    else:
+        render = render.copy()
+
+    ellipse, base_line, tool_line = extract_chip_curve(precise, rough)
+
+    geometry.draw_line(render, *base_line, 127, 1)
+    geometry.draw_line(render, *tool_line, 127, 1)
+    if ellipse is not None:
         cv.ellipse(render, ellipse, 127, 1)
 
     return render
@@ -72,7 +80,7 @@ if __name__ == '__main__':
     import preprocessing.log_tresh_blobfilter_erode
 
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
-    processing.add("chipcurve", extract_chip_curve, ("erode", "clean"))
+    processing.add("chipcurve", render_chip_curve, ("erode", "clean"))
 
     input_dir = Path("imgs", "vertical")
     # input_dir = Path("imgs", "diagonal")
