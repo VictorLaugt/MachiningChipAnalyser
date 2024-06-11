@@ -1,6 +1,8 @@
 import sys
 
-from shape_detection.point_extraction import extract_points, draw_line
+from shape_detection.chip_extraction import (
+    extract_chip_points, filter_between_tool_and_base, draw_line
+)
 
 import numpy as np
 import cv2 as cv
@@ -24,7 +26,7 @@ def create_chip_curve_mask(mask, hull_points):
 def extract_chip_curve(precise, rough):
     h, w = precise.shape
 
-    points, (rho0, xn0, yn0), (rho1, xn1, yn1) = extract_points(precise)
+    points, base_line, tool_line = extract_chip_points(precise)
 
     # compute the convex hull and constrain it to cross an anchor point
     x_min = points[points[:, :, 0].argmin(), 0, 0]
@@ -36,14 +38,8 @@ def extract_chip_curve(precise, rough):
     )[0][0]
     hull_points = np.roll(hull_points, -first_point_index, axis=0)
 
-
     # remove points of the convex hull near the tool and the base
-    x, y = hull_points[:, 0, 0], hull_points[:, 0, 1]
-    mask = (
-        (xn0*x + yn0*y - rho0 + 20 <= 0) &
-        (xn1*x + yn1*y - rho1 + 20 <= 0)
-    ).flatten()
-    filtered_hull_points = hull_points[mask]
+    filtered_hull_points = filter_between_tool_and_base(hull_points, base_line, tool_line, 20, 20)
 
     # extract points near the hull
     mask = np.zeros((h, w), dtype=np.uint8)
@@ -58,8 +54,8 @@ def extract_chip_curve(precise, rough):
 
     # rendering
     render = precise.copy()
-    draw_line(render, rho0, xn0, yn0, 127, 1)
-    draw_line(render, rho1, xn1, yn1, 127, 1)
+    draw_line(render, *base_line, 127, 1)
+    draw_line(render, *tool_line, 127, 1)
     for pt in filtered_hull_points.reshape(-1, 2):
         cv.circle(render, pt, 5, 127, -1)
     # cv.drawContours(render, (hull_points,), 0, 127, 0)

@@ -44,23 +44,30 @@ def locate_base_and_tool(binary_img):
 
     return (rho_base, xn_base, yn_base), (rho_tool, xn_tool, yn_tool)
 
-def extract_points(binary_img):
+def filter_between_tool_and_base(points, base_line, tool_line, base_margin, tool_margin):
+    """Return points between the base and the tool."""
+    rho_base, xn_base, yn_base = base_line
+    rho_tool, xn_tool, yn_tool = tool_line
+
+    x, y = points[:, 0, 0], points[:, 0, 1]
+    mask = (
+        (xn_base*x + yn_base*y - rho_base + base_margin <= 0) &
+        (xn_tool*x + yn_tool*y - rho_tool + tool_margin <= 0)
+    ).flatten()
+
+    return points[mask]
+
+def extract_chip_points(binary_img):
     """Return coordinates of points between base and tool, and line parameters
     for base and tool.
     """
-    (rho0, xn0, yn0), (rho1, xn1, yn1) = locate_base_and_tool(binary_img)
+    base_line, tool_line = locate_base_and_tool(binary_img)
 
     contours, _hierarchy = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
     points = np.vstack(contours)
-    x, y = points[:, 0, 0], points[:, 0, 1]
+    filtered_points = filter_between_tool_and_base(points, base_line, tool_line, 10, 10)
 
-    mask = (
-        (xn0*x + yn0*y - rho0 + 10 <= 0) &
-        (xn1*x + yn1*y - rho1 + 10 <= 0)
-    ).flatten()
-    filtered_points = points[mask]
-
-    return filtered_points, (rho0, xn0, yn0), (rho1, xn1, yn1)
+    return filtered_points, base_line, tool_line
 
 
 # ---- rendering
@@ -73,10 +80,10 @@ def draw_line(img, rho, xn, yn, color, thickness):
     x2, y2 = int(x0 + 2000 * yn), int(y0 - 2000 * xn)
     cv.line(img, (x1, y1), (x2, y2), color, thickness)
 
-def render_point_extraction(binary_img):
+def render_chip_extraction(binary_img):
     render = np.zeros_like(binary_img)
 
-    points, line0, line1 = extract_points(binary_img)
+    points, line0, line1 = extract_chip_points(binary_img)
 
     x, y = points[:, 0, 0], points[:, 0, 1]
     render[y, x] = 255
@@ -94,7 +101,7 @@ if __name__ == '__main__':
     import preprocessing.log_tresh_blobfilter_erode
 
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
-    processing.add("pointextraction", render_point_extraction)
+    processing.add("chipextraction", render_chip_extraction)
 
     input_dir = Path("imgs", "vertical")
     # input_dir = Path("imgs", "diagonal")
@@ -103,4 +110,4 @@ if __name__ == '__main__':
 
     processing.run(loader, output_dir)
     processing.show_frame(21)
-    processing.compare_videos(("input", "pointextraction"))
+    processing.compare_videos(("input", "chipextraction"))
