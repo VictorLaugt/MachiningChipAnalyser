@@ -8,7 +8,7 @@ import numpy as np
 import cv2 as cv
 
 
-def create_chip_curve_mask(mask, hull_points):
+def draw_chip_curve(mask, hull_points):
     margin = 5
 
     h, w = mask.shape
@@ -38,13 +38,13 @@ def extract_chip_curve(precise, rough):
     )[0][0]
     hull_points = np.roll(hull_points, -first_point_index, axis=0)
 
-    # remove points of the convex hull near the tool and the base
-    filtered_hull_points = filter_between_base_tool(hull_points, base_line, tool_line, 20, 20)
+    # remove from the convex hull points near the tool and the base
+    chip_curve_keys = filter_between_base_tool(hull_points, base_line, tool_line, 20, 20)
 
-    # extract points near the hull
-    mask = np.zeros((h, w), dtype=np.uint8)
-    create_chip_curve_mask(mask, filtered_hull_points)
-    y, x = np.nonzero(rough & mask)
+    # extract points of the chip curve
+    chip_curve_mask = np.zeros((h, w), dtype=np.uint8)
+    draw_chip_curve(chip_curve_mask, chip_curve_keys)
+    y, x = np.nonzero(rough & chip_curve_mask)
     chip_curve_points = np.stack((x, y), axis=1).reshape(-1, 1, 2)
 
     if len(chip_curve_points) >= 5:
@@ -56,7 +56,7 @@ def extract_chip_curve(precise, rough):
     render = precise.copy()
     draw_line(render, *base_line, 127, 1)
     draw_line(render, *tool_line, 127, 1)
-    for pt in filtered_hull_points.reshape(-1, 2):
+    for pt in chip_curve_keys.reshape(-1, 2):
         cv.circle(render, pt, 5, 127, -1)
     # cv.drawContours(render, (hull_points,), 0, 127, 0)
     if len(chip_curve_points) >= 5:
