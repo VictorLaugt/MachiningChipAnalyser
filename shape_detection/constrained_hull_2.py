@@ -38,13 +38,18 @@ def extract_chip_curve(precise, rough):
     x_min = points[points[:, :, 0].argmin(), 0, 0]
     anchor = np.array([[[x_min, h-1]]])
     hull_points = cv.convexHull(np.vstack((points, anchor)))
-    # FIXME: roll the array to force the anchor to be the first point of the hull
+    first_point_index = np.where(
+        (hull_points[:, 0, 0] == anchor[0, 0, 0]) &
+        (hull_points[:, 0, 1] == anchor[0, 0, 1])
+    )[0][0]
+    hull_points = np.roll(hull_points, -first_point_index, axis=0)
+
     x, y = hull_points[:, 0, 0], hull_points[:, 0, 1]
 
     # remove points of the convex hull near the tool and the base
     mask = (
-        (xn0*x + yn0*y - rho0 + 15 <= 0) &
-        (xn1*x + yn1*y - rho1 + 15 <= 0)
+        (xn0*x + yn0*y - rho0 + 20 <= 0) &
+        (xn1*x + yn1*y - rho1 + 20 <= 0)
     ).flatten()
     filtered_hull_points = hull_points[mask]
 
@@ -61,10 +66,13 @@ def extract_chip_curve(precise, rough):
         print("Warning !: Not enough point to fit an ellipse", file=sys.stderr)
 
     # display
-    to_display = np.zeros((h, w), dtype=np.uint8)
-    to_display[y, x] = 255
+    to_display = precise.copy()
+    # to_display = np.zeros((h, w), dtype=np.uint8)
+    # to_display[y, x] = 255
     draw_line(to_display, rho0, xn0, yn0, 127, 1)
     draw_line(to_display, rho1, xn1, yn1, 127, 1)
+    for pt in filtered_hull_points.reshape(-1, 2):
+        cv.circle(to_display, pt, 5, 127, -1)
     # cv.drawContours(to_display, (hull_points,), 0, 127, 0)
     if len(chip_curve_points) >= 5:
         cv.ellipse(to_display, ellipse, 127, 1)
@@ -81,8 +89,8 @@ if __name__ == '__main__':
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
     processing.add("chipcurve", extract_chip_curve, ("erode", "clean"))
 
-    # input_dir = Path("imgs", "vertical")
-    input_dir = Path("imgs", "diagonal")
+    input_dir = Path("imgs", "vertical")
+    # input_dir = Path("imgs", "diagonal")
     output_dir = Path("results", "chipcurve")
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
