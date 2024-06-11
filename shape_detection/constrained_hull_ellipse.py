@@ -6,14 +6,7 @@ import numpy as np
 import cv2 as cv
 
 
-def above_line(points, a, b, c, min_distance):
-    """Filter the points to keep those which verify a*x + b*y + c >= min_distance"""
-    x, y = points[:, :, 0], points[:, :, 1]
-    mask = (a*x + b*y + c >= min_distance).flatten()
-    return points[mask]
-
-
-def draw_chip_curve_mask(mask, hull_points):
+def create_chip_curve_mask(mask, hull_points):
     margin = 5
 
     h, w = mask.shape
@@ -31,7 +24,6 @@ def draw_chip_curve_mask(mask, hull_points):
 def extract_chip_curve(precise, rough):
     h, w = precise.shape
 
-    # MOCK: remove the tool and the base
     points, (rho0, xn0, yn0), (rho1, xn1, yn1) = extract_points(precise)
 
     # compute the convex hull and constrain it to cross an anchor point
@@ -44,9 +36,9 @@ def extract_chip_curve(precise, rough):
     )[0][0]
     hull_points = np.roll(hull_points, -first_point_index, axis=0)
 
-    x, y = hull_points[:, 0, 0], hull_points[:, 0, 1]
 
     # remove points of the convex hull near the tool and the base
+    x, y = hull_points[:, 0, 0], hull_points[:, 0, 1]
     mask = (
         (xn0*x + yn0*y - rho0 + 20 <= 0) &
         (xn1*x + yn1*y - rho1 + 20 <= 0)
@@ -55,8 +47,7 @@ def extract_chip_curve(precise, rough):
 
     # extract points near the hull
     mask = np.zeros((h, w), dtype=np.uint8)
-    draw_chip_curve_mask(mask, filtered_hull_points)
-
+    create_chip_curve_mask(mask, filtered_hull_points)
     y, x = np.nonzero(rough & mask)
     chip_curve_points = np.stack((x, y), axis=1).reshape(-1, 1, 2)
 
@@ -65,19 +56,17 @@ def extract_chip_curve(precise, rough):
     else:
         print(f"Warning !: Not enough point to fit an ellipse ({len(chip_curve_points)} points)", file=sys.stderr)
 
-    # display
-    to_display = precise.copy()
-    # to_display = np.zeros((h, w), dtype=np.uint8)
-    # to_display[y, x] = 255
-    draw_line(to_display, rho0, xn0, yn0, 127, 1)
-    draw_line(to_display, rho1, xn1, yn1, 127, 1)
+    # rendering
+    render = precise.copy()
+    draw_line(render, rho0, xn0, yn0, 127, 1)
+    draw_line(render, rho1, xn1, yn1, 127, 1)
     for pt in filtered_hull_points.reshape(-1, 2):
-        cv.circle(to_display, pt, 5, 127, -1)
-    # cv.drawContours(to_display, (hull_points,), 0, 127, 0)
+        cv.circle(render, pt, 5, 127, -1)
+    # cv.drawContours(render, (hull_points,), 0, 127, 0)
     if len(chip_curve_points) >= 5:
-        cv.ellipse(to_display, ellipse, 127, 1)
+        cv.ellipse(render, ellipse, 127, 1)
 
-    return to_display
+    return render
 
 
 if __name__ == '__main__':
@@ -95,9 +84,7 @@ if __name__ == '__main__':
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
     processing.run(loader, output_dir)
-    # processing.show_frame(25)
     processing.compare_frames(25, ("erode", "chipcurve"))
-    # processing.show_video()
     processing.compare_videos(("erode", "chipcurve"))
 
 
