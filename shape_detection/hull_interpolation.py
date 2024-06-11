@@ -1,4 +1,5 @@
-from pathlib import Path
+import geometry
+from shape_detection.chip_extraction import extract_chip_points
 
 import numpy as np
 import cv2 as cv
@@ -6,13 +7,7 @@ import cv2 as cv
 from scipy import interpolate
 
 
-def above_line(points, a, b, c, min_distance):
-    """Filter the points to keep those which verify a*x + b*y + c >= min_distance"""
-    x, y = points[..., 0], points[..., 1]
-    return points[a*x + b*y + c >= min_distance]
-
-
-# def filter_curve(hull_points, maximum_angle, lateral_margin):
+# def filter_chip_curve(hull_points, maximum_angle, lateral_margin):
 #     """Filter the points of hull to only keep the chip curve"""
 #     if len(hull_points) < 3:
 #         return hull_points[:]
@@ -47,34 +42,37 @@ def interpolate_curve(curve_points, image_shape):
     return xi[boundaries], yi[boundaries]
 
 
-def extract_chip_curve(binary):
-    extracted_shape = binary.copy()
-    contours, _hierarchy = cv.findContours(binary, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
-    points = np.vstack(contours)  # ~ (n, 1, 2)
+def interpolate_chip_hull(binary_img):
+    points, base_line, tool_line = extract_chip_points(binary_img)
+    hull_points = cv.convexHull(points, clockwise=True)
+    hull_interpolation = interpolate_curve(hull_points.reshape(-1, 2), binary_img.shape)
+    return hull_interpolation, base_line, tool_line
 
-    # MOCK: remove the tool and the base
-    points = above_line(points, a=0, b=-1, c=385, min_distance=5)  # above the base
-    points = above_line(points, a=-1, b=0, c=967, min_distance=5)  # at the left of the tool
 
-    hull_points = cv.convexHull(points, clockwise=True)  # ~ (p, 1, 2)
+def render_chip_interpolation(binary_img, render=None):
+    if render is None:
+        render = np.zeros_like(binary_img)
+    else:
+        render = render.copy()
 
-    x_interpolate, y_interpolate = interpolate_curve(hull_points.reshape(-1, 2), binary.shape)
+    hull_interpolation, base_line, tool_line = interpolate_chip_hull(binary_img)
+    x_interpolate, y_interpolate = hull_interpolation
 
-    # display the convex hull and its interpolation
-    for pt in hull_points.reshape(-1, 2):
-        cv.circle(extracted_shape, pt, 5, 127, -1)
-    extracted_shape[y_interpolate, x_interpolate] = 127
+    render[y_interpolate, x_interpolate] = 255
+    geometry.draw_line(render, *base_line, color=127, thickness=1)
+    geometry.draw_line(render, *tool_line, color=127, thickness=1)
 
-    return extracted_shape
+    return render
 
 
 if __name__ == '__main__':
     import image_loader
+    from pathlib import Path
 
     import preprocessing.log_tresh_blobfilter_erode
 
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
-    processing.add("chipcurve", extract_chip_curve)
+    processing.add("chipcurve", render_chip_interpolation)
 
     input_dir = Path("imgs", "vertical")
     # input_dir = Path("imgs", "diagonal")

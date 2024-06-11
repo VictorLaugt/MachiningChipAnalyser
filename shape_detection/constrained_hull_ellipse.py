@@ -65,8 +65,8 @@ def render_chip_curve(precise, rough, render=None):
 
     ellipse, base_line, tool_line = extract_chip_curve(precise, rough)
 
-    geometry.draw_line(render, *base_line, 127, 1)
-    geometry.draw_line(render, *tool_line, 127, 1)
+    geometry.draw_line(render, *base_line, color=127, thickness=1)
+    geometry.draw_line(render, *tool_line, color=127, thickness=1)
     if ellipse is not None:
         cv.ellipse(render, ellipse, 127, 1)
 
