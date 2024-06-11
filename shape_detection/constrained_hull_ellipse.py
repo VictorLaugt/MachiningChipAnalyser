@@ -1,7 +1,7 @@
 import sys
 
 from shape_detection.chip_extraction import (
-    extract_chip_points, filter_between_tool_and_base, draw_line
+    extract_chip_points, filter_between_base_tool, draw_line
 )
 
 import numpy as np
@@ -39,7 +39,7 @@ def extract_chip_curve(precise, rough):
     hull_points = np.roll(hull_points, -first_point_index, axis=0)
 
     # remove points of the convex hull near the tool and the base
-    filtered_hull_points = filter_between_tool_and_base(hull_points, base_line, tool_line, 20, 20)
+    filtered_hull_points = filter_between_base_tool(hull_points, base_line, tool_line, 20, 20)
 
     # extract points near the hull
     mask = np.zeros((h, w), dtype=np.uint8)

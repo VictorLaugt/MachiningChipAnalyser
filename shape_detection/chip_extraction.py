@@ -44,7 +44,7 @@ def locate_base_and_tool(binary_img):
 
     return (rho_base, xn_base, yn_base), (rho_tool, xn_tool, yn_tool)
 
-def filter_between_tool_and_base(points, base_line, tool_line, base_margin, tool_margin):
+def filter_between_base_tool(points, base_line, tool_line, base_margin, tool_margin):
     """Return points between the base and the tool."""
     rho_base, xn_base, yn_base = base_line
     rho_tool, xn_tool, yn_tool = tool_line
@@ -65,7 +65,7 @@ def extract_chip_points(binary_img):
 
     contours, _hierarchy = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
     points = np.vstack(contours)
-    filtered_points = filter_between_tool_and_base(points, base_line, tool_line, 10, 10)
+    filtered_points = filter_between_base_tool(points, base_line, tool_line, 10, 10)
 
     return filtered_points, base_line, tool_line
 
