@@ -81,5 +81,5 @@ if __name__ == '__main__':
 
     processing.run(loader, output_dir)
     processing.compare_frames(20, ("input", "chipcurve"))
-    processing.show_video()
+    # processing.show_video()
     processing.compare_videos(("input", "chipcurve"))
