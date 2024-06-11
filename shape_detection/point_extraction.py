@@ -20,7 +20,7 @@ def locate_base_and_tool(binary_img):
     """Compute line parameters for base and tool."""
     lines = cv.HoughLines(binary_img, 1, np.pi/180, 100)
     if lines is None or len(lines) < 2:
-        print("Warning !: line not found", file=sys.stderr)
+        raise ValueError("Warning !: line not found")
 
     rho0, theta0 = geometry.positive_rho(*lines[0, 0, :])
     rho1, theta1 = geometry.positive_rho(*lines[1, 0, :])

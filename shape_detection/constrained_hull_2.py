@@ -63,7 +63,7 @@ def extract_chip_curve(precise, rough):
     if len(chip_curve_points) >= 5:
         ellipse = cv.fitEllipse(chip_curve_points)
     else:
-        print("Warning !: Not enough point to fit an ellipse", file=sys.stderr)
+        print(f"Warning !: Not enough point to fit an ellipse ({len(chip_curve_points)} points)", file=sys.stderr)
 
     # display
     to_display = precise.copy()
