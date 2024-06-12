@@ -23,14 +23,14 @@ def draw_chip_curve(mask, hull_points):
             cv.line(mask, (x1, y1), (x2, y2), 255, 5)
 
 
-def extract_chip_curve(precise, rough):
-    h, w = precise.shape
+def extract_chip_curve(binary_img):
+    h, w = binary_img.shape
     border_line_up = (0, 0, -1)
     border_line_left = (0, -1, 0)
     # border_line_down = (h, 0, 1)
     # border_line_right = (w, 1,  0)
 
-    points, base_line, tool_line, base_angle, tool_angle = extract_chip_points(precise)
+    points, base_line, tool_line, base_angle, tool_angle = extract_chip_points(binary_img)
 
     # compute the convex hull and constrain it to cross an anchor point
     y_min = points[points[:, :, 1].argmin(), 0, 1]
@@ -77,15 +77,15 @@ def extract_chip_curve(precise, rough):
     return polynomial, hull_points, key_points, base_line, tool_line, tool_angle
 
 
-def render_chip_curve(precise, rough, render=None):
-    h, w = precise.shape
+def render_chip_curve(binary_img, render=None):
+    h, w = binary_img.shape
 
     if render is None:
-        render = np.zeros_like(precise)
+        render = np.zeros_like(binary_img)
     else:
         render = render.copy()
 
-    polynomial, hull_points, key_points, base_line, tool_line, tool_angle = extract_chip_curve(precise, rough)
+    polynomial, hull_points, key_points, base_line, tool_line, tool_angle = extract_chip_curve(binary_img)
     if polynomial is not None:
         x = np.arange(0, w, 1, dtype=np.int32)
         y = polynomial(x)
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     import preprocessing.log_tresh_blobfilter_erode
 
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
-    processing.add("chipcurve", render_chip_curve, ("morph", "blobfilter", "morph"))
+    processing.add("chipcurve", render_chip_curve, ("morph", "morph"))
 
     # input_dir = Path("imgs", "vertical")
     input_dir = Path("imgs", "diagonal")

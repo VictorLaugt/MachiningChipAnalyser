@@ -39,12 +39,13 @@ if __name__ == '__main__':
     from pathlib import Path
     import image_loader
 
-    input_dir = Path("imgs", "vertical")
-    # input_dir = Path("imgs", "diagonal")
+    # input_dir = Path("imgs", "vertical")
+    input_dir = Path("imgs", "diagonal")
     output_dir = Path("results", "log_thresh_blobfilter_erode")
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
     processing.run(loader, output_dir)
-    # processing.show_frame(20)
-    processing.show_frame(85)
-    processing.show_video()
+    processing.compare_frames(14, ("input", "morph"))
+    # processing.show_frame(14)
+    processing.compare_videos(("input", "morph"))
+    # processing.show_video()
