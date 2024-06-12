@@ -33,6 +33,19 @@ class _VideoPlayer:
     def __init__(self, reader: cv.VideoCapture, window_name: str):
         self.reader = reader
         self.window_name = window_name
+        self.last_message_length = 0
+
+    def print_frame_count(self) -> None:
+        current_frame = self.reader.get(cv.CAP_PROP_POS_FRAMES)
+        total_frame = self.reader.get(cv.CAP_PROP_FRAME_COUNT)
+        message = f"frame {current_frame}/{total_frame}"
+        pad = max(0, self.last_message_length - len(message))
+        print(message + (pad * ' '), end='\r')
+        self.last_message_length = len(message)
+
+    def erase_frame_count(self) -> None:
+        print(' ' * self.last_message_length, end='\r')
+        self.last_message_length = 0
 
     def step(self) -> None:
         ret, frame = self.reader.read()
@@ -48,8 +61,8 @@ class _VideoPlayer:
         self.step()
 
     def pause(self) -> None:
-        print(f"paused at image {self.reader.get(cv.CAP_PROP_POS_FRAMES)}/{self.reader.get(cv.CAP_PROP_FRAME_COUNT)}")
         while True:
+            self.print_frame_count()
             key = cv.waitKey(30)
             if key == 32:  # Space => play
                 return True
@@ -69,6 +82,7 @@ class _VideoPlayer:
                 continue_playing = False
             elif key == 32:  # Space => pause
                 continue_playing = self.pause()
+                self.erase_frame_count()
 
 
 def play(video_file_path: Path) -> None:
