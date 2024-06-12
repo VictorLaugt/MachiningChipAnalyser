@@ -34,6 +34,18 @@ def under_lines(points, lines, margins):
     return points[mask]
 
 
+def line_nearest_point(points, line):
+    """Return the index of the point nearest to the line and its distance to the
+    line. The line is described as (rho, xn, yn) where xn = cos(theta),
+    yn = sin(theta), and (rho, theta) are the polar parameters.
+    """
+    rho, xn, yn = line
+    x, y = points[:, 0, 0], points[:, 0, 1]
+    distances = np.abs(xn*x + yn*y - rho)
+    i = np.argmin(distances)
+    return i, distances[i]
+
+
 def intersect_line(line0, line1):
     """Compute the intersection points of two lines.
     The lines are described as (rho, xn, yn) where xn = cos(theta), yn = sin(theta),

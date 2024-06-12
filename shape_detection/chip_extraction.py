@@ -17,17 +17,20 @@ import geometry
 
 #     return labels.flatten()
 
+
 def best_base_line(lines):
     """Return the best horizontal line."""
     for rho, theta in lines[:, 0, :]:
         if np.abs(theta - np.pi/2) < 0.2:
             return rho, theta
 
+
 def best_tool_line(lines):
     """Return the best tool line."""
     for rho, theta in lines[:, 0, :]:
         if 0 <= theta <= np.pi/8 or np.pi - 0.2 <= theta <= np.pi:
             return rho, theta
+
 
 def locate_base_and_tool(binary_img):
     """Compute line parameters for base and tool."""
@@ -43,18 +46,6 @@ def locate_base_and_tool(binary_img):
 
     return (rho_base, xn_base, yn_base), (rho_tool, xn_tool, yn_tool)
 
-# def filter_between_base_tool(points, base_line, tool_line, base_margin, tool_margin):
-#     """Return points between the base and the tool."""
-#     rho_base, xn_base, yn_base = base_line
-#     rho_tool, xn_tool, yn_tool = tool_line
-
-#     x, y = points[:, 0, 0], points[:, 0, 1]
-#     mask = (
-#         (xn_base*x + yn_base*y - rho_base + base_margin <= 0) &
-#         (xn_tool*x + yn_tool*y - rho_tool + tool_margin <= 0)
-#     ).flatten()
-
-#     return points[mask]
 
 def extract_chip_points(binary_img):
     """Return coordinates of points between base and tool, and line parameters

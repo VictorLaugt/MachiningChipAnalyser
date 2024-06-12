@@ -25,17 +25,15 @@ def draw_chip_curve(mask, hull_points):
 
 def extract_chip_curve(precise, rough):
     h, w = precise.shape
-
-    border_line_left = (0, -1, 0)
-    border_line_right = (w, 1,  0)
-    border_line_down = (h, 0, 1)
+    # border_line_left = (0, -1, 0)
+    # border_line_right = (w, 1,  0)
+    # border_line_down = (h, 0, 1)
     border_line_up = (0, 0, -1)
 
     points, base_line, tool_line = extract_chip_points(precise)
 
     # compute the convex hull and constrain it to cross an anchor point
     y_min = points[points[:, :, 1].argmin(), 0, 1]
-    # x_min = points[points[:, :, 0].argmin(), 0, 0]
     anchor = np.array([[[0, y_min]], [[0, h-1]]])
     hull_points = cv.convexHull(np.vstack((points, anchor)))
     first_point_index = np.where(
@@ -44,27 +42,36 @@ def extract_chip_curve(precise, rough):
     )[0][0]
     hull_points = np.roll(hull_points, -first_point_index, axis=0)
 
-    # remove from the convex hull points near the tool, the base, and the border of the image
-    key_points = hull_points[2:]
+    # filter points from the convex hull
+    _, base_distance = geometry.line_nearest_point(hull_points, base_line)
+    _, tool_distance = geometry.line_nearest_point(hull_points, tool_line)
     key_points = geometry.under_lines(
-        key_points,
+        hull_points[2:],
         (base_line, tool_line, border_line_up),
-        (20, 20, 15)
+        (base_distance+20, tool_distance+5, 15)
     )
+    # key_points = geometry.under_lines(
+    #     hull_points[2:],
+    #     (base_line, tool_line, border_line_up),
+    #     (20, 20, 15)
+    # )
 
     # extract points of the chip curve
-    chip_curve_mask = np.zeros((h, w), dtype=np.uint8)
-    draw_chip_curve(chip_curve_mask, key_points)
-    y, x = np.nonzero(rough & chip_curve_mask)
-    chip_curve_points = np.stack((x, y), axis=1).reshape(-1, 1, 2)
+    # chip_curve_mask = np.zeros((h, w), dtype=np.uint8)
+    # draw_chip_curve(chip_curve_mask, key_points)
+    # y, x = np.nonzero(rough & chip_curve_mask)
+    # key_points = np.stack((x, y), axis=1).reshape(-1, 1, 2)
 
-    if len(chip_curve_points) < 2:
+    # Fit a polynomial to the key points
+    if len(key_points) < 2:
         print("Warning !: Chip curve not found", file=sys.stderr)
-        parabola = None
+        polynomial = None
+    elif len(key_points) == 2:
+        polynomial = Polynomial.fit(key_points[:, 0, 0], key_points[:, 0, 1], 1)
     else:
-        parabola = Polynomial.fit(chip_curve_points[:, 0, 0], chip_curve_points[:, 0, 1], 2)
+        polynomial = Polynomial.fit(key_points[:, 0, 0], key_points[:, 0, 1], 2)
 
-    return parabola, hull_points, key_points, base_line, tool_line
+    return polynomial, hull_points, key_points, base_line, tool_line
 
 
 def render_chip_curve(precise, rough, render=None):
@@ -75,10 +82,10 @@ def render_chip_curve(precise, rough, render=None):
     else:
         render = render.copy()
 
-    parabola, hull_points, key_points, base_line, tool_line = extract_chip_curve(precise, rough)
-    if parabola is not None:
+    polynomial, hull_points, key_points, base_line, tool_line = extract_chip_curve(precise, rough)
+    if polynomial is not None:
         x = np.arange(0, w, 1, dtype=np.int32)
-        y = parabola(x).astype(np.int32)
+        y = polynomial(x).astype(np.int32)
         inside_mask = (0 <= y) & (y < h)
         x, y = x[inside_mask], y[inside_mask]
         render[y, x] = 127
@@ -110,7 +117,7 @@ if __name__ == '__main__':
 
     processing.run(loader, output_dir)
     processing.compare_frames(15, ("input", "chipcurve"))
-    processing.compare_videos(("chipcurve",))
+    processing.compare_videos(("chipcurve", "input"))
 
 
 # if __name__ == '__main__':
