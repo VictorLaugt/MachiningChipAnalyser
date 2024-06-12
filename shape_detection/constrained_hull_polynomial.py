@@ -25,10 +25,10 @@ def draw_chip_curve(mask, hull_points):
 
 def extract_chip_curve(precise, rough):
     h, w = precise.shape
-    # border_line_left = (0, -1, 0)
-    # border_line_right = (w, 1,  0)
-    # border_line_down = (h, 0, 1)
     border_line_up = (0, 0, -1)
+    border_line_left = (0, -1, 0)
+    # border_line_down = (h, 0, 1)
+    # border_line_right = (w, 1,  0)
 
     points, base_line, tool_line = extract_chip_points(precise)
 
@@ -47,8 +47,8 @@ def extract_chip_curve(precise, rough):
     _, tool_distance = geometry.line_nearest_point(hull_points, tool_line)
     key_points = geometry.under_lines(
         hull_points[2:],
-        (base_line, tool_line, border_line_up),
-        (base_distance+20, tool_distance+5, 15)
+        (base_line, tool_line, border_line_up, border_line_left),
+        (base_distance+20, tool_distance+5, 15, 15)
     )
     # key_points = geometry.under_lines(
     #     hull_points[2:],
