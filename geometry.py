@@ -10,6 +10,11 @@ def positive_rho(rho, theta):
         return -rho, theta+np.pi
 
 
+def rotate(x, y, angle):
+    cos, sin = np.cos(angle), np.sin(angle)
+    return x*cos - y*sin, x*sin + y*cos
+
+
 def above_lines(points, lines, margins):
     """Keeps only the points above the lines with a margin.
     The lines are described as (rho, xn, yn) where xn = cos(theta), yn = sin(theta),

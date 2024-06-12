@@ -30,7 +30,7 @@ def extract_chip_curve(precise, rough):
     # border_line_down = (h, 0, 1)
     # border_line_right = (w, 1,  0)
 
-    points, base_line, tool_line = extract_chip_points(precise)
+    points, base_line, tool_line, base_angle, tool_angle = extract_chip_points(precise)
 
     # compute the convex hull and constrain it to cross an anchor point
     y_min = points[points[:, :, 1].argmin(), 0, 1]
@@ -56,22 +56,25 @@ def extract_chip_curve(precise, rough):
     #     (20, 20, 15)
     # )
 
+
     # extract points of the chip curve
     # chip_curve_mask = np.zeros((h, w), dtype=np.uint8)
     # draw_chip_curve(chip_curve_mask, key_points)
     # y, x = np.nonzero(rough & chip_curve_mask)
     # key_points = np.stack((x, y), axis=1).reshape(-1, 1, 2)
 
+    x, y = geometry.rotate(key_points[:, 0, 0], key_points[:, 0, 1], -tool_angle)
+
     # Fit a polynomial to the key points
     if len(key_points) < 2:
         print("Warning !: Chip curve not found", file=sys.stderr)
         polynomial = None
     elif len(key_points) == 2:
-        polynomial = Polynomial.fit(key_points[:, 0, 0], key_points[:, 0, 1], 1)
+        polynomial = Polynomial.fit(x, y, 1)
     else:
-        polynomial = Polynomial.fit(key_points[:, 0, 0], key_points[:, 0, 1], 2)
+        polynomial = Polynomial.fit(x, y, 2)
 
-    return polynomial, hull_points, key_points, base_line, tool_line
+    return polynomial, hull_points, key_points, base_line, tool_line, tool_angle
 
 
 def render_chip_curve(precise, rough, render=None):
@@ -82,11 +85,13 @@ def render_chip_curve(precise, rough, render=None):
     else:
         render = render.copy()
 
-    polynomial, hull_points, key_points, base_line, tool_line = extract_chip_curve(precise, rough)
+    polynomial, hull_points, key_points, base_line, tool_line, tool_angle = extract_chip_curve(precise, rough)
     if polynomial is not None:
         x = np.arange(0, w, 1, dtype=np.int32)
-        y = polynomial(x).astype(np.int32)
-        inside_mask = (0 <= y) & (y < h)
+        y = polynomial(x)
+        x, y = geometry.rotate(x, y, tool_angle)
+        x, y = x.astype(np.int32), y.astype(np.int32)
+        inside_mask = (0 <= x) & (x < w) & (0 <= y) & (y < h)
         x, y = x[inside_mask], y[inside_mask]
         render[y, x] = 127
 
@@ -94,9 +99,9 @@ def render_chip_curve(precise, rough, render=None):
     geometry.draw_line(render, tool_line, color=127, thickness=1)
 
     for pt in hull_points.reshape(-1, 2):
-        cv.circle(render, pt, 10, 127 // 2, -1)
+        cv.circle(render, pt, 7, 127 // 2, -1)
     for kpt in key_points.reshape(-1, 2):
-        cv.circle(render, kpt, 10, 127, -1)
+        cv.circle(render, kpt, 7, 127, -1)
 
     return render
 
@@ -110,8 +115,8 @@ if __name__ == '__main__':
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
     processing.add("chipcurve", render_chip_curve, ("morph", "blobfilter", "morph"))
 
-    input_dir = Path("imgs", "vertical")
-    # input_dir = Path("imgs", "diagonal")
+    # input_dir = Path("imgs", "vertical")
+    input_dir = Path("imgs", "diagonal")
     output_dir = Path("results", "chipcurve")
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 

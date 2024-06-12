@@ -44,20 +44,20 @@ def locate_base_and_tool(binary_img):
     xn_base, yn_base = np.cos(theta_base), np.sin(theta_base)
     xn_tool, yn_tool = np.cos(theta_tool), np.sin(theta_tool)
 
-    return (rho_base, xn_base, yn_base), (rho_tool, xn_tool, yn_tool)
+    return (rho_base, xn_base, yn_base), (rho_tool, xn_tool, yn_tool), theta_base, theta_tool
 
 
 def extract_chip_points(binary_img):
     """Return coordinates of points between base and tool, and line parameters
     for base and tool.
     """
-    base_line, tool_line = locate_base_and_tool(binary_img)
+    base_line, tool_line, theta_base, theta_tool = locate_base_and_tool(binary_img)
 
     contours, _hierarchy = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
     points = np.vstack(contours)
     filtered_points = geometry.under_lines(points, (base_line, tool_line), (10, 10))
 
-    return filtered_points, base_line, tool_line
+    return filtered_points, base_line, tool_line, theta_base, theta_tool
 
 
 def render_chip_extraction(binary_img, render=None):
@@ -66,13 +66,13 @@ def render_chip_extraction(binary_img, render=None):
     else:
         render = render.copy()
 
-    points, line0, line1 = extract_chip_points(binary_img)
+    points, base_line, tool_line, _base_angle, _tool_angle = extract_chip_points(binary_img)
 
     x, y = points[:, 0, 0], points[:, 0, 1]
     render[y, x] = 255
 
-    geometry.draw_line(render, line0, color=127, thickness=1)
-    geometry.draw_line(render, line1, color=127, thickness=1)
+    geometry.draw_line(render, base_line, color=127, thickness=1)
+    geometry.draw_line(render, tool_line, color=127, thickness=1)
 
     return render
 
