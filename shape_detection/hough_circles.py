@@ -1,9 +1,7 @@
 import sys
 
 import geometry
-from shape_detection.chip_extraction import (
-    extract_chip_points, filter_between_base_tool
-)
+from shape_detection.chip_extraction import extract_chip_points
 
 import numpy as np
 import cv2 as cv
@@ -51,8 +49,8 @@ def render_circles(binary_img, render=None):
 
     circles, base_line, tool_line = extract_circles(binary_img)
 
-    geometry.draw_line(render, *base_line, color=127, thickness=1)
-    geometry.draw_line(render, *tool_line, color=127, thickness=1)
+    geometry.draw_line(render, base_line, color=127, thickness=1)
+    geometry.draw_line(render, tool_line, color=127, thickness=1)
     if circles is not None:
         for x_center, y_center, radius in circles[0, :, :]:
             cv.circle(render, (int(x_center), int(y_center)), int(radius), 127, 1)
@@ -75,8 +73,8 @@ if __name__ == '__main__':
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
     processing.run(loader, output_dir)
-    processing.compare_frames(25, ("erode", "circles"))
-    processing.compare_videos(("erode", "circles"))
+    processing.compare_frames(25, ("morph", "circles"))
+    processing.compare_videos(("morph", "circles"))
 
 
 # if __name__ == '__main__':

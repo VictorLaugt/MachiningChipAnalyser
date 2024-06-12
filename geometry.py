@@ -10,40 +10,48 @@ def positive_rho(rho, theta):
         return -rho, theta+np.pi
 
 
-def above_line(points, rho, xn, yn, min_distance):
-    """Keeps only the points above the line whose polar parameters are
-    (rho, theta), with xn = cos(theta), yn = sin(theta).
+def above_lines(points, lines, margins):
+    """Keeps only the points above the lines with a margin.
+    The lines are described as (rho, xn, yn) where xn = cos(theta), yn = sin(theta),
+    and (rho, theta) are the polar parameters.
     """
     x, y = points[:, 0, 0], points[:, 0, 1]
-    mask = (xn*x + yn*y - rho - min_distance >= 0).flatten()
+    mask = np.ones(len(points), dtype=bool)
+    for (rho, xn, yn), min_distance in zip(lines, margins):
+        mask &= (xn*x + yn*y - rho - min_distance >= 0).flatten()
     return points[mask]
 
 
-def under_line(points, rho, xn, yn, min_distance):
-    """Keeps only the points under the line whose polar parameters are
-    (rho, theta), with xn = cos(theta), yn = sin(theta).
+def under_lines(points, lines, margins):
+    """Keeps only the points under the lines with a margin.
+    The lines are described as (rho, xn, yn) where xn = cos(theta), yn = sin(theta),
+    and (rho, theta) are the polar parameters.
     """
     x, y = points[:, 0, 0], points[:, 0, 1]
-    mask = (xn*x + yn*y - rho + min_distance <= 0).flatten()
+    mask = np.ones(len(points), dtype=bool)
+    for (rho, xn, yn), min_distance in zip(lines, margins):
+        mask &= (xn*x + yn*y - rho + min_distance <= 0).flatten()
     return points[mask]
 
 
-def intersect_line(rho0, xn0, yn0, rho1, xn1, yn1):
-    """Return the intersection points of the two line whose polar parameters are
-    (rho0, theta0) and (rho1, theta1), with
-    xn0 = cos(theta0), yn0 = sin(theta0) and xn1 = cos(theta1), yn1 = sin(theta1).
+def intersect_line(line0, line1):
+    """Compute the intersection points of two lines.
+    The lines are described as (rho, xn, yn) where xn = cos(theta), yn = sin(theta),
+    and (rho, theta) are the polar parameters.
     """
+    (rho0, xn0, yn0), (rho1, xn1, yn1) = line0, line1
     denominator = yn0*xn1 - xn0*yn1
     return (
         int((rho1*yn0 - rho0*yn1) / denominator),
         int((rho0*xn1 - rho1*xn0) / denominator)
     )
 
-
-def draw_line(img, rho, xn, yn, color, thickness):
-    """Draw on img the line whose polar parameters are (rho, theta),
-    with xn = cos(theta), yn = sin(theta).
+def draw_line(img, line, color, thickness):
+    """Draw on img a line.
+    The lines are described as (rho, xn, yn) where xn = cos(theta), yn = sin(theta),
+    and (rho, theta) are the polar parameters.
     """
+    rho, xn, yn = line
     x0, y0 = rho * xn, rho * yn
     x1, y1 = int(x0 - 2000 * yn), int(y0 + 2000 * xn)
     x2, y2 = int(x0 + 2000 * yn), int(y0 - 2000 * xn)

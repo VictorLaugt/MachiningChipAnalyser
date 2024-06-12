@@ -59,8 +59,8 @@ def render_chip_interpolation(binary_img, render=None):
     x_interpolate, y_interpolate = hull_interpolation
 
     render[y_interpolate, x_interpolate] = 255
-    geometry.draw_line(render, *base_line, color=127, thickness=1)
-    geometry.draw_line(render, *tool_line, color=127, thickness=1)
+    geometry.draw_line(render, base_line, color=127, thickness=1)
+    geometry.draw_line(render, tool_line, color=127, thickness=1)
 
     return render
 

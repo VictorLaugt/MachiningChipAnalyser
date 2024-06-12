@@ -1,9 +1,7 @@
 import sys
 
 import geometry
-from shape_detection.chip_extraction import (
-    extract_chip_points, filter_between_base_tool
-)
+from shape_detection.chip_extraction import extract_chip_points
 
 import numpy as np
 from numpy.polynomial import Polynomial
@@ -28,6 +26,11 @@ def draw_chip_curve(mask, hull_points):
 def extract_chip_curve(precise, rough):
     h, w = precise.shape
 
+    border_line_left = (0, -1, 0)
+    border_line_right = (w, 1,  0)
+    border_line_down = (h, 0, 1)
+    border_line_up = (0, 0, -1)
+
     points, base_line, tool_line = extract_chip_points(precise)
 
     # compute the convex hull and constrain it to cross an anchor point
@@ -43,8 +46,11 @@ def extract_chip_curve(precise, rough):
 
     # remove from the convex hull points near the tool, the base, and the border of the image
     key_points = hull_points[2:]
-    key_points = key_points[key_points[:, 0, 1] > 15]
-    key_points = filter_between_base_tool(key_points, base_line, tool_line, 20, 20)
+    key_points = geometry.under_lines(
+        key_points,
+        (base_line, tool_line, border_line_up),
+        (20, 20, 15)
+    )
 
     # extract points of the chip curve
     chip_curve_mask = np.zeros((h, w), dtype=np.uint8)
@@ -77,8 +83,8 @@ def render_chip_curve(precise, rough, render=None):
         x, y = x[inside_mask], y[inside_mask]
         render[y, x] = 127
 
-    geometry.draw_line(render, *base_line, color=127, thickness=1)
-    geometry.draw_line(render, *tool_line, color=127, thickness=1)
+    geometry.draw_line(render, base_line, color=127, thickness=1)
+    geometry.draw_line(render, tool_line, color=127, thickness=1)
 
     for pt in hull_points.reshape(-1, 2):
         cv.circle(render, pt, 10, 127 // 2, -1)
@@ -103,8 +109,8 @@ if __name__ == '__main__':
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
     processing.run(loader, output_dir)
-    processing.compare_frames(15, ("morph", "chipcurve"))
-    processing.compare_videos(("input", "chipcurve"), horizontal=False)
+    processing.compare_frames(15, ("input", "chipcurve"))
+    processing.compare_videos(("chipcurve",))
 
 
 # if __name__ == '__main__':

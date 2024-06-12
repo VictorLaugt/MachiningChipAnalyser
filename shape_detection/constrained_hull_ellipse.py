@@ -1,9 +1,7 @@
 import sys
 
 import geometry
-from shape_detection.chip_extraction import (
-    extract_chip_points, filter_between_base_tool
-)
+from shape_detection.chip_extraction import extract_chip_points
 
 import numpy as np
 import cv2 as cv
@@ -40,7 +38,7 @@ def extract_chip_curve(precise, rough):
     hull_points = np.roll(hull_points, -first_point_index, axis=0)
 
     # remove from the convex hull points near the tool and the base
-    chip_curve_keys = filter_between_base_tool(hull_points, base_line, tool_line, 20, 20)
+    chip_curve_keys = geometry.under_lines(hull_points, (base_line, tool_line), (20, 20))
 
     # extract points of the chip curve
     chip_curve_mask = np.zeros((h, w), dtype=np.uint8)
@@ -65,8 +63,8 @@ def render_chip_curve(precise, rough, render=None):
 
     ellipse, base_line, tool_line = extract_chip_curve(precise, rough)
 
-    geometry.draw_line(render, *base_line, color=127, thickness=1)
-    geometry.draw_line(render, *tool_line, color=127, thickness=1)
+    geometry.draw_line(render, base_line, color=127, thickness=1)
+    geometry.draw_line(render, tool_line, color=127, thickness=1)
     if ellipse is not None:
         cv.ellipse(render, ellipse, 127, 1)
 
@@ -80,7 +78,7 @@ if __name__ == '__main__':
     import preprocessing.log_tresh_blobfilter_erode
 
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
-    processing.add("chipcurve", render_chip_curve, ("erode", "clean"))
+    processing.add("chipcurve", render_chip_curve, ("morph", "blobfilter"))
 
     input_dir = Path("imgs", "vertical")
     # input_dir = Path("imgs", "diagonal")
@@ -88,7 +86,7 @@ if __name__ == '__main__':
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
     processing.run(loader, output_dir)
-    processing.compare_frames(25, ("erode", "chipcurve"))
+    processing.compare_frames(25, ("morph", "chipcurve"))
     processing.compare_videos(("input", "chipcurve"))
 
 
