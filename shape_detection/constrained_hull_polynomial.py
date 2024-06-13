@@ -23,58 +23,62 @@ def draw_chip_curve(mask, hull_points):
             cv.line(mask, (x1, y1), (x2, y2), 255, 5)
 
 
+def filter_chip_curve_points(points, tool_chip_max_angle, tool_angle):
+    ...
+    return points
+
+
 def extract_chip_curve(binary_img):
+
+    # TODO: make this part more generic
     h, w = binary_img.shape
-    border_line_up = (0, 0, -1)
-    border_line_left = (0, -1, 0)
-    # border_line_down = (h, 0, 1)
-    # border_line_right = (w, 1,  0)
+    border_up = (0, 0, -1)
+    border_left = (0, -1, 0)
+    border_down = (h, 0, 1)
+    border_right = (w, 1,  0)
 
-    points, base_line, tool_line, base_angle, tool_angle = extract_chip_points(binary_img)
+    tool_opposite_border = border_left
+    base_opposite_border = border_up
+    base_border = border_down
 
-    # compute the convex hull and constrain it to cross an anchor point
-    y_min = points[points[:, :, 1].argmin(), 0, 1]
-    anchor = np.array([[[0, y_min]], [[0, h-1]]])
-    hull_points = cv.convexHull(np.vstack((points, anchor)))
-    first_point_index = np.where(
-        (hull_points[:, 0, 0] == anchor[0, 0, 0]) &
-        (hull_points[:, 0, 1] == anchor[0, 0, 1])
+    chip_pts, base_line, tool_line, base_angle, tool_angle = extract_chip_points(binary_img)
+
+    # compute the chip convex hull and constrain it to cross anchor points
+    vertex_idx, _ = geometry.line_furthest_point(chip_pts, base_line)
+    chip_vertex = chip_pts[vertex_idx, 0, :]
+    anchor_1 = geometry.orthogonal_projection(*chip_vertex, tool_opposite_border)
+    anchor_2 = geometry.orthogonal_projection(*anchor_1, base_border)
+    anchors = np.array([anchor_1, anchor_2], dtype=np.int32).reshape(-1, 1, 2)
+    chip_hull_pts = cv.convexHull(np.vstack((chip_pts, anchors)), clockwise=True)
+
+    first_pt_idx = np.where(
+        (chip_hull_pts[:, 0, 0] == anchors[0, 0, 0]) &
+        (chip_hull_pts[:, 0, 1] == anchors[0, 0, 1])
     )[0][0]
-    hull_points = np.roll(hull_points, -first_point_index, axis=0)
+    chip_hull_pts = np.roll(chip_hull_pts, -first_pt_idx, axis=0)[2:]
 
-    # filter points from the convex hull
-    _, base_distance = geometry.line_nearest_point(hull_points, base_line)
-    _, tool_distance = geometry.line_nearest_point(hull_points, tool_line)
-    key_points = geometry.under_lines(
-        hull_points[2:],
-        (base_line, tool_line, border_line_up, border_line_left),
+    # extract the chip curve points from the convex hull
+    _, base_distance = geometry.line_nearest_point(chip_hull_pts, base_line)
+    _, tool_distance = geometry.line_nearest_point(chip_hull_pts, tool_line)
+    chip_curve_pts = geometry.under_lines(
+        chip_hull_pts,
+        (base_line, tool_line, base_opposite_border, tool_opposite_border),
         (base_distance+20, tool_distance+5, 15, 15)
     )
-    # key_points = geometry.under_lines(
-    #     hull_points[2:],
-    #     (base_line, tool_line, border_line_up),
-    #     (20, 20, 15)
-    # )
+    key_pts = filter_chip_curve_points(chip_curve_pts, ..., ...)
 
-
-    # extract points of the chip curve
-    # chip_curve_mask = np.zeros((h, w), dtype=np.uint8)
-    # draw_chip_curve(chip_curve_mask, key_points)
-    # y, x = np.nonzero(rough & chip_curve_mask)
-    # key_points = np.stack((x, y), axis=1).reshape(-1, 1, 2)
-
-    x, y = geometry.rotate(key_points[:, 0, 0], key_points[:, 0, 1], -tool_angle)
 
     # Fit a polynomial to the key points
-    if len(key_points) < 2:
+    x, y = geometry.rotate(key_pts[:, 0, 0], key_pts[:, 0, 1], -tool_angle)
+    if len(key_pts) < 2:
         print("Warning !: Chip curve not found", file=sys.stderr)
         polynomial = None
-    elif len(key_points) == 2:
+    elif len(key_pts) == 2:
         polynomial = Polynomial.fit(x, y, 1)
     else:
         polynomial = Polynomial.fit(x, y, 2)
 
-    return polynomial, hull_points, key_points, base_line, tool_line, tool_angle
+    return polynomial, chip_hull_pts, key_pts, base_line, tool_line, tool_angle
 
 
 def render_chip_curve(binary_img, render=None):
@@ -91,17 +95,17 @@ def render_chip_curve(binary_img, render=None):
         y = polynomial(x)
         x, y = geometry.rotate(x, y, tool_angle)
         x, y = x.astype(np.int32), y.astype(np.int32)
-        inside_mask = (0 <= x) & (x < w) & (0 <= y) & (y < h)
+        inside_mask = (2 <= x) & (x < w-2) & (2 <= y) & (y < h-2)
         x, y = x[inside_mask], y[inside_mask]
-        render[y, x] = 127
-
-    geometry.draw_line(render, base_line, color=127, thickness=1)
-    geometry.draw_line(render, tool_line, color=127, thickness=1)
+        render[y, x] = render[y, x+1] = render[y, x-1] = render[y+1, x] = render[y-1, x] = 127
 
     for pt in hull_points.reshape(-1, 2):
-        cv.circle(render, pt, 7, 127 // 2, -1)
+        cv.circle(render, pt, 4, 127 // 2, -1)
     for kpt in key_points.reshape(-1, 2):
-        cv.circle(render, kpt, 7, 127, -1)
+        cv.circle(render, kpt, 4, 127, -1)
+
+    geometry.draw_line(render, base_line, color=127, thickness=2)
+    geometry.draw_line(render, tool_line, color=127, thickness=2)
 
     return render
 

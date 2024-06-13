@@ -27,8 +27,10 @@ def best_base_line(lines):
 
 def best_tool_line(lines):
     """Return the best tool line."""
+    high = np.pi/8
+    low = 7*np.pi/8
     for rho, theta in lines[:, 0, :]:
-        if 0 <= theta <= np.pi/8 or np.pi - 0.2 <= theta <= np.pi:
+        if theta < high or theta > low:
             return rho, theta
 
 
@@ -38,8 +40,8 @@ def locate_base_and_tool(binary_img):
     if lines is None or len(lines) < 2:
         raise ValueError("Warning !: line not found")
 
-    rho_base, theta_base = geometry.positive_rho(*best_base_line(lines))
-    rho_tool, theta_tool = geometry.positive_rho(*best_tool_line(lines))
+    rho_base, theta_base = geometry.standard_polar_param(*best_base_line(lines))
+    rho_tool, theta_tool = geometry.standard_polar_param(*best_tool_line(lines))
 
     xn_base, yn_base = np.cos(theta_base), np.sin(theta_base)
     xn_tool, yn_tool = np.cos(theta_tool), np.sin(theta_tool)
