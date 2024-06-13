@@ -55,7 +55,7 @@ def extract_chip_curve(binary_img):
         (chip_hull_pts[:, 0, 0] == anchors[0, 0, 0]) &
         (chip_hull_pts[:, 0, 1] == anchors[0, 0, 1])
     )[0][0]
-    chip_hull_pts = np.roll(chip_hull_pts, -first_pt_idx, axis=0)[2:]
+    chip_hull_pts = np.roll(chip_hull_pts, -first_pt_idx, axis=0)[1:]
 
     # extract the chip curve points from the convex hull
     _, base_distance = geometry.line_nearest_point(chip_hull_pts, base_line)
