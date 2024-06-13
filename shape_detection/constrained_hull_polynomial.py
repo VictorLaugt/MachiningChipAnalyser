@@ -48,7 +48,7 @@ def filter_chip_curve_points(curve_points, tool_angle, tool_chip_max_angle, is_c
 
 
 def extract_chip_curve(binary_img):
-    # TODO: make this part more generic
+    # TODO: make this part more generic so it can adapt to the chip orientation
     h, w = binary_img.shape
     border_up = (0, 0, -1)
     border_left = (0, -1, 0)
