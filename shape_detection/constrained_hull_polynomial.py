@@ -29,7 +29,6 @@ def filter_chip_curve_points(points, tool_chip_max_angle, tool_angle):
 
 
 def extract_chip_curve(binary_img):
-
     # TODO: make this part more generic
     h, w = binary_img.shape
     border_up = (0, 0, -1)
@@ -41,21 +40,24 @@ def extract_chip_curve(binary_img):
     base_opposite_border = border_up
     base_border = border_down
 
+    is_clockwise = True
+
     chip_pts, base_line, tool_line, base_angle, tool_angle = extract_chip_points(binary_img)
+    tool_base_inter = geometry.intersect_line(tool_line, base_line)
 
     # compute the chip convex hull and constrain it to cross anchor points
-    vertex_idx, _ = geometry.line_furthest_point(chip_pts, base_line)
-    chip_vertex = chip_pts[vertex_idx, 0, :]
-    anchor_1 = geometry.orthogonal_projection(*chip_vertex, tool_opposite_border)
+    highest_idx, _ = geometry.line_furthest_point(chip_pts, base_line)
+    chip_highest = chip_pts[highest_idx, 0, :]
+    anchor_1 = geometry.orthogonal_projection(*chip_highest, tool_opposite_border)
     anchor_2 = geometry.orthogonal_projection(*anchor_1, base_border)
-    anchors = np.array([anchor_1, anchor_2], dtype=np.int32).reshape(-1, 1, 2)
-    chip_hull_pts = cv.convexHull(np.vstack((chip_pts, anchors)), clockwise=True)
+    anchors = np.array([anchor_1, anchor_2, tool_base_inter], dtype=np.int32).reshape(-1, 1, 2)
+    chip_hull_pts = cv.convexHull(np.vstack((chip_pts, anchors)), clockwise=is_clockwise)
 
     first_pt_idx = np.where(
         (chip_hull_pts[:, 0, 0] == anchors[0, 0, 0]) &
         (chip_hull_pts[:, 0, 1] == anchors[0, 0, 1])
     )[0][0]
-    chip_hull_pts = np.roll(chip_hull_pts, -first_pt_idx, axis=0)[1:]
+    chip_hull_pts = np.roll(chip_hull_pts, -first_pt_idx, axis=0)
 
     # extract the chip curve points from the convex hull
     _, base_distance = geometry.line_nearest_point(chip_hull_pts, base_line)
@@ -119,8 +121,8 @@ if __name__ == '__main__':
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
     processing.add("chipcurve", render_chip_curve, ("morph", "morph"))
 
-    # input_dir = Path("imgs", "vertical")
-    input_dir = Path("imgs", "diagonal")
+    input_dir = Path("imgs", "vertical")
+    # input_dir = Path("imgs", "diagonal")
     output_dir = Path("results", "chipcurve")
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
