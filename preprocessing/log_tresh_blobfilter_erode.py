@@ -45,7 +45,7 @@ if __name__ == '__main__':
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
     processing.run(loader, output_dir)
-    processing.compare_frames(14, ("input", "morph"))
-    # processing.show_frame(14)
-    processing.compare_videos(("input", "morph"))
-    # processing.show_video()
+    # processing.compare_frames(14, ("input", "morph"))
+    processing.show_frame(14)
+    # processing.compare_videos(("input", "morph"))
+    processing.show_video()

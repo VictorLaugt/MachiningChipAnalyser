@@ -59,7 +59,7 @@ def extract_chip_curve(binary_img):
     base_opposite_border = border_up
     base_border = border_down
 
-    is_clockwise = True
+    indirect_rotation = True
 
     chip_pts, base_line, tool_line, base_angle, tool_angle = extract_chip_points(binary_img)
     tool_base_inter = geometry.intersect_line(tool_line, base_line)
@@ -70,7 +70,7 @@ def extract_chip_curve(binary_img):
     anchor_1 = geometry.orthogonal_projection(*chip_highest, tool_opposite_border)
     anchor_2 = geometry.orthogonal_projection(*anchor_1, base_border)
     anchors = np.array([anchor_1, anchor_2, tool_base_inter], dtype=np.int32).reshape(-1, 1, 2)
-    chip_hull_pts = cv.convexHull(np.vstack((chip_pts, anchors)), clockwise=is_clockwise)
+    chip_hull_pts = cv.convexHull(np.vstack((chip_pts, anchors)), clockwise=indirect_rotation)
 
     first_pt_idx = np.where(
         (chip_hull_pts[:, 0, 0] == anchors[0, 0, 0]) &
@@ -86,7 +86,7 @@ def extract_chip_curve(binary_img):
         (base_line, tool_line, base_opposite_border, tool_opposite_border),
         (base_distance+20, tool_distance+5, 15, 15)
     )
-    key_pts = filter_chip_curve_points(chip_curve_pts, tool_angle, np.pi/4, is_clockwise)
+    key_pts = filter_chip_curve_points(chip_curve_pts, tool_angle, np.pi/4, indirect_rotation)
     # key_pts = chip_curve_pts
 
     # Fit a polynomial to the key points
