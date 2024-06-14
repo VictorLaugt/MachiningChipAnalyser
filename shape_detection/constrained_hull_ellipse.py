@@ -1,7 +1,7 @@
 import sys
 
 import geometry
-from shape_detection.chip_extraction import extract_chip_points
+from shape_detection.chip_extraction import extract_main_features
 
 import numpy as np
 import cv2 as cv
@@ -23,14 +23,17 @@ def draw_chip_curve(mask, hull_points):
 
 
 def extract_chip_curve(precise, rough):
+    main_ft = extract_main_features(precise)
     h, w = precise.shape
 
-    points, base_line, tool_line = extract_chip_points(precise)
+    contours, _ = cv.findContours(precise, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
+    pts = np.vstack(contours)
+    chip_pts = geometry.under_lines(pts, (main_ft.base_line, main_ft.tool_line), (10, 10))
 
     # compute the convex hull and constrain it to cross an anchor point
-    x_min = points[points[:, :, 0].argmin(), 0, 0]
+    x_min = chip_pts[chip_pts[:, :, 0].argmin(), 0, 0]
     anchor = np.array([[[x_min, h-1]]])
-    hull_points = cv.convexHull(np.vstack((points, anchor)))
+    hull_points = cv.convexHull(np.vstack((chip_pts, anchor)))
     first_point_index = np.where(
         (hull_points[:, 0, 0] == anchor[0, 0, 0]) &
         (hull_points[:, 0, 1] == anchor[0, 0, 1])
@@ -38,7 +41,7 @@ def extract_chip_curve(precise, rough):
     hull_points = np.roll(hull_points, -first_point_index, axis=0)
 
     # remove from the convex hull points near the tool and the base
-    chip_curve_keys = geometry.under_lines(hull_points, (base_line, tool_line), (20, 20))
+    chip_curve_keys = geometry.under_lines(hull_points, (main_ft.base_line, main_ft.tool_line), (20, 20))
 
     # extract points of the chip curve
     chip_curve_mask = np.zeros((h, w), dtype=np.uint8)
@@ -52,7 +55,7 @@ def extract_chip_curve(precise, rough):
         ellipse = None
         print(f"Warning !: Not enough point to fit an ellipse ({len(chip_curve_points)} points)", file=sys.stderr)
 
-    return ellipse, base_line, tool_line
+    return ellipse, main_ft.base_line, main_ft.tool_line
 
 
 def render_chip_curve(precise, rough, render=None):

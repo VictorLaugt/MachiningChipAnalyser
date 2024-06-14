@@ -140,8 +140,10 @@ if __name__ == '__main__':
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
     processing.add("chipcurve", render_chip_features, ("morph", "morph"))
 
-    input_dir = Path("imgs", "vertical")
+    # input_dir = Path("imgs", "vertical")
     # input_dir = Path("imgs", "diagonal")
+    # input_dir = Path("imgs", "vertical_flip")
+    input_dir = Path("imgs", "diagonal_flip")
     output_dir = Path("results", "chipcurve")
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 

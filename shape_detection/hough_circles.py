@@ -1,7 +1,7 @@
 import sys
 
 import geometry
-from shape_detection.chip_extraction import extract_chip_points
+from shape_detection.chip_extraction import extract_main_features
 
 import numpy as np
 import cv2 as cv
@@ -23,10 +23,14 @@ def draw_chip_curve(mask, hull_points):
 
 
 def extract_circles(binary_img):
-    points, base_line, tool_line = extract_chip_points(binary_img)
+    main_ft = extract_main_features(binary_img)
 
-    x_min = points[points[:, :, 0].argmin(), 0, 0]
-    x_max = points[points[:, :, 1].argmax(), 0, 1]
+    contours, _ = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
+    pts = np.vstack(contours)
+    chip_pts = geometry.under_lines(pts, (main_ft.base_line, main_ft.tool_line), (10, 10))
+
+    x_min = chip_pts[chip_pts[:, :, 0].argmin(), 0, 0]
+    x_max = chip_pts[chip_pts[:, :, 1].argmax(), 0, 1]
 
     circles = cv.HoughCircles(
         binary_img,
@@ -38,7 +42,7 @@ def extract_circles(binary_img):
     if circles is None:
         print("Warning !: circle not found", file=sys.stderr)
 
-    return circles, base_line, tool_line
+    return circles, main_ft.base_line, main_ft.tool_line
 
 
 def render_circles(binary_img, render=None):

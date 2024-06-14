@@ -1,30 +1,10 @@
 import geometry
-from shape_detection.chip_extraction import extract_chip_points
+from shape_detection.chip_extraction import extract_main_features
 
 import numpy as np
 import cv2 as cv
 
 from scipy import interpolate
-
-
-# def filter_chip_curve(hull_points, maximum_angle, lateral_margin):
-#     """Filter the points of hull to only keep the chip curve"""
-#     if len(hull_points) < 3:
-#         return hull_points[:]
-
-#     points = hull_points.reshape(-1, 2)
-#     for i in range(2, len(points)):
-#         a, b, c = points[i-2], points[i-1], points[i]
-
-#         if c[0] < lateral_margin:  # image lateral border reached
-#             return hull_points[:i]
-
-#         ab, bc = (b - a), (c - b)
-#         angle = np.arccos(np.dot(ab, bc) / (np.linalg.norm(ab) * np.linalg.norm(bc)))
-#         if angle > maximum_angle:  # sharp angle detected (i.e end of chip reached)
-#             return hull_points[:i]
-
-#     return hull_points[:]
 
 
 def interpolate_curve(curve_points, image_shape):
@@ -43,10 +23,16 @@ def interpolate_curve(curve_points, image_shape):
 
 
 def interpolate_chip_hull(binary_img):
-    points, base_line, tool_line = extract_chip_points(binary_img)
-    hull_points = cv.convexHull(points, clockwise=True)
+    main_ft = extract_main_features(binary_img)
+
+    contours, _ = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
+    pts = np.vstack(contours)
+    chip_pts = geometry.under_lines(pts, (main_ft.base_line, main_ft.tool_line), (10, 10))
+
+    hull_points = cv.convexHull(chip_pts, clockwise=True)
     hull_interpolation = interpolate_curve(hull_points.reshape(-1, 2), binary_img.shape)
-    return hull_interpolation, base_line, tool_line
+
+    return hull_interpolation, main_ft.base_line, main_ft.tool_line
 
 
 def render_chip_interpolation(binary_img, render=None):
