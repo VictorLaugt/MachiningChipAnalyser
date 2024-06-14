@@ -4,6 +4,7 @@ if TYPE_CHECKING:
     from typing import Iterable, Sequence, Callable, TypeVar
     from numpy import ndarray
     Image = TypeVar("Image", bound=ndarray)
+    Operation = Callable[..., Image]
 
 import numpy as np
 import cv2 as cv
@@ -90,7 +91,7 @@ class DagProcess:
         self.next_id += 1
         return new_id
 
-    def add(self, name: str, operation: Callable, node_input_steps: Iterable[str] = None) -> None:
+    def add(self, name: str, operation: Operation, node_input_steps: Iterable[str] = None) -> None:
         if name in self.steps.keys():
             raise AlreadyExistingStepNameError(name)
 

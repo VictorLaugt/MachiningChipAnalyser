@@ -1,3 +1,12 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import TypeVar
+    PolarParamArray = TypeVar('PolarParamArray', np.ndarray)  # ~ (n, 1, 2)
+    from geometry import Line
+
+from dataclasses import dataclass
+
 import numpy as np
 import cv2 as cv
 
@@ -17,15 +26,22 @@ import geometry
 
 #     return labels.flatten()
 
+@dataclass
+class ChipExtraction:
+    chip_points: np.ndarray
+    base_line: Line
+    tool_line: Line
+    base_angle: float
+    tool_angle: float
 
-def best_base_line(lines):
+def best_base_line(lines: PolarParamArray) -> tuple[float, float]:
     """Return the best horizontal line."""
     for rho, theta in lines[:, 0, :]:
         if np.abs(theta - np.pi/2) < 0.2:
             return rho, theta
 
 
-def best_tool_line(lines):
+def best_tool_line(lines: PolarParamArray) -> tuple[float, float]:
     """Return the best tool line."""
     high = np.pi/8
     low = 7*np.pi/8
@@ -49,7 +65,7 @@ def locate_base_and_tool(binary_img):
     return (rho_base, xn_base, yn_base), (rho_tool, xn_tool, yn_tool), theta_base, theta_tool
 
 
-def extract_chip_points(binary_img):
+def extract_chip_points_bis(binary_img):
     """Return coordinates of points between base and tool, and line parameters
     for base and tool.
     """
@@ -57,9 +73,19 @@ def extract_chip_points(binary_img):
 
     contours, _hierarchy = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
     points = np.vstack(contours)
-    filtered_points = geometry.under_lines(points, (base_line, tool_line), (10, 10))
+    chip_pts = geometry.under_lines(points, (base_line, tool_line), (10, 10))
 
-    return filtered_points, base_line, tool_line, theta_base, theta_tool
+    return chip_pts, base_line, tool_line, theta_base, theta_tool
+
+
+def extract_chip_points(binary_img):
+    base_line, tool_line, base_angle,tool_angle = locate_base_and_tool(binary_img)
+
+    contours, _hierarchy = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
+    pts = np.vstack(contours)
+    chip_pts = geometry.under_lines(pts, (base_line, tool_line), (10, 10))
+
+    return chip_pts, base_line, tool_line, base_angle, tool_angle
 
 
 def render_chip_extraction(binary_img, render=None):

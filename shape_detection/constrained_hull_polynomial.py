@@ -24,8 +24,6 @@ def draw_chip_curve(mask, hull_points):
 
 
 def filter_chip_curve_points(curve_points, tool_angle, tool_chip_max_angle, is_clockwise):
-    print()
-
     pi_2 = np.pi/2
     if tool_angle > np.pi:
         tool_angle -= 2*np.pi
@@ -40,9 +38,6 @@ def filter_chip_curve_points(curve_points, tool_angle, tool_chip_max_angle, is_c
 
     mask = np.zeros(len(curve_points), dtype=bool)
     mask[1:] = np.abs(pi_2 + tool_angle - curve_vector_angles) < tool_chip_max_angle
-
-    print(f"{curve_points = }")
-    print(f"{curve_vector_angles = }")
 
     return curve_points[mask]
 
@@ -87,7 +82,6 @@ def extract_chip_curve(binary_img):
         (base_distance+20, tool_distance+5, 15, 15)
     )
     key_pts = filter_chip_curve_points(chip_curve_pts, tool_angle, np.pi/4, indirect_rotation)
-    # key_pts = chip_curve_pts
 
     # Fit a polynomial to the key points
     x, y = geometry.rotate(key_pts[:, 0, 0], key_pts[:, 0, 1], -tool_angle)
@@ -140,13 +134,13 @@ if __name__ == '__main__':
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
     processing.add("chipcurve", render_chip_curve, ("morph", "morph"))
 
-    # input_dir = Path("imgs", "vertical")
-    input_dir = Path("imgs", "diagonal")
+    input_dir = Path("imgs", "vertical")
+    # input_dir = Path("imgs", "diagonal")
     output_dir = Path("results", "chipcurve")
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
     processing.run(loader, output_dir)
-    processing.compare_frames(15, ("input", "chipcurve"))
+    processing.compare_frames(15, ("chipcurve", "input"))
     processing.compare_videos(("chipcurve", "input"))
 
 

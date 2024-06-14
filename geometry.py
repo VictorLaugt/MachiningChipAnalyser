@@ -1,19 +1,16 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import TypeVar, Iterable
+    T = TypeVar('T', int, float, np.ndarray)
+    PointArray = TypeVar('PointArray', np.ndarray)  # ~ (n, 1, 2)
+    Line = tuple[float, float, float]
+
 import cv2 as cv
 import numpy as np
 
 
-# def standard_polar_param(rho, theta):
-#     """Standardize the polar parameters (rho, theta)
-#     Input:  -inf < rho < +inf and  0  <= theta < pi
-#     Output:   0 <= rho < +inf and -pi <= theta < pi
-#     """
-#     if rho >= 0:
-#         return rho, theta
-#     else:
-#         return -rho, theta - np.pi
-
-
-def standard_polar_param(rho, theta):
+def standard_polar_param(rho: float, theta: float) -> tuple[float, float]:
     """Standardize the polar parameters (rho, theta)
     Input:  -inf < rho < +inf and 0 <= theta < pi
     Output:   0 <= rho < +inf and 0 <= theta < 2*pi
@@ -24,12 +21,12 @@ def standard_polar_param(rho, theta):
         return -rho, theta+np.pi
 
 
-def rotate(x, y, angle):
+def rotate(x: T, y: T, angle: T) -> T:
     cos, sin = np.cos(angle), np.sin(angle)
     return x*cos - y*sin, x*sin + y*cos
 
 
-def above_lines(points, lines, margins):
+def above_lines(points: PointArray, lines: Iterable[Line], margins: Iterable[float]) -> PointArray:
     """Keeps only the points above the lines with a margin.
     The lines are described as (rho, xn, yn) where xn = cos(theta), yn = sin(theta),
     and (rho, theta) are the polar parameters.
@@ -40,7 +37,7 @@ def above_lines(points, lines, margins):
         mask &= (xn*x + yn*y - rho - min_distance >= 0).flatten()
     return points[mask]
 
-def under_lines(points, lines, margins):
+def under_lines(points: PointArray, lines: Iterable[Line], margins: Iterable[float]) -> PointArray:
     """Keeps only the points under the lines with a margin.
     The lines are described as (rho, xn, yn) where xn = cos(theta), yn = sin(theta),
     and (rho, theta) are the polar parameters.
@@ -52,7 +49,7 @@ def under_lines(points, lines, margins):
     return points[mask]
 
 
-def line_nearest_point(points, line):
+def line_nearest_point(points: PointArray, line: Line) -> tuple[int, float]:
     """Return the index of the point nearest to the line and its distance to the
     line. The line is described as (rho, xn, yn) where xn = cos(theta),
     yn = sin(theta), and (rho, theta) are the polar parameters.
@@ -63,7 +60,7 @@ def line_nearest_point(points, line):
     i = np.argmin(distances)
     return i, distances[i]
 
-def line_furthest_point(points, line):
+def line_furthest_point(points: PointArray, line: Line) -> tuple[int, float]:
     """Return the index of the point furthest to the line and its distance to the
     line. The line is described as (rho, xn, yn) where xn = cos(theta),
     yn = sin(theta), and (rho, theta) are the polar parameters.
@@ -74,7 +71,7 @@ def line_furthest_point(points, line):
     i = np.argmax(distances)
     return i, distances[i]
 
-def orthogonal_projection(x, y, line):
+def orthogonal_projection(x: T, y: T, line: Line) -> T:
     """Compute the orthogonal projection of a point on a line.
     The line is described as (rho, xn, yn) where xn = cos(theta), yn = sin(theta),
     and (rho, theta) are the polar parameters.
@@ -83,7 +80,7 @@ def orthogonal_projection(x, y, line):
     dist = xn*x + yn*y - rho
     return (x - dist*xn, y - dist*yn)
 
-def intersect_line(line0, line1):
+def intersect_line(line0: Line, line1: Line) -> tuple[int, int]:
     """Compute the intersection points of two lines.
     The lines are described as (rho, xn, yn) where xn = cos(theta), yn = sin(theta),
     and (rho, theta) are the polar parameters.
@@ -96,7 +93,7 @@ def intersect_line(line0, line1):
     )
 
 
-def draw_line(img, line, color, thickness):
+def draw_line(img: np.ndarray, line: Line, color: int, thickness: int) -> None:
     """Draw on img a line.
     The lines are described as (rho, xn, yn) where xn = cos(theta), yn = sin(theta),
     and (rho, theta) are the polar parameters.
