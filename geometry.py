@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import TypeVar, Iterable
     T = TypeVar('T', int, float, np.ndarray)
-    PointArray = TypeVar('PointArray', np.ndarray)  # ~ (n, 1, 2)
+    PointArray = TypeVar('PointArray', bound=np.ndarray)  # ~ (n, 1, 2) dtype=int32
     Line = tuple[float, float, float]
 
 import cv2 as cv
@@ -26,7 +26,12 @@ def rotate(x: T, y: T, angle: T) -> T:
     return x*cos - y*sin, x*sin + y*cos
 
 
-def above_lines(points: PointArray, lines: Iterable[Line], margins: Iterable[float]) -> PointArray:
+def neg_line(line: Line) -> Line:
+    rho, xn, yn = line
+    return (-rho, -xn, -yn)
+
+
+def above_lines(points: PointArray, lines: Iterable[Line], margins: Iterable[int]) -> PointArray:
     """Keeps only the points above the lines with a margin.
     The lines are described as (rho, xn, yn) where xn = cos(theta), yn = sin(theta),
     and (rho, theta) are the polar parameters.
@@ -37,7 +42,7 @@ def above_lines(points: PointArray, lines: Iterable[Line], margins: Iterable[flo
         mask &= (xn*x + yn*y - rho - min_distance >= 0).flatten()
     return points[mask]
 
-def under_lines(points: PointArray, lines: Iterable[Line], margins: Iterable[float]) -> PointArray:
+def under_lines(points: PointArray, lines: Iterable[Line], margins: Iterable[int]) -> PointArray:
     """Keeps only the points under the lines with a margin.
     The lines are described as (rho, xn, yn) where xn = cos(theta), yn = sin(theta),
     and (rho, theta) are the polar parameters.
@@ -71,7 +76,8 @@ def line_furthest_point(points: PointArray, line: Line) -> tuple[int, float]:
     i = np.argmax(distances)
     return i, distances[i]
 
-def orthogonal_projection(x: T, y: T, line: Line) -> T:
+
+def orthogonal_projection(x: T, y: T, line: Line) -> tuple[T, T]:
     """Compute the orthogonal projection of a point on a line.
     The line is described as (rho, xn, yn) where xn = cos(theta), yn = sin(theta),
     and (rho, theta) are the polar parameters.
@@ -79,6 +85,7 @@ def orthogonal_projection(x: T, y: T, line: Line) -> T:
     rho, xn, yn = line
     dist = xn*x + yn*y - rho
     return (x - dist*xn, y - dist*yn)
+
 
 def intersect_line(line0: Line, line1: Line) -> tuple[int, int]:
     """Compute the intersection points of two lines.

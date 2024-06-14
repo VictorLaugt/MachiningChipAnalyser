@@ -1,9 +1,9 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
+    from geometry import Line, PointArray
     from typing import TypeVar
-    PolarParamArray = TypeVar('PolarParamArray', np.ndarray)  # ~ (n, 1, 2)
-    from geometry import Line
+    PolarParamArray = TypeVar('PolarParamArray', np.ndarray)  # ~ (n, 1, 2) dtype=float32
 
 from dataclasses import dataclass
 
@@ -13,26 +13,23 @@ import cv2 as cv
 import geometry
 
 
-# def segment_by_angles(lines, k):
-#     """Group lines based on angles with k-means."""
-#     angles = 2 * lines[:, 0, 1].reshape(-1, 1)
-#     angle_coordinates = np.hstack((np.cos(angles), np.sin(angles)))
-
-#     # criteria = (type, max_iter, epsilon)
-#     criteria_type = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER)
-#     criteria = (criteria_type, 10, 1.0)
-#     flags = cv.KMEANS_RANDOM_CENTERS
-#     _compactness, labels, _centers = cv.kmeans(angle_coordinates, k, None, criteria, 10, flags)
-
-#     return labels.flatten()
-
 @dataclass
-class ChipExtraction:
-    chip_points: np.ndarray
+class MainFeatures:
+    def __init__(self):
+        pass
+
+    indirect_rotation: bool
+
     base_line: Line
     tool_line: Line
-    base_angle: float
     tool_angle: float
+
+    base_border: Line
+    base_opp_border: Line
+    tool_opp_border: Line
+
+    tool_base_intersection: tuple[float, float]
+
 
 def best_base_line(lines: PolarParamArray) -> tuple[float, float]:
     """Return the best horizontal line."""
@@ -50,7 +47,7 @@ def best_tool_line(lines: PolarParamArray) -> tuple[float, float]:
             return rho, theta
 
 
-def locate_base_and_tool(binary_img):
+def locate_base_and_tool(binary_img: np.ndarray) -> tuple[Line, Line, float, float]:
     """Compute line parameters for base and tool."""
     lines = cv.HoughLines(binary_img, 1, np.pi/180, 100)
     if lines is None or len(lines) < 2:
@@ -65,42 +62,77 @@ def locate_base_and_tool(binary_img):
     return (rho_base, xn_base, yn_base), (rho_tool, xn_tool, yn_tool), theta_base, theta_tool
 
 
-def extract_chip_points_bis(binary_img):
-    """Return coordinates of points between base and tool, and line parameters
-    for base and tool.
-    """
-    base_line, tool_line, theta_base, theta_tool = locate_base_and_tool(binary_img)
+def extract_main_features(binary_img: np.ndarray) -> MainFeatures:
+    ft = MainFeatures()
+    h, w = binary_img.shape
 
-    contours, _hierarchy = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
-    points = np.vstack(contours)
-    chip_pts = geometry.under_lines(points, (base_line, tool_line), (10, 10))
+    base_line, tool_line, _, ft.tool_angle = locate_base_and_tool(binary_img)
+    ft.tool_base_intersection = xi, yi = geometry.intersect_line(base_line, tool_line)
 
-    return chip_pts, base_line, tool_line, theta_base, theta_tool
+    _, xn_base, yn_base = base_line
+    _, xn_tool, yn_tool = tool_line
+    direct_base_tool = xn_base*yn_tool - yn_base*xn_tool > 0
+    up, left, down, right = (0, 0, -1), (0, -1, 0), (h, 0, 1), (w, 1, 0)
+
+    if xi > w/2:
+        # down right intersection
+        if yi > h/2:
+            ft.indirect_rotation = not direct_base_tool
+            ft.base_line, ft.tool_line = base_line, tool_line
+            if direct_base_tool:
+                ft.base_border, ft.base_opp_border, ft.tool_opp_border = right, left, up
+            else:
+                ft.base_border, ft.base_opp_border, ft.tool_opp_border = down, up, left
+
+        # up right intersection
+        else:
+            ft.indirect_rotation = direct_base_tool
+            if direct_base_tool:
+                ft.base_line, ft.tool_line = base_line, geometry.neg_line(tool_line)
+                ft.base_border, ft.base_opp_border, ft.tool_opp_border = right, left, down
+            else:
+                ft.base_line, ft.tool_line = geometry.neg_line(base_line), tool_line
+                ft.base_border, ft.base_opp_border, ft.tool_opp_border = up, down, left
+
+    else:
+        # down left intersection
+        if yi > h/2:
+            ft.indirect_rotation = direct_base_tool
+            if direct_base_tool:
+                ft.base_line, ft.tool_line = geometry.neg_line(base_line), tool_line
+                ft.base_border, ft.base_opp_border, ft.tool_opp_border = left, right, up
+            else:
+                ft.base_line, ft.tool_line = base_line, geometry.neg_line(tool_line)
+                ft.base_border, ft.base_opp_border, ft.tool_opp_border = down, up, right
+
+        # up left intersection
+        else:
+            ft.indirect_rotation = not direct_base_tool
+            ft.base_line, ft.tool_line = geometry.neg_line(base_line), geometry.neg_line(tool_line)
+            if direct_base_tool:
+                ft.base_border, ft.base_opp_border, ft.tool_opp_border = left, right, down
+            else:
+                ft.base_border, ft.base_opp_border, ft.tool_opp_border = up, down, right
+
+    return ft
 
 
-def extract_chip_points(binary_img):
-    base_line, tool_line, base_angle,tool_angle = locate_base_and_tool(binary_img)
-
-    contours, _hierarchy = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
-    pts = np.vstack(contours)
-    chip_pts = geometry.under_lines(pts, (base_line, tool_line), (10, 10))
-
-    return chip_pts, base_line, tool_line, base_angle, tool_angle
-
-
-def render_chip_extraction(binary_img, render=None):
+def render_main_features(binary_img: np.ndarray, render=None) -> np.ndarray:
     if render is None:
         render = np.zeros_like(binary_img)
     else:
         render = render.copy()
 
-    points, base_line, tool_line, _base_angle, _tool_angle = extract_chip_points(binary_img)
+    feat = extract_main_features(binary_img)
 
-    x, y = points[:, 0, 0], points[:, 0, 1]
+    contours, _ = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
+    pts = np.vstack(contours)
+    chip_pts = geometry.under_lines(pts, (feat.base_line, feat.tool_line), (10, 10))
+    x, y = chip_pts[:, 0, 0], chip_pts[:, 0, 1]
     render[y, x] = 255
 
-    geometry.draw_line(render, base_line, color=127, thickness=1)
-    geometry.draw_line(render, tool_line, color=127, thickness=1)
+    geometry.draw_line(render, feat.base_line, color=127, thickness=1)
+    geometry.draw_line(render, feat.tool_line, color=127, thickness=1)
 
     return render
 
@@ -112,7 +144,7 @@ if __name__ == '__main__':
     import preprocessing.log_tresh_blobfilter_erode
 
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
-    processing.add("chipextraction", render_chip_extraction)
+    processing.add("chipextraction", render_main_features)
 
     input_dir = Path("imgs", "vertical")
     # input_dir = Path("imgs", "diagonal")
