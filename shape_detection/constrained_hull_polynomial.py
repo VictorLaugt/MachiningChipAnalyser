@@ -24,6 +24,11 @@ class ChipFeatures:
 
 
 def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: PointArray) -> PointArray:
+    """Compute the convex hull of the chip while constraining it to go through
+    three anchor points.
+    Return the convex hull points in the chip rotation order. The first point of
+    the hull is the intersection between the tool and the base.
+    """
     highest_idx, _ = geometry.line_furthest_point(chip_pts, main_ft.base_line)
     chip_highest = chip_pts[highest_idx, 0, :]
 
@@ -35,14 +40,15 @@ def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: PointArray) -> Poi
     chip_hull_pts = cv.convexHull(np.vstack((chip_pts, anchors)), clockwise=main_ft.indirect_rotation)
 
     first_pt_idx = np.where(
-        (chip_hull_pts[:, 0, 0] == anchor_0[0]) &
-        (chip_hull_pts[:, 0, 1] == anchor_0[1])
+        (chip_hull_pts[:, 0, 0] == anchor_2[0]) &
+        (chip_hull_pts[:, 0, 1] == anchor_2[1])
     )[0][0]
 
     return np.roll(chip_hull_pts, -first_pt_idx, axis=0)
 
 
 def extract_chip_curve_points(main_ft: MainFeatures, chip_hull_pts: PointArray) -> PointArray:
+    """Return the points of the chip hull which belong to the chip curve."""
     _, base_distance = geometry.line_nearest_point(chip_hull_pts, main_ft.base_line)
     _, tool_distance = geometry.line_nearest_point(chip_hull_pts, main_ft.tool_line)
 
@@ -54,6 +60,7 @@ def extract_chip_curve_points(main_ft: MainFeatures, chip_hull_pts: PointArray) 
 
 
 def extract_key_points(main_ft: MainFeatures, curve_points: PointArray, tool_chip_max_angle: float) -> PointArray:
+    """Return key points from the chip curve which can then be use to fit a polynomial."""
     if main_ft.tool_angle > np.pi:
         tool_angle = main_ft.tool_angle - 2*np.pi
     else:
@@ -74,6 +81,7 @@ def extract_key_points(main_ft: MainFeatures, curve_points: PointArray, tool_chi
 
 
 def fit_polynomial(main_ft: MainFeatures, key_pts: PointArray) -> Polynomial:
+    """Return a polynomial of degree 2 which fits the key points."""
     x, y = geometry.rotate(key_pts[:, 0, 0], key_pts[:, 0, 1], -main_ft.tool_angle)
     if len(key_pts) < 2:
         print("Warning !: Chip curve not found", file=sys.stderr)
@@ -87,6 +95,7 @@ def fit_polynomial(main_ft: MainFeatures, key_pts: PointArray) -> Polynomial:
 
 
 def extract_chip_features(binary_img: np.ndarray) -> tuple[MainFeatures, ChipFeatures]:
+    """Detect and return the chip features from the preprocessed binary image."""
     main_ft = extract_main_features(binary_img)
 
     contours, _ = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
@@ -102,6 +111,9 @@ def extract_chip_features(binary_img: np.ndarray) -> tuple[MainFeatures, ChipFea
 
 
 def render_chip_features(binary_img: np.ndarray, render=None) -> np.ndarray:
+    """Return an image which shows on `render` the detected features from the
+    preprocessed binary image `binary_img`.
+    """
     h, w = binary_img.shape
 
     if render is None:
