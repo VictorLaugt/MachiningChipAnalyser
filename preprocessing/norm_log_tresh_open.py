@@ -8,7 +8,7 @@ Morphological opening and closing (for contact detection only)
 import numpy as np
 import cv2 as cv
 
-import utils
+import dag_process
 
 
 log_kernel = np.array([
@@ -25,7 +25,7 @@ log_kernel = np.array([
 
 
 # contact detection
-processing_contact = utils.DagProcess()
+processing_contact = dag_process.DagProcess()
 processing_contact.add("norm", lambda img: cv.normalize(img, None, 0, 255, cv.NORM_MINMAX))
 processing_contact.add("contact_edge", lambda img: cv.filter2D(img, -1, 2 * log_kernel))
 processing_contact.add("contact_binary", lambda img: cv.threshold(img, 245, 255, cv.THRESH_BINARY)[1])
@@ -34,7 +34,7 @@ processing_contact.add("contact_close", lambda img: cv.morphologyEx(img, cv.MORP
 
 
 # spike detection
-processing_spikes = utils.DagProcess()
+processing_spikes = dag_process.DagProcess()
 processing_spikes.add("norm", lambda img: cv.normalize(img, None, 0, 255, cv.NORM_MINMAX))
 processing_spikes.add("spikes_edge", lambda img: cv.filter2D(img, -1, (1/3) * log_kernel))
 processing_spikes.add("spikes_binary", lambda img: cv.threshold(img, 245, 255, cv.THRESH_BINARY)[1])

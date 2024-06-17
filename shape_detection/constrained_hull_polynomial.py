@@ -144,6 +144,7 @@ def render_chip_features(binary_img: np.ndarray, render=None) -> np.ndarray:
 
 
 if __name__ == '__main__':
+    import os
     from pathlib import Path
 
     import image_loader
@@ -152,16 +153,18 @@ if __name__ == '__main__':
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
     processing.add("chipcurve", render_chip_features, ("morph", "morph"))
 
-    # input_dir = Path("imgs", "vertical")
-    # input_dir = Path("imgs", "diagonal")
-    # input_dir = Path("imgs", "vertical_flip")
-    input_dir = Path("imgs", "diagonal_flip")
+    input_dir_str = os.environ.get("INPUT_DIR")
+    if input_dir_str is not None:
+        input_dir = Path(os.environ["INPUT_DIR"])
+    else:
+        input_dir = Path("imgs", "vertical")
+
     output_dir = Path("results", "chipcurve")
     loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
 
     processing.run(loader, output_dir)
     processing.compare_frames(15, ("chipcurve", "input"))
-    processing.compare_videos(("chipcurve", "input"))
+    processing.compare_videos(("chipcurve", "morph"))
 
 
 # if __name__ == '__main__':
