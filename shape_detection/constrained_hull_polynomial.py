@@ -49,13 +49,19 @@ def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: PointArray) -> Poi
 
 def extract_chip_curve_points(main_ft: MainFeatures, chip_hull_pts: PointArray) -> PointArray:
     """Return the points of the chip hull which belong to the chip curve."""
-    _, base_distance = geometry.line_nearest_point(chip_hull_pts, main_ft.base_line)
-    _, tool_distance = geometry.line_nearest_point(chip_hull_pts, main_ft.tool_line)
+    # _, base_distance = geometry.line_nearest_point(chip_hull_pts, main_ft.base_line)
+    # _, tool_distance = geometry.line_nearest_point(chip_hull_pts, main_ft.tool_line)
+
+    # return geometry.under_lines(
+    #     chip_hull_pts,
+    #     (main_ft.base_line, main_ft.tool_line, main_ft.base_opp_border, main_ft.tool_opp_border),
+    #     (base_distance+20, tool_distance+5, 15, 15)
+    # )
 
     return geometry.under_lines(
-        chip_hull_pts,
-        (main_ft.base_line, main_ft.tool_line, main_ft.base_opp_border, main_ft.tool_opp_border),
-        (base_distance+20, tool_distance+5, 15, 15)
+        chip_hull_pts[1:],
+        (main_ft.base_line, main_ft.base_opp_border, main_ft.tool_opp_border),
+        (0, 15, 15)
     )
 
 
@@ -74,7 +80,8 @@ def extract_key_points(main_ft: MainFeatures, curve_points: PointArray, tool_chi
     curve_segment_lengths = np.linalg.norm(curve_surface_vectors, axis=-1)
     curve_vector_angles = np.arccos(curve_surface_vectors[:, 0] / curve_segment_lengths)
 
-    mask = np.zeros(len(curve_points), dtype=bool)
+    mask = np.ones(len(curve_points), dtype=bool)     # keep the first point
+    # mask = np.zeros(len(curve_points), dtype=bool)  # exclude the first point
     mask[1:] = np.abs(np.pi/2 + tool_angle - curve_vector_angles) < tool_chip_max_angle
 
     return curve_points[mask]
@@ -164,7 +171,7 @@ if __name__ == '__main__':
 
     processing.run(loader, output_dir)
     processing.compare_frames(15, ("chipcurve", "input"))
-    processing.compare_videos(("chipcurve", "morph"))
+    processing.compare_videos(("chipcurve", "input"))
 
 
 # if __name__ == '__main__':
