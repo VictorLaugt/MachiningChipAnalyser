@@ -19,6 +19,17 @@ def img_seq_equals(img_itr_1: Iterable[Image], img_itr_2: Iterable[Image]) -> bo
     return all(np.array_equal(img_1, img_2) for img_1, img_2 in zip(img_itr_1, img_itr_2))
 
 
+def rgb_image(img: Image) -> Image:
+    if img.ndim == 2:    # gray (n, h, w)
+        return cv.cvtColor(img, cv.COLOR_GRAY2BGR)
+    elif img.ndim == 3:  # rgb  (n, h, w, 3)
+        return img
+    elif img.ndim == 4:  # rgba (n, h, w, 4)
+        return cv.cvtColor(img, cv.COLOR_RGBA2RGB)
+    else:
+        raise ValueError(f"Unknown array shape for an image: {img.shape}")
+
+
 class DagError(Exception):
     pass
 
@@ -192,8 +203,8 @@ class DagProcess:
         self._ensure_video_directory()
 
         for step_name, step_id in self.steps.items():
-            video.create_from_gray(
-                self.image_sequences[step_id],
+            video.create_from_rgb(
+                [rgb_image(img) for img in self.image_sequences[step_id]],
                 self.result_dir.joinpath(f"{step_name}.avi")
             )
 
@@ -212,8 +223,8 @@ class DagProcess:
             img_seqs.append(self._get(name))
         stacked_img_seq = []
         for frame_index in range(len(self.image_sequences[0])):
-            stacked_img_seq.append(stack_function([seq[frame_index] for seq in img_seqs]))
+            stacked_img_seq.append(stack_function([rgb_image(seq[frame_index]) for seq in img_seqs]))
 
         comparison_video_path = self.result_dir.joinpath(f"{'_'.join(step_names)}.avi")
-        video.create_from_gray(stacked_img_seq, comparison_video_path)
+        video.create_from_rgb(stacked_img_seq, comparison_video_path)
         video.play(comparison_video_path)
