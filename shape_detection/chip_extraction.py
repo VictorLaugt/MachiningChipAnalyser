@@ -18,16 +18,22 @@ class MainFeatures:
     def __init__(self):
         pass
 
+    # rotation direction of the chip
     indirect_rotation: bool
 
+    # base and tool lines, such that every points of the chip are under these lines
     base_line: Line
     tool_line: Line
+
+    # angle of the tool line polar coordinates
     tool_angle: float
 
+    # borders of the image
     base_border: Line
     base_opp_border: Line
     tool_opp_border: Line
 
+    # intersection between the base and the tool lines
     tool_base_intersection: tuple[float, float]
 
 
