@@ -110,3 +110,12 @@ def draw_line(img: np.ndarray, line: Line, color: int, thickness: int) -> None:
     x1, y1 = int(x0 - 2000 * yn), int(y0 + 2000 * xn)
     x2, y2 = int(x0 + 2000 * yn), int(y0 - 2000 * xn)
     cv.line(img, (x1, y1), (x2, y2), color, thickness)
+
+
+def parallel(line: Line, x: float, y: float) -> Line:
+    """Return the line parallel to the input line and passing through the point
+    (x, y). The lines are described as (rho, xn, yn) where
+    xn = cos(theta), yn = sin(theta), and (rho, theta) are the polar parameters.
+    """
+    _rho, xn, yn = line
+    return (x*xn + y*yn, xn, yn)
