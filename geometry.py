@@ -16,14 +16,14 @@ def standard_polar_param(rho: float, theta: float) -> tuple[float, float]:
     Output:   0 <= rho < +inf and 0 <= theta < 2*pi
     """
     if rho >= 0:
-        return rho, theta
+        return (rho, theta)
     else:
-        return -rho, theta+np.pi
+        return (-rho, theta+np.pi)
 
 
-def rotate(x: T, y: T, angle: T) -> T:
+def rotate(x: T, y: T, angle: T) -> tuple[T, T]:
     cos, sin = np.cos(angle), np.sin(angle)
-    return x*cos - y*sin, x*sin + y*cos
+    return (x*cos - y*sin, x*sin + y*cos)
 
 
 def neg_line(line: Line) -> Line:

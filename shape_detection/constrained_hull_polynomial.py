@@ -18,9 +18,10 @@ import cv2 as cv
 
 @dataclass
 class ChipFeatures:
-    polynomial: Polynomial
     hull_pts: PointArray
     key_pts: PointArray
+    polynomial: Polynomial
+    contact_point: tuple[float, float]
 
 
 def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: PointArray) -> PointArray:
@@ -89,17 +90,31 @@ def extract_key_points(main_ft: MainFeatures, curve_points: PointArray, tool_chi
 
 def fit_polynomial(main_ft: MainFeatures, key_pts: PointArray) -> Polynomial:
     """Return a polynomial of degree 2 which fits the key points."""
-    x, y = geometry.rotate(key_pts[:, 0, 0], key_pts[:, 0, 1], -main_ft.tool_angle)
+    rot_x, rot_y = geometry.rotate(key_pts[:, 0, 0], key_pts[:, 0, 1], -main_ft.tool_angle)
+
     if len(key_pts) < 2:
         print("Warning !: Chip curve not found", file=sys.stderr)
         polynomial = None
     elif len(key_pts) == 2:
-        polynomial = Polynomial.fit(x, y, 1)
+        polynomial = Polynomial.fit(rot_x, rot_y, 1)
     else:
-        polynomial = Polynomial.fit(x, y, 2)
+        polynomial = Polynomial.fit(rot_x, rot_y, 2)
 
     return polynomial
 
+
+def chip_tool_contact_point(main_ft: MainFeatures, polynomial: Polynomial) -> tuple[float, float]:
+    """Return the contact point between the tool and the chip curve."""
+    # abscissa of the contact point, rotated in the polynomial basis
+    xi, yi = main_ft.tool_base_intersection
+    cos, sin = np.cos(main_ft.tool_angle), -np.sin(main_ft.tool_angle)
+    rot_xc = xi*cos - yi*sin
+
+    # ordinate of the contact point, rotated in the polynomial basis
+    rot_yc = polynomial(rot_xc)
+
+    # contact point, rotated back in the image basis
+    return geometry.rotate(rot_xc, rot_yc, main_ft.tool_angle)
 
 def extract_chip_features(binary_img: np.ndarray) -> tuple[MainFeatures, ChipFeatures]:
     """Detect and return the chip features from the preprocessed binary image."""
@@ -113,8 +128,9 @@ def extract_chip_features(binary_img: np.ndarray) -> tuple[MainFeatures, ChipFea
     chip_curve_pts = extract_chip_curve_points(main_ft, chip_hull_pts)
     key_pts = extract_key_points(main_ft, chip_curve_pts, np.pi/4)
     polynomial = fit_polynomial(main_ft, key_pts)
+    contact = chip_tool_contact_point(main_ft, polynomial)
 
-    return main_ft, ChipFeatures(polynomial, chip_hull_pts, key_pts)
+    return main_ft, ChipFeatures(chip_hull_pts, key_pts, polynomial, contact)
 
 
 def render_chip_features(binary_img: np.ndarray, render=None) -> np.ndarray:
