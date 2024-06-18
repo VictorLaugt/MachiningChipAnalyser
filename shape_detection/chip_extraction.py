@@ -117,22 +117,21 @@ def extract_main_features(binary_img: np.ndarray) -> MainFeatures:
     return ft
 
 
-def render_main_features(binary_img: np.ndarray, render=None) -> np.ndarray:
-    if render is None:
-        render = np.zeros_like(binary_img)
-    else:
-        render = render.copy()
+def render_main_features(binary_img: np.ndarray) -> np.ndarray:
+    main_ft = extract_main_features(binary_img)
 
-    feat = extract_main_features(binary_img)
+    red = (0, 0, 255)
+    white = (255, 255, 255)
+    render = np.zeros((binary_img.shape[0], binary_img.shape[1], 3), dtype=np.uint8)
+
+    geometry.draw_line(render, main_ft.base_line, color=red, thickness=3)
+    geometry.draw_line(render, main_ft.tool_line, color=red, thickness=3)
 
     contours, _ = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
     pts = np.vstack(contours)
-    chip_pts = geometry.under_lines(pts, (feat.base_line, feat.tool_line), (10, 10))
+    chip_pts = geometry.under_lines(pts, (main_ft.base_line, main_ft.tool_line), (10, 10))
     x, y = chip_pts[:, 0, 0], chip_pts[:, 0, 1]
-    render[y, x] = 255
-
-    geometry.draw_line(render, feat.base_line, color=127, thickness=1)
-    geometry.draw_line(render, feat.tool_line, color=127, thickness=1)
+    render[y, x] = white
 
     return render
 
@@ -149,7 +148,7 @@ if __name__ == '__main__':
     input_dir = Path("imgs", "vertical")
     # input_dir = Path("imgs", "diagonal")
     output_dir = Path("results", "lines")
-    loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
+    loader = image_loader.ImageLoader(input_dir)
 
     processing.run(loader, output_dir)
     processing.show_frame(21)

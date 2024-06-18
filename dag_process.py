@@ -179,10 +179,10 @@ class DagProcess:
             raise DagNotFinishedError()
 
         stack_function = np.hstack if horizontal else np.vstack
-        imgs = []
-        for name in step_names:
-            imgs.append(self._get(name)[frame_index])
-        cv.imshow("_".join(step_names), stack_function(imgs))
+        frames = [self._get(name)[frame_index] for name in step_names]
+        if any(img.ndim > 2 for img in frames):
+            frames = [rgb_image(img) for img in frames]
+        cv.imshow("_".join(step_names), stack_function(frames))
 
         while cv.waitKey(30) != 113:
             pass

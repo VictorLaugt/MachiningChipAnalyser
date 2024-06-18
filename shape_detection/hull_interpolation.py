@@ -63,7 +63,7 @@ if __name__ == '__main__':
     input_dir = Path("imgs", "vertical")
     # input_dir = Path("imgs", "diagonal")
     output_dir = Path("results", "hull_interpolation")
-    loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
+    loader = image_loader.ImageLoader(input_dir)
 
     processing.run(loader, output_dir)
     processing.compare_frames(20, ("input", "chipcurve"))

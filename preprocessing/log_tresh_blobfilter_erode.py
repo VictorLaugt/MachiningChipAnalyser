@@ -25,6 +25,7 @@ log_kernel = 2 * np.array([
     [0, 1, 1, 2, 2, 2, 1, 1, 0]
 ])
 
+processing.add("gray", lambda img: cv.cvtColor(img, cv.COLOR_RGB2GRAY))
 processing.add("edge", lambda img: cv.filter2D(img, -1, log_kernel))
 processing.add("binary", lambda img: cv.threshold(img, 240, 255, cv.THRESH_BINARY)[1])
 processing.add("blobfilter", lambda img: connected_components.remove_small_components(img, min_area=20))
@@ -42,7 +43,7 @@ if __name__ == '__main__':
     input_dir = Path("imgs", "vertical")
     # input_dir = Path("imgs", "diagonal")
     output_dir = Path("results", "log_thresh_blobfilter_erode")
-    loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
+    loader = image_loader.ImageLoader(input_dir)
 
     processing.run(loader, output_dir)
     # processing.compare_frames(14, ("input", "morph"))

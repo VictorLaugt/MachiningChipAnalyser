@@ -93,7 +93,7 @@ def fit_polynomial(main_ft: MainFeatures, key_pts: PointArray) -> Polynomial:
     rot_x, rot_y = geometry.rotate(key_pts[:, 0, 0], key_pts[:, 0, 1], -main_ft.tool_angle)
 
     if len(key_pts) < 2:
-        print("Warning !: Chip curve not found", file=sys.stderr)
+        print("Warning !: Cannot fit the chip curve", file=sys.stderr)
         polynomial = None
     elif len(key_pts) == 2:
         polynomial = Polynomial.fit(rot_x, rot_y, 1)
@@ -135,13 +135,19 @@ def extract_chip_features(binary_img: np.ndarray) -> tuple[MainFeatures, ChipFea
 
 
 def render_chip_features_on_binary(binary_img: np.ndarray) -> np.ndarray:
-    """Return an image which shows on `render` the detected features from the
-    preprocessed binary image `binary_img`.
+    """Return an image which shows the detected features on the top of the
+    preprocessed binary image.
     """
     main_ft, chip_ft = extract_chip_features(binary_img)
-
-    render = np.zeros_like(binary_img)
     contact_line = geometry.parallel(main_ft.base_line, *chip_ft.contact_point)
+
+    red = (0, 0, 255)
+    yellow = (0, 255, 255)
+    green = (0, 255, 0)
+    dark_green = (0, 85, 0)
+    blue = (255, 0, 0)
+    white = (255, 255, 255)
+    render = np.zeros((binary_img.shape[0], binary_img.shape[1], 3), dtype=np.uint8)
 
     if chip_ft.polynomial is not None:
         x = np.arange(0, binary_img.shape[1], 1, dtype=np.int32)
@@ -149,17 +155,51 @@ def render_chip_features_on_binary(binary_img: np.ndarray) -> np.ndarray:
         x, y = geometry.rotate(x, y, main_ft.tool_angle)
         x, y = x.astype(np.int32), y.astype(np.int32)
         for i in range(len(x)-1):
-            cv.line(render, (x[i], y[i]), (x[i+1], y[i+1]), color=127, thickness=2)
+            cv.line(render, (x[i], y[i]), (x[i+1], y[i+1]), color=blue, thickness=2)
+
+    geometry.draw_line(render, main_ft.base_line, color=red, thickness=3)
+    geometry.draw_line(render, main_ft.tool_line, color=red, thickness=3)
+    geometry.draw_line(render, contact_line, color=yellow, thickness=1)
+
     for pt in chip_ft.hull_pts.reshape(-1, 2):
-        cv.circle(render, pt, 4, color=127//2, thickness=-1)
+        cv.circle(render, pt, 6, color=dark_green, thickness=-1)
     for kpt in chip_ft.key_pts.reshape(-1, 2):
-        cv.circle(render, kpt, 4, color=127, thickness=-1)
+        cv.circle(render, kpt, 6, color=green, thickness=-1)
 
-    geometry.draw_line(render, main_ft.base_line, color=127, thickness=2)
-    geometry.draw_line(render, main_ft.tool_line, color=127, thickness=2)
-    geometry.draw_line(render, contact_line, color=127, thickness=2)
+    render[np.nonzero(binary_img)] = white
+    return render
 
-    render[np.nonzero(binary_img)] = 255
+
+def render_chip_features_on_input(input_img: np.ndarray, binary_img: np.nparray) -> np.ndarray:
+    """Return an image which shows the detected features on the top of the
+    input image.
+    """
+    main_ft, chip_ft = extract_chip_features(binary_img)
+    contact_line = geometry.parallel(main_ft.base_line, *chip_ft.contact_point)
+
+    red = (0, 0, 255)
+    yellow = (0, 255, 255)
+    green = (0, 255, 0)
+    dark_green = (0, 85, 0)
+    blue = (255, 0, 0)
+    render = input_img.copy()
+
+    if chip_ft.polynomial is not None:
+        x = np.arange(0, input_img.shape[1], 1, dtype=np.int32)
+        y = chip_ft.polynomial(x)
+        x, y = geometry.rotate(x, y, main_ft.tool_angle)
+        x, y = x.astype(np.int32), y.astype(np.int32)
+        for i in range(len(x)-1):
+            cv.line(render, (x[i], y[i]), (x[i+1], y[i+1]), color=blue, thickness=2)
+
+    geometry.draw_line(render, main_ft.base_line, color=red, thickness=3)
+    geometry.draw_line(render, main_ft.tool_line, color=red, thickness=3)
+    geometry.draw_line(render, contact_line, color=yellow, thickness=1)
+
+    for pt in chip_ft.hull_pts.reshape(-1, 2):
+        cv.circle(render, pt, 6, color=dark_green, thickness=-1)
+    for kpt in chip_ft.key_pts.reshape(-1, 2):
+        cv.circle(render, kpt, 6, color=green, thickness=-1)
 
     return render
 
@@ -172,6 +212,7 @@ if __name__ == '__main__':
     import preprocessing.log_tresh_blobfilter_erode
 
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
+    # processing.add("chipcurve", render_chip_features_on_input, ("input", "morph"))
     processing.add("chipcurve", render_chip_features_on_binary)
 
     input_dir_str = os.environ.get("INPUT_DIR")
@@ -181,18 +222,8 @@ if __name__ == '__main__':
         input_dir = Path("imgs", "vertical")
 
     output_dir = Path("results", "chipcurve")
-    loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
+    loader = image_loader.ImageLoader(input_dir)
 
     processing.run(loader, output_dir)
     processing.compare_frames(15, ("chipcurve", "input"))
     processing.compare_videos(("chipcurve", "input"))
-
-
-# if __name__ == '__main__':
-#     img = cv.cvtColor(cv.imread('preprocessed.png'), cv.COLOR_RGB2GRAY)
-#     extracted = render_chip_curve(img, img, render=img)
-
-#     cv.imshow('extracted', extracted)
-#     while cv.waitKey(30) != 113:
-#         pass
-#     cv.destroyAllWindows()

@@ -26,6 +26,7 @@ log_kernel = np.array([
 
 # contact detection
 processing_contact = dag_process.DagProcess()
+processing_contact.add("gray", lambda img: cv.cvtColor(img, cv.COLOR_RGB2GRAY))
 processing_contact.add("norm", lambda img: cv.normalize(img, None, 0, 255, cv.NORM_MINMAX))
 processing_contact.add("contact_edge", lambda img: cv.filter2D(img, -1, 2 * log_kernel))
 processing_contact.add("contact_binary", lambda img: cv.threshold(img, 245, 255, cv.THRESH_BINARY)[1])
@@ -35,6 +36,7 @@ processing_contact.add("contact_close", lambda img: cv.morphologyEx(img, cv.MORP
 
 # spike detection
 processing_spikes = dag_process.DagProcess()
+processing_spikes.add("gray", lambda img: cv.cvtColor(img, cv.COLOR_RGB2GRAY))
 processing_spikes.add("norm", lambda img: cv.normalize(img, None, 0, 255, cv.NORM_MINMAX))
 processing_spikes.add("spikes_edge", lambda img: cv.filter2D(img, -1, (1/3) * log_kernel))
 processing_spikes.add("spikes_binary", lambda img: cv.threshold(img, 245, 255, cv.THRESH_BINARY)[1])
@@ -47,7 +49,7 @@ if __name__ == '__main__':
     input_dir = Path("imgs", "vertical")
     # input_dir = Path("imgs", "diagonal")
     output_dir = Path("results", "norm_log_thresh_open")
-    loader = image_loader.ImageLoaderColorConverter(input_dir, cv.COLOR_RGB2GRAY)
+    loader = image_loader.ImageLoader(input_dir)
 
     processing_contact.run(loader, output_dir)
     processing_spikes.run(loader, output_dir)
