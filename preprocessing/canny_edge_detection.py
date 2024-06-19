@@ -4,10 +4,10 @@ Canny edge detection
 
 import cv2 as cv
 
-import dag_process
+import dag_process_vizualiser
 
 
-processing = dag_process.DagProcessVizualiser()
+processing = dag_process_vizualiser.DagProcessVizualiser()
 processing.add("gray", lambda img: cv.cvtColor(img, cv.COLOR_RGB2GRAY))
 processing.add("edge", lambda img: cv.Canny(img, 100, 200))
 

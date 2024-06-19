@@ -7,11 +7,11 @@ Morphological erosion
 import numpy as np
 import cv2 as cv
 
-import dag_process
+import dag_process_vizualiser
 import connected_components
 
 
-processing = dag_process.DagProcessVizualiser()
+processing = dag_process_vizualiser.DagProcessVizualiser()
 
 log_kernel = 2 * np.array([
     [0, 1, 1, 2, 2, 2, 1, 1, 0],

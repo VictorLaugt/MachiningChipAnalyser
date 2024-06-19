@@ -6,10 +6,10 @@ Morphological edge extraction (subtraction of eroded image from binary image)
 
 import cv2 as cv
 
-import dag_process
+import dag_process_vizualiser
 
 
-processing = dag_process.DagProcessVizualiser()
+processing = dag_process_vizualiser.DagProcessVizualiser()
 
 processing.add("gray", lambda img: cv.cvtColor(img, cv.COLOR_RGB2GRAY))
 processing.add("norm", lambda img: cv.normalize(img, None, 0, 255, cv.NORM_MINMAX))

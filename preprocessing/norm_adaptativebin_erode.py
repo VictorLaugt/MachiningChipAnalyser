@@ -7,10 +7,10 @@ Moprhological erosion
 
 import cv2 as cv
 
-import dag_process
+import dag_process_vizualiser
 
 
-processing = dag_process.DagProcessVizualiser()
+processing = dag_process_vizualiser.DagProcessVizualiser()
 
 processing.add("gray", lambda img: cv.cvtColor(img, cv.COLOR_RGB2GRAY))
 processing.add("blur", lambda img: cv.GaussianBlur(img, (9, 9), 0))
