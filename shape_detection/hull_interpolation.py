@@ -61,11 +61,10 @@ if __name__ == '__main__':
     processing.add("chipcurve", render_chip_interpolation)
 
     input_dir = Path("imgs", "vertical")
-    # input_dir = Path("imgs", "diagonal")
     output_dir = Path("results", "hull_interpolation")
     loader = image_loader.ImageLoader(input_dir)
 
-    processing.run(loader, output_dir)
-    processing.compare_frames(20, ("input", "chipcurve"))
-    # processing.show_video()
-    processing.compare_videos(("input", "chipcurve"))
+    processing.run(loader)
+    processing.show_frame_comp(20, ("input", "chipcurve"))
+    processing.show_video_comp(("input", "chipcurve"))
+    processing.save_videos(output_dir)

@@ -84,20 +84,10 @@ if __name__ == '__main__':
     processing.add("chipcurve", render_chip_curve, ("morph", "blobfilter"))
 
     input_dir = Path("imgs", "vertical")
-    # input_dir = Path("imgs", "diagonal")
     output_dir = Path("results", "chipcurve")
     loader = image_loader.ImageLoader(input_dir)
 
-    processing.run(loader, output_dir)
-    processing.compare_frames(25, ("morph", "chipcurve"))
-    processing.compare_videos(("input", "chipcurve"))
-
-
-# if __name__ == '__main__':
-#     img = cv.cvtColor(cv.imread('preprocessed.png'), cv.COLOR_RGB2GRAY)
-#     extracted = extract_chip_curve(img, img)
-
-#     cv.imshow('extracted', extracted)
-#     while cv.waitKey(30) != 113:
-#         pass
-#     cv.destroyAllWindows()
+    processing.run(loader)
+    processing.show_frame_comp(25, ("morph", "chipcurve"))
+    processing.show_video_comp(("input", "chipcurve"))
+    processing.save_videos(output_dir)

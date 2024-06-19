@@ -6,6 +6,8 @@ SHAPE_DETECTION_SRC = $(wildcard $(SHAPE_DETECTION_DIR)/*.py)
 
 export PYTHONPATH += .
 
+all: preprocessing_all shape_detection_all
+
 debug:
 	@echo "PREPROCESSING_DIR = $(PREPROCESSING_DIR)"
 	@echo "PREPROCESSING_SRC = $(PREPROCESSING_SRC)"

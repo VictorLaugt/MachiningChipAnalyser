@@ -41,12 +41,10 @@ if __name__ == '__main__':
     import image_loader
 
     input_dir = Path("imgs", "vertical")
-    # input_dir = Path("imgs", "diagonal")
     output_dir = Path("results", "log_thresh_blobfilter_erode")
     loader = image_loader.ImageLoader(input_dir)
 
-    processing.run(loader, output_dir)
-    # processing.compare_frames(14, ("input", "morph"))
-    processing.show_frame(14)
-    # processing.compare_videos(("input", "morph"))
-    processing.show_video()
+    processing.run(loader)
+    processing.show_frames(14)
+    processing.show_videos()
+    processing.save_videos(output_dir)

@@ -224,6 +224,7 @@ if __name__ == '__main__':
     output_dir = Path("results", "chipcurve")
     loader = image_loader.ImageLoader(input_dir)
 
-    processing.run(loader, output_dir)
-    processing.compare_frames(15, ("chipcurve", "input"))
-    processing.compare_videos(("chipcurve", "input"))
+    processing.run(loader)
+    processing.show_frame_comp(15, ("chipcurve", "input"))
+    processing.show_video_comp(("chipcurve", "input"))
+    processing.save_videos(output_dir)

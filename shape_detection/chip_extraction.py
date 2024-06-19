@@ -152,10 +152,10 @@ if __name__ == '__main__':
     processing.add("chipextraction", render_main_features)
 
     input_dir = Path("imgs", "vertical")
-    # input_dir = Path("imgs", "diagonal")
     output_dir = Path("results", "lines")
     loader = image_loader.ImageLoader(input_dir)
 
-    processing.run(loader, output_dir)
-    processing.show_frame(21)
-    processing.compare_videos(("input", "chipextraction"))
+    processing.run(loader)
+    processing.show_frames(21)
+    processing.show_video_comp(("input", "chipextraction"))
+    processing.save_videos(output_dir)

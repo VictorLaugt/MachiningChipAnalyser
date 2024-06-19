@@ -4,7 +4,9 @@ if TYPE_CHECKING:
     from typing import Iterable, Sequence, Callable, TypeVar
     from numpy import ndarray
     Image = TypeVar("Image", bound=ndarray)
+    Feature = TypeVar("Feature")
     Operation = Callable[..., Image]
+    FeatureExtractor = Callable[..., Feature]
 
 import numpy as np
 import cv2 as cv
@@ -48,9 +50,9 @@ class NotExistingStepNameError(InvalidStepNameError):
     def __init__(self, step_name: str):
         super().__init__(f"Step name '{step_name}' does not exist")
 
-class InvalidResultDirError(DagError, FileExistsError):
-    def __init__(self, result_dir: Path):
-        super().__init__(f"Result directory '{result_dir}' is not a directory")
+class InvalidOutputDirError(DagError, FileExistsError):
+    def __init__(self, output_dir: Path):
+        super().__init__(f"Output directory '{output_dir}' is not a directory")
 
 
 class DagProcessNode:
@@ -59,7 +61,7 @@ class DagProcessNode:
         self.node_input_ids = node_input_ids
 
 
-# len(self) == len(self.node_lists) == n
+# len(self.node_lists) == n
 # len(self.steps) == len(self.image_sequences) == self.next_id == n + 1
 class DagProcess:
     def __init__(self):
@@ -68,7 +70,7 @@ class DagProcess:
         self.node_list: list[DagProcessNode] = []
 
         self.image_sequences: list[Sequence[Image]] = []
-        self.result_dir = Path()
+        self.feature_extractions: list[Feature] = []
         self.finished = False
 
     def copy(self) -> DagProcess:
@@ -78,7 +80,6 @@ class DagProcess:
         copy.node_list = self.node_list.copy()
 
         copy.image_sequences = []
-        copy.result_dir = self.result_dir
         copy.finished = False
 
         return copy
@@ -93,16 +94,28 @@ class DagProcess:
             ")"
         )
 
+    def _ensure_video_directory(self, video_output_dir: Path) -> None:
+        if not video_output_dir.is_dir():
+            try:
+                video_output_dir.mkdir()
+            except OSError:
+                raise InvalidOutputDirError(video_output_dir)
 
-    def __len__(self) -> int:
-        return len(self.node_list)
+    def _ensure_finished(self) -> None:
+        if not self.finished:
+            raise DagNotFinishedError()
 
     def _get_new_id(self) -> int:
         new_id = self.next_id
         self.next_id += 1
         return new_id
 
-    def add(self, name: str, operation: Operation, node_input_steps: Iterable[str] = None) -> None:
+    def add(
+            self,
+            name: str,
+            operation: Operation,
+            node_input_steps: Iterable[str] = None
+    ) -> None:
         if name in self.steps.keys():
             raise AlreadyExistingStepNameError(name)
 
@@ -116,18 +129,14 @@ class DagProcess:
         self.steps[name] = step_id
         self.node_list.append(node)
 
-
-    def run(self, input_image_sequence: Sequence[Image], result_dir_path: Path = None) -> None:
-        if result_dir_path is not None:
-            self.result_dir = result_dir_path
-
+    def run(self, input_image_sequence: Sequence[Image]) -> None:
         self.finished = False
-
-        step_iterator = iter(self.steps.items())
-        next(step_iterator)
 
         image_sequences = [None] * self.next_id
         image_sequences[0] = input_image_sequence
+
+        step_iterator = iter(self.steps.items())
+        next(step_iterator)
         for step_name, step_id in step_iterator:
             print(f"Running {step_name} ...")
             node = self.node_list[step_id - 1]
@@ -146,85 +155,77 @@ class DagProcess:
         return self.image_sequences[self.steps[step_name]]
 
     def get(self, step_name: str) -> Sequence[Image]:
-        if not self.finished:
-            raise DagNotFinishedError()
+        self._ensure_finished()
         return self._get(step_name)
 
     def get_input(self) -> Sequence[Image]:
-        if not self.finished:
-            raise DagNotFinishedError()
-        return self.input_image_sequence
+        self._ensure_finished()
+        return self.image_sequences[0]
 
     def get_output(self) -> Sequence[Image]:
-        if not self.finished:
-            raise DagNotFinishedError()
-        if len(self) == 0:
-            return self.input_image_sequence
+        self._ensure_finished()
         return self.image_sequences[-1]
 
 
-    def show_frame(self, frame_index: int) -> None:
-        if not self.finished:
-            raise DagNotFinishedError()
+    def _create_frame_comp(self, frames: Sequence[Image], horizontal: bool) -> Image:
+        if any(f.ndim > 2 for f in frames):
+            frames = [rgb_image(f) for f in frames]
+        return np.hstack(frames) if horizontal else np.vstack(frames)
 
+    def _create_video_comp(self, img_seqs: Iterable[Sequence[Image]], horizontal: bool, force_rgb: bool) -> Sequence[Image]:
+        stack_function = np.hstack if horizontal else np.vstack
+        stacked_img_seq = []
+        for frames in zip(*img_seqs):
+            if force_rgb or any(img.ndim > 2 for img in frames):
+                frames = [rgb_image(img) for img in frames]
+            stacked_img_seq.append(stack_function(frames))
+        return stacked_img_seq
+
+
+    def show_frames(self, frame_index: int) -> None:
+        self._ensure_finished()
         for step_name, step_id in self.steps.items():
             cv.imshow(step_name, self.image_sequences[step_id][frame_index])
-
         while cv.waitKey(30) != 113:
             pass
         cv.destroyAllWindows()
 
-    def compare_frames(self, frame_index: int, step_names: Sequence[str], horizontal: bool=False) -> None:
-        if not self.finished:
-            raise DagNotFinishedError()
 
-        stack_function = np.hstack if horizontal else np.vstack
+    def show_frame_comp(self, frame_index: int, step_names: Sequence[str], horizontal: bool=False) -> None:
+        self._ensure_finished()
         frames = [self._get(name)[frame_index] for name in step_names]
-        if any(img.ndim > 2 for img in frames):
-            frames = [rgb_image(img) for img in frames]
-        cv.imshow("_".join(step_names), stack_function(frames))
-
+        stacked_img = self._create_frame_comp(frames, horizontal)
+        cv.imshow("_".join(step_names), stacked_img)
         while cv.waitKey(30) != 113:
             pass
         cv.destroyAllWindows()
 
 
-    def _ensure_video_directory(self) -> None:
-        if not self.result_dir.is_dir():
-            try:
-                self.result_dir.mkdir()
-            except OSError:
-                raise InvalidResultDirError(self.result_dir)
-
-    def show_video(self) -> None:
-        if not self.finished:
-            raise DagNotFinishedError()
-
-        self._ensure_video_directory()
-
+    def save_videos(self, video_output_dir: Path) -> None:
+        self._ensure_finished()
+        self._ensure_video_directory(video_output_dir)
         for step_name, step_id in self.steps.items():
             video.create_from_rgb(
-                [rgb_image(img) for img in self.image_sequences[step_id]],
-                self.result_dir.joinpath(f"{step_name}.avi")
+                (rgb_image(img) for img in self.image_sequences[step_id]),
+                video_output_dir.joinpath(f"{step_name}.avi")
             )
 
-        for step_name in self.steps.keys():
-            video.play(self.result_dir.joinpath(f"{step_name}.avi"))
+    def show_videos(self) -> None:
+        self._ensure_finished()
+        for step_name, step_id in self.steps.items():
+            video.VideoImgSeqPlayer(self.image_sequences[step_id], step_name).play()
 
-    def compare_videos(self, step_names: Sequence[str], horizontal: bool=False) -> None:
-        if not self.finished:
-            raise DagNotFinishedError()
 
-        self._ensure_video_directory()
-
-        stack_function = np.hstack if horizontal else np.vstack
-        img_seqs = []
-        for name in step_names:
-            img_seqs.append(self._get(name))
-        stacked_img_seq = []
-        for frame_index in range(len(self.image_sequences[0])):
-            stacked_img_seq.append(stack_function([rgb_image(seq[frame_index]) for seq in img_seqs]))
-
-        comparison_video_path = self.result_dir.joinpath(f"{'_'.join(step_names)}.avi")
+    def save_video_comp(self, video_output_dir: Path, step_names: Sequence[str], horizontal: bool=False) -> None:
+        self._ensure_finished()
+        self._ensure_video_directory(video_output_dir)
+        img_seqs = [self._get(name) for name in step_names]
+        stacked_img_seq = self._create_video_comp(img_seqs, horizontal, force_rgb=True)
+        comparison_video_path = video_output_dir.joinpath(f"{'_'.join(step_names)}.avi")
         video.create_from_rgb(stacked_img_seq, comparison_video_path)
-        video.play(comparison_video_path)
+
+    def show_video_comp(self, step_names: Sequence[str], horizontal: bool=False) -> None:
+        self._ensure_finished()
+        img_seqs = [self._get(name) for name in step_names]
+        stacked_img_seq = self._create_video_comp(img_seqs, horizontal, force_rgb=False)
+        video.VideoImgSeqPlayer(stacked_img_seq, "_".join(step_names)).play()

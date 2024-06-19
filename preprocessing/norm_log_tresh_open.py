@@ -47,15 +47,16 @@ if __name__ == '__main__':
     import image_loader
 
     input_dir = Path("imgs", "vertical")
-    # input_dir = Path("imgs", "diagonal")
     output_dir = Path("results", "norm_log_thresh_open")
     loader = image_loader.ImageLoader(input_dir)
 
-    processing_contact.run(loader, output_dir)
-    processing_spikes.run(loader, output_dir)
+    processing_contact.run(loader)
+    processing_spikes.run(loader)
 
-    processing_contact.show_frame(20)
-    processing_contact.show_video()
+    processing_contact.show_frames(20)
+    processing_contact.show_videos()
+    processing_contact.save_videos(output_dir)
 
-    processing_spikes.show_frame(20)
-    processing_spikes.show_video()
+    processing_spikes.show_frames(20)
+    processing_spikes.show_videos()
+    processing_spikes.save_videos(output_dir)

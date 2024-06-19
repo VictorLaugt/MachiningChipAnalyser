@@ -29,23 +29,6 @@ seq = []
 
 every_points = np.stack(np.indices((h, w)), axis=-1).reshape(-1, 1, 2)
 rho = 150
-# for i, theta in enumerate(np.linspace(0, 2*np.pi, 100)):
-#     img = np.zeros((h, w), dtype=np.uint8)
-#     xn = np.cos(theta)
-#     yn = np.sin(theta)
-
-#     pts = under_line(every_points, rho, xn, yn, min_distance=5)
-#     x, y = pts[:, 0, 0].flatten(), pts[:, 0, 1].flatten()
-#     img[y, x] = 255
-#     draw(img, rho, xn, yn, 127, 5)
-
-#     seq.append(img)
-
-#     print(f"frame {i}: {theta = }")
-
-
-# video.create_from_gray(seq, Path("results", "polar_line_experiment.avi"))
-# video.play(Path("results", "polar_line_experiment.avi"))
 
 
 theta0, theta1 = 0.0, np.pi/2

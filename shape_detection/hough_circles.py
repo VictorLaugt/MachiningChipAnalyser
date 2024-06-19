@@ -72,47 +72,10 @@ if __name__ == '__main__':
     processing.add("circles", render_circles)
 
     input_dir = Path("imgs", "vertical")
-    # input_dir = Path("imgs", "diagonal")
     output_dir = Path("results", "circles")
     loader = image_loader.ImageLoader(input_dir)
 
-    processing.run(loader, output_dir)
-    processing.compare_frames(25, ("morph", "circles"))
-    processing.compare_videos(("morph", "circles"))
-
-
-# if __name__ == '__main__':
-#     img = cv.imread('preprocessed.png', cv.IMREAD_GRAYSCALE)
-#     # img = cv.imread('chipcurve.png', cv.IMREAD_GRAYSCALE)
-
-#     inp = img.copy()
-#     inp[:, :500] = 0
-#     inp[:, 966:] = 0
-#     inp[385:, :] = 0
-
-#     circles = cv.HoughCircles(
-#         inp,
-#         cv.HOUGH_GRADIENT, dp=1, minDist=20, param1=50, param2=30,
-#         minRadius=0,
-#         maxRadius=0
-#     )
-
-#     render = inp.copy()
-#     # for c in circles[0, :10, :]:
-#     for c in circles[0, :, :]:
-#         cv.circle(render, (int(c[0]), int(c[1])), int(c[2]), 127, 1)
-
-#     cv.imshow('circles', render)
-#     while cv.waitKey(30) != 113:
-#         pass
-#     cv.destroyAllWindows()
-
-
-#     def show_circle(img, circle):
-#         img = img.copy()
-#         cv.circle(img, (int(circle[0]), int(circle[1])), int(circle[2]), 127, 1)
-#         cv.imshow('circle', img)
-#         while cv.waitKey(30) != 113:
-#             pass
-#         cv.destroyAllWindows()
-
+    processing.run(loader)
+    processing.show_frame_comp(25, ("morph", "circles"))
+    processing.show_video_comp(("morph", "circles"))
+    processing.save_videos(output_dir)
