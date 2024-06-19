@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from geometry import Line, PointArray
+    from geometry import PointArray
     from chip_extraction import MainFeatures
 
 from dataclasses import dataclass
@@ -134,11 +134,8 @@ def extract_chip_features(binary_img: np.ndarray) -> tuple[MainFeatures, ChipFea
     return main_ft, ChipFeatures(chip_hull_pts, key_pts, polynomial, contact)
 
 
-def render_chip_features_on_binary(binary_img: np.ndarray) -> np.ndarray:
-    """Return an image which shows the detected features on the top of the
-    preprocessed binary image.
-    """
-    main_ft, chip_ft = extract_chip_features(binary_img)
+def render_chip_features(render: np.ndarray, main_ft: MainFeatures, chip_ft: ChipFeatures):
+    """Draw a representation of features `main_ft` and `chip_ft` on image `render`."""
     contact_line = geometry.parallel(main_ft.base_line, *chip_ft.contact_point)
 
     red = (0, 0, 255)
@@ -146,11 +143,9 @@ def render_chip_features_on_binary(binary_img: np.ndarray) -> np.ndarray:
     green = (0, 255, 0)
     dark_green = (0, 85, 0)
     blue = (255, 0, 0)
-    white = (255, 255, 255)
-    render = np.zeros((binary_img.shape[0], binary_img.shape[1], 3), dtype=np.uint8)
 
     if chip_ft.polynomial is not None:
-        x = np.arange(0, binary_img.shape[1], 1, dtype=np.int32)
+        x = np.arange(0, render.shape[1], 1, dtype=np.int32)
         y = chip_ft.polynomial(x)
         x, y = geometry.rotate(x, y, main_ft.tool_angle)
         x, y = x.astype(np.int32), y.astype(np.int32)
@@ -166,54 +161,47 @@ def render_chip_features_on_binary(binary_img: np.ndarray) -> np.ndarray:
     for kpt in chip_ft.key_pts.reshape(-1, 2):
         cv.circle(render, kpt, 6, color=green, thickness=-1)
 
-    render[np.nonzero(binary_img)] = white
-    return render
 
+class ChipFeatureCollector:
+    def __init__(self, scale: float=1.0):
+        self.scale = scale
+        self.chip_features: list[ChipFeatures] = []
+        self.main_features: list[MainFeatures] = []
+        self.contact_lengths: list[float] = []
 
-def render_chip_features_on_input(input_img: np.ndarray, binary_img: np.nparray) -> np.ndarray:
-    """Return an image which shows the detected features on the top of the
-    input image.
-    """
-    main_ft, chip_ft = extract_chip_features(binary_img)
-    contact_line = geometry.parallel(main_ft.base_line, *chip_ft.contact_point)
+    def collect(self, main_ft: MainFeatures, chip_ft: ChipFeatures) -> None:
+        xi, yi = main_ft.tool_base_intersection
+        xc, yc = chip_ft.contact_point
+        self.main_features.append(main_ft)
+        self.chip_features.append(chip_ft)
+        self.contact_lengths.append(self.scale * np.linalg.norm((xc-xi, yc-yi)))
 
-    red = (0, 0, 255)
-    yellow = (0, 255, 255)
-    green = (0, 255, 0)
-    dark_green = (0, 85, 0)
-    blue = (255, 0, 0)
-    render = input_img.copy()
-
-    if chip_ft.polynomial is not None:
-        x = np.arange(0, input_img.shape[1], 1, dtype=np.int32)
-        y = chip_ft.polynomial(x)
-        x, y = geometry.rotate(x, y, main_ft.tool_angle)
-        x, y = x.astype(np.int32), y.astype(np.int32)
-        for i in range(len(x)-1):
-            cv.line(render, (x[i], y[i]), (x[i+1], y[i+1]), color=blue, thickness=2)
-
-    geometry.draw_line(render, main_ft.base_line, color=red, thickness=3)
-    geometry.draw_line(render, main_ft.tool_line, color=red, thickness=3)
-    geometry.draw_line(render, contact_line, color=yellow, thickness=1)
-
-    for pt in chip_ft.hull_pts.reshape(-1, 2):
-        cv.circle(render, pt, 6, color=dark_green, thickness=-1)
-    for kpt in chip_ft.key_pts.reshape(-1, 2):
-        cv.circle(render, kpt, 6, color=green, thickness=-1)
-
-    return render
+    def extract_and_render(self, binary_img: np.ndarray, background: np.ndarray=None) -> np.ndarray:
+        main_ft, chip_ft = extract_chip_features(binary_img)
+        self.collect(main_ft, chip_ft)
+        if background is None:
+            ft_repr = np.zeros((binary_img.shape[0], binary_img.shape[1], 3), dtype=np.uint8)
+            render_chip_features(ft_repr, main_ft, chip_ft)
+            ft_repr[np.nonzero(binary_img)] = (255, 255, 255)
+        else:
+            ft_repr = background.copy()
+            render_chip_features(ft_repr, main_ft, chip_ft)
+        return ft_repr
 
 
 if __name__ == '__main__':
     import os
     from pathlib import Path
+    import matplotlib.pyplot as plt
 
     import image_loader
     import preprocessing.log_tresh_blobfilter_erode
 
+    collector = ChipFeatureCollector()
+
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
-    # processing.add("chipcurve", render_chip_features_on_input, ("input", "morph"))
-    processing.add("chipcurve", render_chip_features_on_binary)
+    # processing.add("chipcurve", collector.extract_and_render, ("morph", "input"))
+    processing.add("chipcurve", collector.extract_and_render)
 
     input_dir_str = os.environ.get("INPUT_DIR")
     if input_dir_str is not None:
@@ -226,6 +214,9 @@ if __name__ == '__main__':
 
     processing.run(loader)
     processing.show_frame_comp(15, ("chipcurve", "input"))
-    processing.show_frame_comp(15, ("input",))
     processing.show_video_comp(("chipcurve", "input"))
-    # processing.save_videos(output_dir)
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(collector.contact_lengths, 'x-')
+    plt.grid()
+    plt.show()
