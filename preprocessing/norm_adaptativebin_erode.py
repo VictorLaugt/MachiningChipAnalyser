@@ -10,7 +10,7 @@ import cv2 as cv
 import dag_process
 
 
-processing = dag_process.DagProcess()
+processing = dag_process.DagProcessVizualiser()
 
 processing.add("gray", lambda img: cv.cvtColor(img, cv.COLOR_RGB2GRAY))
 processing.add("blur", lambda img: cv.GaussianBlur(img, (9, 9), 0))

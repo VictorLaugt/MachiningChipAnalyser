@@ -11,7 +11,7 @@ import dag_process
 import connected_components
 
 
-processing = dag_process.DagProcess()
+processing = dag_process.DagProcessVizualiser()
 
 log_kernel = 2 * np.array([
     [0, 1, 1, 2, 2, 2, 1, 1, 0],

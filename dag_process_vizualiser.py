@@ -63,7 +63,7 @@ class DagProcessNode:
 
 # len(self.node_lists) == n
 # len(self.steps) == len(self.image_sequences) == self.next_id == n + 1
-class DagProcess:
+class DagProcessVizualiser:
     def __init__(self):
         self.next_id = 1
         self.steps = OrderedDict((("input", 0),))
@@ -73,8 +73,8 @@ class DagProcess:
         self.feature_extractions: list[Feature] = []
         self.finished = False
 
-    def copy(self) -> DagProcess:
-        copy = super().__new__(DagProcess)
+    def copy(self) -> DagProcessVizualiser:
+        copy = super().__new__(DagProcessVizualiser)
         copy.next_id = self.next_id
         copy.steps = self.steps.copy()
         copy.node_list = self.node_list.copy()
@@ -181,7 +181,6 @@ class DagProcess:
             stacked_img_seq.append(stack_function(frames))
         return stacked_img_seq
 
-
     def show_frames(self, frame_index: int) -> None:
         self._ensure_finished()
         for step_name, step_id in self.steps.items():
@@ -189,7 +188,6 @@ class DagProcess:
         while cv.waitKey(30) != 113:
             pass
         cv.destroyAllWindows()
-
 
     def show_frame_comp(self, frame_index: int, step_names: Sequence[str], horizontal: bool=False) -> None:
         self._ensure_finished()
@@ -199,7 +197,6 @@ class DagProcess:
         while cv.waitKey(30) != 113:
             pass
         cv.destroyAllWindows()
-
 
     def save_videos(self, video_output_dir: Path) -> None:
         self._ensure_finished()
@@ -214,7 +211,6 @@ class DagProcess:
         self._ensure_finished()
         for step_name, step_id in self.steps.items():
             video.VideoImgSeqPlayer(self.image_sequences[step_id], step_name).play()
-
 
     def save_video_comp(self, video_output_dir: Path, step_names: Sequence[str], horizontal: bool=False) -> None:
         self._ensure_finished()

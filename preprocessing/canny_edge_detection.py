@@ -7,7 +7,7 @@ import cv2 as cv
 import dag_process
 
 
-processing = dag_process.DagProcess()
+processing = dag_process.DagProcessVizualiser()
 processing.add("gray", lambda img: cv.cvtColor(img, cv.COLOR_RGB2GRAY))
 processing.add("edge", lambda img: cv.Canny(img, 100, 200))
 

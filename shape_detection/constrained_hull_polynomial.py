@@ -226,5 +226,6 @@ if __name__ == '__main__':
 
     processing.run(loader)
     processing.show_frame_comp(15, ("chipcurve", "input"))
+    processing.show_frame_comp(15, ("input",))
     processing.show_video_comp(("chipcurve", "input"))
-    processing.save_videos(output_dir)
+    # processing.save_videos(output_dir)
