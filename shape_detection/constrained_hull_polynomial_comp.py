@@ -21,7 +21,9 @@ class ChipFeatures:
     hull_pts: PointArray
     key_pts: PointArray
     polynomial: Polynomial
+    weighted_polynomial: Polynomial
     contact_point: tuple[float, float]
+    weighted_contact_point: tuple[float, float]
 
 
 def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: PointArray) -> PointArray:
@@ -88,6 +90,27 @@ def extract_key_points(main_ft: MainFeatures, curve_points: PointArray, tool_chi
     return curve_points[mask]
 
 
+def fit_weighted_polynomial(main_ft: MainFeatures, key_pts: PointArray) -> Polynomial:
+    """Return a polynomial of degree 2 which fits the key points."""
+    vectors = key_pts[1:, 0, :] - key_pts[:-1, 0, :]
+    lengths = np.linalg.norm(vectors, axis=-1)
+    distances = np.zeros(len(key_pts), dtype=np.float64)
+    distances[1:] = np.cumsum(lengths, axis=0)
+    weights = 1. - 0.9 * distances / distances[-1]
+
+    rot_x, rot_y = geometry.rotate(key_pts[:, 0, 0], key_pts[:, 0, 1], -main_ft.tool_angle)
+
+    if len(key_pts) < 2:
+        print("Warning !: Cannot fit the chip curve", file=sys.stderr)
+        polynomial = None
+    elif len(key_pts) == 2:
+        polynomial = Polynomial.fit(rot_x, rot_y, 1)
+    else:
+        polynomial = Polynomial.fit(rot_x, rot_y, 2, w=weights)
+
+    return polynomial
+
+
 def fit_polynomial(main_ft: MainFeatures, key_pts: PointArray) -> Polynomial:
     """Return a polynomial of degree 2 which fits the key points."""
     rot_x, rot_y = geometry.rotate(key_pts[:, 0, 0], key_pts[:, 0, 1], -main_ft.tool_angle)
@@ -128,15 +151,23 @@ def extract_chip_features(binary_img: np.ndarray) -> tuple[MainFeatures, ChipFea
     chip_hull_pts = compute_chip_convex_hull(main_ft, chip_pts)
     chip_curve_pts = extract_chip_curve_points(main_ft, chip_hull_pts)
     key_pts = extract_key_points(main_ft, chip_curve_pts, np.pi/4)
+
     polynomial = fit_polynomial(main_ft, key_pts)
+    weighted_polynomial = fit_weighted_polynomial(main_ft, key_pts)
     contact = chip_tool_contact_point(main_ft, polynomial)
+    weighted_contact = chip_tool_contact_point(main_ft, weighted_polynomial)
 
-    return main_ft, ChipFeatures(chip_hull_pts, key_pts, polynomial, contact)
+    return main_ft, ChipFeatures(
+        chip_hull_pts, key_pts,
+        polynomial, weighted_polynomial,
+        contact, weighted_contact
+    )
 
 
-def render_chip_features(render: np.ndarray, main_ft: MainFeatures, chip_ft: ChipFeatures) -> None:
+def render_chip_features(render: np.ndarray, main_ft: MainFeatures, chip_ft: ChipFeatures):
     """Draw a representation of features `main_ft` and `chip_ft` on image `render`."""
     contact_line = geometry.parallel(main_ft.base_line, *chip_ft.contact_point)
+    weighted_contact_line = geometry.parallel(main_ft.base_line, *chip_ft.weighted_contact_point)
 
     red = (0, 0, 255)
     yellow = (0, 255, 255)
@@ -152,9 +183,18 @@ def render_chip_features(render: np.ndarray, main_ft: MainFeatures, chip_ft: Chi
         for i in range(len(x)-1):
             cv.line(render, (x[i], y[i]), (x[i+1], y[i+1]), color=blue, thickness=2)
 
+    if chip_ft.weighted_polynomial is not None:
+        x = np.arange(0, render.shape[1], 1, dtype=np.int32)
+        y = chip_ft.weighted_polynomial(x)
+        x, y = geometry.rotate(x, y, main_ft.tool_angle)
+        x, y = x.astype(np.int32), y.astype(np.int32)
+        for i in range(len(x)-1):
+            cv.line(render, (x[i], y[i]), (x[i+1], y[i+1]), color=yellow, thickness=2)
+
     geometry.draw_line(render, main_ft.base_line, color=red, thickness=3)
     geometry.draw_line(render, main_ft.tool_line, color=red, thickness=3)
-    geometry.draw_line(render, contact_line, color=yellow, thickness=1)
+    geometry.draw_line(render, contact_line, color=blue, thickness=1)
+    geometry.draw_line(render, weighted_contact_line, color=yellow, thickness=1)
 
     for pt in chip_ft.hull_pts.reshape(-1, 2):
         cv.circle(render, pt, 6, color=dark_green, thickness=-1)
@@ -168,13 +208,16 @@ class ChipFeatureCollector:
         self.chip_features: list[ChipFeatures] = []
         self.main_features: list[MainFeatures] = []
         self.contact_lengths: list[float] = []
+        self.weighted_contact_lengths: list[float] = []
 
     def collect(self, main_ft: MainFeatures, chip_ft: ChipFeatures) -> None:
         xi, yi = main_ft.tool_base_intersection
         xc, yc = chip_ft.contact_point
+        xwc, ywc = chip_ft.weighted_contact_point
         self.main_features.append(main_ft)
         self.chip_features.append(chip_ft)
         self.contact_lengths.append(self.scale * np.linalg.norm((xc-xi, yc-yi)))
+        self.weighted_contact_lengths.append(self.scale * np.linalg.norm((xwc-xi, ywc-yi)))
 
     def extract_and_render(self, binary_img: np.ndarray, background: np.ndarray=None) -> np.ndarray:
         main_ft, chip_ft = extract_chip_features(binary_img)
@@ -213,10 +256,13 @@ if __name__ == '__main__':
     loader = image_loader.ImageLoader(input_dir)
 
     processing.run(loader)
-    processing.show_frame_comp(15, ("chipcurve", "input"))
+    processing.show_frame_comp(76, ("chipcurve", "input"))
     processing.show_video_comp(("chipcurve", "input"))
+    processing.save_video_comp(output_dir, ("chipcurve", "input"))
 
     plt.figure(figsize=(10, 5))
-    plt.plot(collector.contact_lengths, 'x-')
+    plt.plot(collector.contact_lengths, 'x-', label='simple')
+    plt.plot(collector.weighted_contact_lengths, 'x-', label='weighted')
+    plt.legend()
     plt.grid()
     plt.show()
