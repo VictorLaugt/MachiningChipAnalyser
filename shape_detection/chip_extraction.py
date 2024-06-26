@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from geometry import Line, PointArray
+    from geometry import PolarLine, PointArray
     from typing import TypeVar
     PolarParamArray = TypeVar('PolarParamArray', np.ndarray)  # ~ (n, 1, 2) dtype=float32
 
@@ -22,16 +22,16 @@ class MainFeatures:
     indirect_rotation: bool
 
     # base and tool lines, such that every points of the chip are under these lines
-    base_line: Line
-    tool_line: Line
+    base_line: PolarLine
+    tool_line: PolarLine
 
     # angle of the tool line polar coordinates
     tool_angle: float
 
     # borders of the image
-    base_border: Line
-    base_opp_border: Line
-    tool_opp_border: Line
+    base_border: PolarLine
+    base_opp_border: PolarLine
+    tool_opp_border: PolarLine
 
     # intersection between the base and the tool lines
     tool_base_intersection: tuple[float, float]
@@ -53,7 +53,7 @@ def best_tool_line(lines: PolarParamArray) -> tuple[float, float]:
             return rho, theta
 
 
-def locate_base_and_tool(binary_img: np.ndarray) -> tuple[Line, Line, float, float]:
+def locate_base_and_tool(binary_img: np.ndarray) -> tuple[PolarLine, PolarLine, float, float]:
     """Compute line parameters for base and tool."""
     lines = cv.HoughLines(binary_img, 1, np.pi/180, 100)
     if lines is None or len(lines) < 2:
