@@ -1,9 +1,11 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from typing import Sequence
+    from typing import Sequence, TypeVar
     from geometry import PointArray, Line
     from chip_extraction import MainFeatures
+    LineArray = TypeVar('LineArray', bound=np.ndarray[float])  # ~ (n, 3) dtype=float32
+
 
 from dataclasses import dataclass
 
@@ -13,6 +15,35 @@ from shape_detection.chip_extraction import extract_main_features
 import numpy as np
 from numpy.polynomial import Polynomial
 import cv2 as cv
+
+
+def lines_from_point_pairs(a_pts: PointArray, b_pts: PointArray) -> LineArray:
+    xa, ya = a_pts[:, 0, 0], a_pts[:, 0, 1]
+    xb, yb = b_pts[:, 0, 0], b_pts[:, 0, 1]
+
+    dy = yb - ya
+    dx = xb - xa
+
+    norm = np.linalg.norm((-dy, dx))
+    xn, yn = -dy / norm, dx / norm
+    rho = xn * xa + yn * ya
+
+    return np.column_stack((rho, -dy, dx))
+
+
+def compute_bisectors(pts: PointArray) -> LineArray:
+    a = pts[:-2]
+    b = pts[1:-1]
+    c = pts[2:]
+
+    ba = a - b
+    bc = c - b
+
+    p0 = b + ba / np.linalg.norm(ba, axis=-1, keepdims=True)
+    p1 = b + bc / np.linalg.norm(bc, axis=-1, keepdims=True)
+    mid = (p0 + p1) / 2
+
+    return lines_from_point_pairs(b, mid)
 
 
 @dataclass
@@ -58,10 +89,6 @@ def extract_chip_dorsal(main_ft: MainFeatures, chip_hull_pts: PointArray) -> Poi
     return chip_hull_pts
 
 
-def compute_dorsal_bisectors(dorsal_pts: PointArray) -> Sequence[Line]:
-    ...
-
-
 def extract_inner_chip_features(binary_img: np.ndarray) -> tuple[MainFeatures, InnerChipFeatures]:
     main_ft = extract_main_features(binary_img)
 
@@ -71,7 +98,18 @@ def extract_inner_chip_features(binary_img: np.ndarray) -> tuple[MainFeatures, I
 
     chip_hull_pts = compute_chip_convex_hull(main_ft, chip_pts)
     chip_dorsal_pts = extract_chip_dorsal(main_ft, chip_hull_pts)
-    bisectors = compute_dorsal_bisectors(chip_dorsal_pts)
+
+    print("\n[")
+    for p in chip_dorsal_pts:
+        print(f"    {str(p)},")
+    print("]")
+
+
+    bisectors = compute_bisectors(chip_dorsal_pts)
+    # print("\n\nbisectors = ", '\n'.join(map(str, bisectors)))
+    bisector_intersections = np.array([
+        geometry.intersect_line(bisectors[i], bisectors[i+1]) for i in range(len(bisectors)-1)
+    ]).reshape(-1, 1, 2)
 
     return main_ft, InnerChipFeatures(chip_dorsal_pts, bisectors)
 
@@ -79,12 +117,15 @@ def extract_inner_chip_features(binary_img: np.ndarray) -> tuple[MainFeatures, I
 def render_inner_chip_features(render: np.ndarray, main_ft: MainFeatures, inner_ft: InnerChipFeatures) -> None:
     red = (0, 0, 255)
     green = (0, 255, 0)
+    yellow = (0, 255, 255)
 
     geometry.draw_line(render, main_ft.base_line, color=red, thickness=3)
     geometry.draw_line(render, main_ft.tool_line, color=red, thickness=3)
 
     for pt in inner_ft.dorsal_pts.reshape(-1, 2):
         cv.circle(render, pt, 6, color=green, thickness=-1)
+    for bisect in inner_ft.bisectors:
+        geometry.draw_line(render, bisect, color=yellow, thickness=2)
 
 
 def extract_and_render(binary_img: np.ndarray) -> np.ndarray:
