@@ -1,8 +1,11 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from geometry import PointArray
+    from typing import Sequence
+    from geometry import PointArray, Line
     from chip_extraction import MainFeatures
+
+from dataclasses import dataclass
 
 import geometry
 from shape_detection.chip_extraction import extract_main_features
@@ -10,6 +13,12 @@ from shape_detection.chip_extraction import extract_main_features
 import numpy as np
 from numpy.polynomial import Polynomial
 import cv2 as cv
+
+
+@dataclass
+class InnerChipFeatures:
+    dorsal_pts: PointArray
+    bisectors: Sequence[Line]
 
 
 def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: PointArray) -> PointArray:
@@ -49,18 +58,11 @@ def extract_chip_dorsal(main_ft: MainFeatures, chip_hull_pts: PointArray) -> Poi
     return chip_hull_pts
 
 
-def render_chip_dorsal(render: np.ndarray, main_ft: MainFeatures, dorsal: PointArray) -> None:
-    red = (0, 0, 255)
-    green = (0, 255, 0)
-
-    geometry.draw_line(render, main_ft.base_line, color=red, thickness=3)
-    geometry.draw_line(render, main_ft.tool_line, color=red, thickness=3)
-
-    for pt in dorsal.reshape(-1, 2):
-        cv.circle(render, pt, 6, color=green, thickness=-1)
+def compute_dorsal_bisectors(dorsal_pts: PointArray) -> Sequence[Line]:
+    ...
 
 
-def chip_dorsal_rendering(binary_img: np.ndarray) -> np.ndarray:
+def extract_inner_chip_features(binary_img: np.ndarray) -> tuple[MainFeatures, InnerChipFeatures]:
     main_ft = extract_main_features(binary_img)
 
     contours, _ = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
@@ -69,12 +71,28 @@ def chip_dorsal_rendering(binary_img: np.ndarray) -> np.ndarray:
 
     chip_hull_pts = compute_chip_convex_hull(main_ft, chip_pts)
     chip_dorsal_pts = extract_chip_dorsal(main_ft, chip_hull_pts)
+    bisectors = compute_dorsal_bisectors(chip_dorsal_pts)
 
-    render = np.zeros((binary_img.shape[0], binary_img.shape[1], 3), dtype=np.uint8)
-    render_chip_dorsal(render, main_ft, chip_dorsal_pts)
-    render[np.nonzero(binary_img)] = (255, 255, 255)
-    return render
+    return main_ft, InnerChipFeatures(chip_dorsal_pts, bisectors)
 
+
+def render_inner_chip_features(render: np.ndarray, main_ft: MainFeatures, inner_ft: InnerChipFeatures) -> None:
+    red = (0, 0, 255)
+    green = (0, 255, 0)
+
+    geometry.draw_line(render, main_ft.base_line, color=red, thickness=3)
+    geometry.draw_line(render, main_ft.tool_line, color=red, thickness=3)
+
+    for pt in inner_ft.dorsal_pts.reshape(-1, 2):
+        cv.circle(render, pt, 6, color=green, thickness=-1)
+
+
+def extract_and_render(binary_img: np.ndarray) -> np.ndarray:
+    main_ft, inner_ft = extract_inner_chip_features(binary_img)
+    ft_repr = np.zeros((binary_img.shape[0], binary_img.shape[1], 3), dtype=np.uint8)
+    render_inner_chip_features(ft_repr, main_ft, inner_ft)
+    ft_repr[np.nonzero(binary_img)] = (255, 255, 255)
+    return ft_repr
 
 
 if __name__ == '__main__':
@@ -86,7 +104,7 @@ if __name__ == '__main__':
     import preprocessing.log_tresh_blobfilter_erode
 
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
-    processing.add("unfolding", chip_dorsal_rendering)
+    processing.add("unfolding", extract_and_render)
 
     input_dir_str = os.environ.get("INPUT_DIR")
     if input_dir_str is not None:
