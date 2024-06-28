@@ -197,7 +197,7 @@ if __name__ == '__main__':
     import image_loader
     import preprocessing.log_tresh_blobfilter_erode
 
-    collector = ChipFeatureCollector()
+    collector = ChipFeatureCollector(scale=3.5)
 
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
     # processing.add("chipcurve", collector.extract_and_render, ("morph", "input"))
@@ -218,5 +218,7 @@ if __name__ == '__main__':
 
     plt.figure(figsize=(10, 5))
     plt.plot(collector.contact_lengths, 'x-')
+    plt.xlabel('frame')
+    plt.ylabel('contact length (µm)')
     plt.grid()
     plt.show()
