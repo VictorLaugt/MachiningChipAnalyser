@@ -197,22 +197,43 @@ if __name__ == '__main__':
     import image_loader
     import preprocessing.log_tresh_blobfilter_erode
 
-    collector = ChipFeatureCollector(scale=3.5)
+    # ---- environment variables
+    input_dir_str = os.environ.get("INPUT_DIR")
+    output_dir_str = os.environ.get("OUTPUT_DIR")
+    scale_str = os.environ.get("SCALE_UM")
+
+    if input_dir_str is not None:
+        input_dir = Path(input_dir_str)
+    else:
+        input_dir = Path("imgs", "vertical")
+
+    if output_dir_str is not None:
+        output_dir = Path(output_dir_str)
+    else:
+        output_dir = Path("results", "chipvurve")
+
+    if scale_str is not None:
+        scale_um = float(scale_str)
+    else:
+        scale_um = 3.5
+
+
+    # ---- processing
+    collector = ChipFeatureCollector(scale_um)
 
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
     # processing.add("chipcurve", collector.extract_and_render, ("morph", "input"))
     processing.add("chipcurve", collector.extract_and_render)
 
-    input_dir_str = os.environ.get("INPUT_DIR")
-    if input_dir_str is not None:
-        input_dir = Path(os.environ["INPUT_DIR"])
-    else:
-        input_dir = Path("imgs", "vertical")
-
-    output_dir = Path("results", "chipcurve")
     loader = image_loader.ImageLoader(input_dir)
-
     processing.run(loader)
+
+
+    # ---- visualization
+    # processing.show_frame_comp(15, ("chipcurve",))
+    # processing.show_video_comp(("chipcurve",))
+    # processing.save_video_comp(output_dir, ("chipcurve",))
+
     processing.show_frame_comp(15, ("chipcurve", "input"))
     processing.show_video_comp(("chipcurve", "input"))
 
