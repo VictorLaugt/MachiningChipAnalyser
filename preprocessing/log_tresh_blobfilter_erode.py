@@ -56,5 +56,15 @@ if __name__ == '__main__':
 
     processing.run(loader)
     processing.show_frames(14)
-    processing.show_videos()
-    processing.save_videos(output_dir)
+    for step_name in ("input", "edge", "binary", "blobfilter", "morph"):
+        processing.save_frame_comp(output_dir, 14, (step_name,))
+    # processing.save_frame_comp(
+    #     output_dir,
+    #     14,
+    #     ("edge", "binary", "blobfilter", "morph"),
+    #     horizontal=False
+    # )
+
+    # processing.show_videos()
+    # processing.save_videos(output_dir)
+

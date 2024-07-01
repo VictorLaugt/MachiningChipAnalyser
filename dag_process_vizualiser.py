@@ -94,12 +94,12 @@ class DagProcessVizualiser:
             ")"
         )
 
-    def _ensure_video_directory(self, video_output_dir: Path) -> None:
-        if not video_output_dir.is_dir():
+    def _ensure_output_directory(self, output_dir: Path) -> None:
+        if not output_dir.is_dir():
             try:
-                video_output_dir.mkdir()
+                output_dir.mkdir()
             except OSError:
-                raise InvalidOutputDirError(video_output_dir)
+                raise InvalidOutputDirError(output_dir)
 
     def _ensure_finished(self) -> None:
         if not self.finished:
@@ -189,6 +189,7 @@ class DagProcessVizualiser:
             pass
         cv.destroyAllWindows()
 
+
     def show_frame_comp(self, frame_index: int, step_names: Sequence[str], horizontal: bool=False) -> None:
         self._ensure_finished()
         frames = [self._get(name)[frame_index] for name in step_names]
@@ -198,30 +199,41 @@ class DagProcessVizualiser:
             pass
         cv.destroyAllWindows()
 
-    def save_videos(self, video_output_dir: Path) -> None:
+    def save_frame_comp(self, image_output_dir: Path, frame_index: int, step_names: Sequence[str], horizontal: bool=False) -> None:
         self._ensure_finished()
-        self._ensure_video_directory(video_output_dir)
-        for step_name, step_id in self.steps.items():
-            video.create_from_rgb(
-                (rgb_image(img) for img in self.image_sequences[step_id]),
-                video_output_dir.joinpath(f"{step_name}.avi")
-            )
+        self._ensure_output_directory(image_output_dir)
+        frames = [self._get(name)[frame_index] for name in step_names]
+        stacked_img = self._create_frame_comp(frames, horizontal)
+        comparison_image_path = image_output_dir.joinpath(f"{'_'.join(step_names)}.png")
+        cv.imwrite(str(comparison_image_path), stacked_img)
+
 
     def show_videos(self) -> None:
         self._ensure_finished()
         for step_name, step_id in self.steps.items():
             video.VideoImgSeqPlayer(self.image_sequences[step_id], step_name).play()
 
-    def save_video_comp(self, video_output_dir: Path, step_names: Sequence[str], horizontal: bool=False) -> None:
+    def save_videos(self, video_output_dir: Path) -> None:
         self._ensure_finished()
-        self._ensure_video_directory(video_output_dir)
-        img_seqs = [self._get(name) for name in step_names]
-        stacked_img_seq = self._create_video_comp(img_seqs, horizontal, force_rgb=True)
-        comparison_video_path = video_output_dir.joinpath(f"{'_'.join(step_names)}.avi")
-        video.create_from_rgb(stacked_img_seq, comparison_video_path)
+        self._ensure_output_directory(video_output_dir)
+        for step_name, step_id in self.steps.items():
+            video.create_from_rgb(
+                (rgb_image(img) for img in self.image_sequences[step_id]),
+                video_output_dir.joinpath(f"{step_name}.avi")
+            )
+
 
     def show_video_comp(self, step_names: Sequence[str], horizontal: bool=False) -> None:
         self._ensure_finished()
         img_seqs = [self._get(name) for name in step_names]
         stacked_img_seq = self._create_video_comp(img_seqs, horizontal, force_rgb=False)
         video.VideoImgSeqPlayer(stacked_img_seq, "_".join(step_names)).play()
+
+    def save_video_comp(self, video_output_dir: Path, step_names: Sequence[str], horizontal: bool=False) -> None:
+        self._ensure_finished()
+        self._ensure_output_directory(video_output_dir)
+        img_seqs = [self._get(name) for name in step_names]
+        stacked_img_seq = self._create_video_comp(img_seqs, horizontal, force_rgb=True)
+        comparison_video_path = video_output_dir.joinpath(f"{'_'.join(step_names)}.avi")
+        video.create_from_rgb(stacked_img_seq, comparison_video_path)
+
