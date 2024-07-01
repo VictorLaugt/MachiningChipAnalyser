@@ -238,7 +238,7 @@ if __name__ == '__main__':
     processing.show_video_comp(("chipcurve", "input"))
 
     plt.figure(figsize=(10, 5))
-    plt.plot(collector.contact_lengths, 'x-')
+    plt.plot(range(1, len(collector.contact_lengths)+1), collector.contact_lengths, 'x-')
     plt.xlabel('frame')
     plt.ylabel('contact length (µm)')
     plt.grid()
