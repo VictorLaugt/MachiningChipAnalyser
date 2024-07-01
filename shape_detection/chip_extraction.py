@@ -42,6 +42,7 @@ def best_base_line(lines: PolarParamArray) -> tuple[float, float]:
     for rho, theta in lines[:, 0, :]:
         if np.abs(theta - np.pi/2) < 0.2:
             return rho, theta
+    raise ValueError("base not found")
 
 
 def best_tool_line(lines: PolarParamArray) -> tuple[float, float]:
@@ -51,13 +52,14 @@ def best_tool_line(lines: PolarParamArray) -> tuple[float, float]:
     for rho, theta in lines[:, 0, :]:
         if theta < high or theta > low:
             return rho, theta
+    raise ValueError("tool not found")
 
 
 def locate_base_and_tool(binary_img: np.ndarray) -> tuple[Line, Line, float, float]:
     """Compute line parameters for base and tool."""
     lines = cv.HoughLines(binary_img, 1, np.pi/180, 100)
     if lines is None or len(lines) < 2:
-        raise ValueError("Warning !: line not found")
+        raise ValueError("line not found")
 
     rho_base, theta_base = geometry.standard_polar_param(*best_base_line(lines))
     rho_tool, theta_tool = geometry.standard_polar_param(*best_tool_line(lines))

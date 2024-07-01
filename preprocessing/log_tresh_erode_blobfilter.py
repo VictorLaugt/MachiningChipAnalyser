@@ -25,13 +25,12 @@ log_kernel = 2 * np.array([
     [0, 1, 1, 2, 2, 2, 1, 1, 0]
 ])
 
+
 processing.add("gray", lambda img: cv.cvtColor(img, cv.COLOR_RGB2GRAY))
 processing.add("edge", lambda img: cv.filter2D(img, -1, log_kernel))
 processing.add("binary", lambda img: cv.threshold(img, 240, 255, cv.THRESH_BINARY)[1])
-processing.add("blobfilter", lambda img: connected_components.remove_small_components(img, min_area=20))
-# processing.add("blobfilter", lambda img: connected_components.remove_small_components(img, min_area=45))
 processing.add("morph", lambda img: cv.erode(img, cv.getStructuringElement(cv.MORPH_CROSS, (3, 3)), iterations=2))
-# processing.add("morph", lambda img: cv.morphologyEx(img, cv.MORPH_OPEN, cv.getStructuringElement(cv.MORPH_CROSS, (3, 3)), iterations=2))
+processing.add("blobfilter", lambda img: connected_components.remove_small_components(img, min_area=20))
 
 
 if __name__ == '__main__':
@@ -50,7 +49,7 @@ if __name__ == '__main__':
     if output_dir_str is not None:
         output_dir = Path(output_dir_str)
     else:
-        output_dir = Path("results", "log_thresh_blobfilter_erode")
+        output_dir = Path("results", "log_thresh_erode_blobfilter")
 
     loader = image_loader.ImageLoader(input_dir)
 

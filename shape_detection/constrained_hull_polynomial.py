@@ -1,5 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+
+import preprocessing.log_tresh_erode_blobfilter
 if TYPE_CHECKING:
     from geometry import PointArray
     from chip_extraction import MainFeatures
@@ -221,7 +223,9 @@ if __name__ == '__main__':
     # ---- processing
     collector = ChipFeatureCollector(scale_um)
 
+    # processing = preprocessing.log_tresh_erode_blobfilter.processing.copy()
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
+
     # processing.add("chipcurve", collector.extract_and_render, ("morph", "input"))
     processing.add("chipcurve", collector.extract_and_render)
 
