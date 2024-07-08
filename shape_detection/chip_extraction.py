@@ -145,19 +145,39 @@ def render_main_features(binary_img: np.ndarray) -> np.ndarray:
 
 
 if __name__ == '__main__':
-    import image_loader
+    import os
     from pathlib import Path
 
+    import image_loader
     import preprocessing.log_tresh_blobfilter_erode
+
+    # ---- environment variables
+    input_dir_str = os.environ.get("INPUT_DIR")
+    output_dir_str = os.environ.get("OUTPUT_DIR")
+    scale_str = os.environ.get("SCALE_UM")
+
+    if input_dir_str is not None:
+        input_dir = Path(input_dir_str)
+    else:
+        input_dir = Path("imgs", "vertical")
+
+    if output_dir_str is not None:
+        output_dir = Path(output_dir_str)
+    else:
+        output_dir = Path("results", "chipvurve")
 
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
     processing.add("chipextraction", render_main_features)
 
-    input_dir = Path("imgs", "vertical")
-    output_dir = Path("results", "lines")
+    # ---- processing
     loader = image_loader.ImageLoader(input_dir)
-
     processing.run(loader)
-    processing.show_frames(21)
-    processing.show_video_comp(("input", "chipextraction"))
-    processing.save_videos(output_dir)
+
+    # ---- visualization
+    processing.show_frames(14)
+    # processing.show_video_comp(("input", "chipextraction"))
+
+    processing.show_frame_comp(14, ("morph", "chipextraction"))
+    processing.save_frame_comp(output_dir, 14, ("morph",))
+    processing.save_frame_comp(output_dir, 14, ("chipextraction",))
+    # processing.save_videos(output_dir)
