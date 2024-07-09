@@ -234,11 +234,11 @@ if __name__ == '__main__':
 
 
     # ---- visualization
-    # processing.show_frame_comp(15, ("chipcurve",))
+    # processing.show_frame_comp(min(15, len(loader)-1), ("chipcurve",))
     # processing.show_video_comp(("chipcurve",))
     # processing.save_video_comp(output_dir, ("chipcurve",))
 
-    processing.show_frame_comp(15, ("chipcurve", "input"))
+    processing.show_frame_comp(min(15, len(loader)-1), ("chipcurve", "input"))
     processing.show_video_comp(("chipcurve", "input"))
 
     plt.figure(figsize=(10, 5))

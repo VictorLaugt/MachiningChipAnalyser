@@ -65,6 +65,6 @@ if __name__ == '__main__':
     loader = image_loader.ImageLoader(input_dir)
 
     processing.run(loader)
-    processing.show_frame_comp(20, ("input", "chipcurve"))
+    processing.show_frame_comp(min(20, len(loader)-1), ("input", "chipcurve"))
     processing.show_video_comp(("input", "chipcurve"))
     processing.save_videos(output_dir)

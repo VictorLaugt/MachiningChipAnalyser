@@ -55,7 +55,7 @@ if __name__ == '__main__':
     loader = image_loader.ImageLoader(input_dir)
 
     processing.run(loader)
-    processing.show_frames(14)
+    processing.show_frames(min(14, len(loader)-1))
     for step_name in ("input", "edge", "binary", "blobfilter", "morph"):
         processing.save_frame_comp(output_dir, 14, (step_name,))
     # processing.save_frame_comp(

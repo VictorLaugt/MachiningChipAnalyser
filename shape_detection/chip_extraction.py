@@ -174,10 +174,10 @@ if __name__ == '__main__':
     processing.run(loader)
 
     # ---- visualization
-    processing.show_frames(14)
+    processing.show_frames(min(14, len(loader)-1))
     # processing.show_video_comp(("input", "chipextraction"))
 
-    processing.show_frame_comp(14, ("morph", "chipextraction"))
+    processing.show_frame_comp(min(14, len(loader)-1), ("morph", "chipextraction"))
     processing.save_frame_comp(output_dir, 14, ("morph",))
     processing.save_frame_comp(output_dir, 14, ("chipextraction",))
     # processing.save_videos(output_dir)

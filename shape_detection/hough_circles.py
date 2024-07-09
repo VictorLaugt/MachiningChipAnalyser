@@ -76,6 +76,6 @@ if __name__ == '__main__':
     loader = image_loader.ImageLoader(input_dir)
 
     processing.run(loader)
-    processing.show_frame_comp(25, ("morph", "circles"))
+    processing.show_frame_comp(min(25, len(loader)-1), ("morph", "circles"))
     processing.show_video_comp(("morph", "circles"))
     processing.save_videos(output_dir)

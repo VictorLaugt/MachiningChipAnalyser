@@ -27,6 +27,6 @@ if __name__ == '__main__':
     loader = image_loader.ImageLoader(input_dir)
 
     processing.run(loader)
-    processing.show_frames(43)
+    processing.show_frames(min(43, len(loader)-1))
     processing.show_videos()
     processing.save_videos(output_dir)
