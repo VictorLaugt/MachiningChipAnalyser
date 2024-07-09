@@ -31,10 +31,10 @@ nearest_edge_idx: Array(N)<int32> = argmin(dist_edge_pt, axis=0)
 //     nearest_edge_idx[j] = argmin(dist_edge_pt[:, j])
 
 
-// O(H*mean(G))
+// O(hull_length * mean(G))
 // measure the thickness of the chip along its curve
-chip_thickness = new MutableSequence<float32>()
-chip_inside_pts = new MutableSequence<Point>()
+chip_thickness = new MutableSequence<float32>
+chip_inside_pts = new MutableSequence<Point>
 
 for i in range(H-1):
     edge: Line = edge_lines[i]
