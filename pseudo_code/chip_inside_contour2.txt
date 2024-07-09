@@ -21,7 +21,7 @@ for i in range(H-1):
 
 
 // O(H*N)
-nearest_edge_idx: Array(N)<int32> = argmin(dist_edge_pt, axis=0)
+nearest_edge_idx: Array(N)<int32> = argmin(dist_edge_pt, axis=1)
 // nearest_edge_idx = new Array(N)<int32>
 // for j in range(N):
 //     nearest_edge_idx[j] = argmin(dist_edge_pt[:, j])
