@@ -18,10 +18,16 @@ processing.add("edge", lambda img: cv.morphologyEx(img, cv.MORPH_GRADIENT, cv.ge
 
 
 if __name__ == '__main__':
+    import os
     from pathlib import Path
     import image_loader
 
-    input_dir = Path("imgs", "vertical")
+    input_dir_str = os.environ.get("INPUT_DIR")
+    if input_dir_str is not None:
+        input_dir = Path(os.environ["INPUT_DIR"])
+    else:
+        input_dir = Path("imgs", "vertical")
+
     output_dir = Path("results", "norm_tresh_morphedge")
     loader = image_loader.ImageLoader(input_dir)
 

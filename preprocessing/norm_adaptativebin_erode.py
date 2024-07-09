@@ -22,10 +22,16 @@ processing.add("morph", lambda img: cv.erode(img, cv.getStructuringElement(cv.MO
 
 
 if __name__ == '__main__':
+    import os
     from pathlib import Path
     import image_loader
 
-    input_dir = Path("imgs", "vertical")
+    input_dir_str = os.environ.get("INPUT_DIR")
+    if input_dir_str is not None:
+        input_dir = Path(os.environ["INPUT_DIR"])
+    else:
+        input_dir = Path("imgs", "vertical")
+
     output_dir = Path("results", "norm_adaptativebin_erode")
     loader = image_loader.ImageLoader(input_dir)
 
