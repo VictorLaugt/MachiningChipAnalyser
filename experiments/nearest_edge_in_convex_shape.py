@@ -28,48 +28,33 @@ def classify_by_nearest_edge(points: PointArray, edge_lines: Sequence[Line]) -> 
 
 
 if __name__ == '__main__':
-    points = ...
-    edge_lines = ...
-    groups = points[classify_by_nearest_edge(points, edge_lines)]
-
-    for edge, pts in zip(edge_lines, groups):
-        ...
-
-
-
-
-if __name__ == '__main__':
-    blue = (255, 0, 0)
-    green = (0, 255, 0)
-    red = (0, 0, 255)
-    colors = np.array(((127, 0, 0), (0, 127, 0), (0, 0, 127)))
-
     h, w = 500, 900
     img = np.zeros((h, w, 3), dtype=np.uint8)
 
-    factor = 50.
-    rho_0, theta_0 = factor * 4 * 3**0.5, np.pi/4
-    rho_1, theta_1 = factor * 3, np.pi/2
-    rho_2, theta_2 = factor * -11.25**0.5, -np.pi/3 + np.pi
+    edge_points = np.array([[653, 183], [591, 147], [341, 149], [8, 482]]).reshape(-1, 1, 2)
 
-    line_0 = (rho_0, np.cos(theta_0), np.sin(theta_0))
-    line_1 = (rho_1, np.cos(theta_1), np.sin(theta_1))
-    line_2 = (rho_2, np.cos(theta_2), np.sin(theta_2))
+    edge_lines = []
+    for i in range(len(edge_points)-1):
+        a, b = edge_points[i, 0], edge_points[i+1, 0]
+        edge_lines.append(geometry.line_from_two_points(a, b))
 
-    x, y = np.meshgrid(np.arange(0, w), np.arange(0, h))
-    pts = np.column_stack((x.flatten(), y.flatten())).reshape(-1, 1, 2)
-    pts = geometry.above_lines(pts, (line_0, line_1, line_2), (0, 0, 0))
+    n_points = 1000
+    points = np.column_stack((
+        np.random.randint(0, w + 1, n_points),
+        np.random.randint(0, h + 1, n_points)
+    )).reshape(-1, 1, 2)
 
-    dist_0 = line_points_distance(pts, line_0)
-    dist_1 = line_points_distance(pts, line_1)
-    dist_2 = line_points_distance(pts, line_2)
 
-    nearest_edge_indices = np.argmin((dist_0, dist_1, dist_2), axis=0)
-    img[pts[:, 0, 1], pts[:, 0, 0]] = colors[nearest_edge_indices]
+    labels = classify_by_nearest_edge(points, edge_lines)
+    groups = [points[np.where(labels == lbl)] for lbl in range(len(edge_lines))]
 
-    geometry.draw_line(img, line_0, blue, 10)
-    geometry.draw_line(img, line_1, green, 10)
-    geometry.draw_line(img, line_2, red, 10)
+    group_colors = ((127, 0, 0), (0, 127, 0), (0, 0, 127))
+    edge_colors = ((255, 0, 0), (0, 255, 0), (0, 0, 255))
+    for color, group in zip(group_colors, groups):
+        for pt in group:
+            cv.circle(img, (pt[0, 0], pt[0, 1]), 3, color, -1)
+    for color, edge in zip(edge_colors, edge_lines):
+        geometry.draw_line(img, edge, color, 5)
 
     cv.imshow('img', img)
     while cv.waitKey(0) != 113:

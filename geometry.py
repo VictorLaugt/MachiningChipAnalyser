@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import TypeVar, Iterable
     T = TypeVar('T', int, float, np.ndarray)
-    PointArray = TypeVar('PointArray', bound=np.ndarray[float])  # ~ (n, 1, 2) dtype=int32
+    PointArray = TypeVar('PointArray', bound=np.ndarray)  # ~ (n, 1, 2)
     Line = tuple[float, float, float]  # (rho, xn, yn), xn = cos(theta), yn = sin(theta)
 
 import cv2 as cv
@@ -57,6 +57,15 @@ def parallel(line: Line, x: float, y: float) -> Line:
     return (x*xn + y*yn, xn, yn)
 
 
+def line_from_two_points(a: tuple[float, float], b: tuple[float, float]) -> Line:
+    """Return the line passing through the two points a and b."""
+    (xa, ya), (xb, yb) = a, b
+    xn, yn = yb - ya, xa - xb
+    norm = np.linalg.norm((xn, yn))
+    xn, yn = xn / norm, yn / norm
+    return (xa*xn + ya*yn, xn, yn)
+
+
 def above_lines(points: PointArray, lines: Iterable[Line], margins: Iterable[int]) -> PointArray:
     """Keeps only the points above the lines with a margin."""
     x, y = points[:, 0, 0], points[:, 0, 1]
@@ -100,9 +109,9 @@ def line_furthest_point(points: PointArray, line: Line) -> tuple[int, float]:
 def intersect_line(line0: Line, line1: Line) -> tuple[int, int]:
     """Compute the intersection points of two lines."""
     (rho0, xn0, yn0), (rho1, xn1, yn1) = line0, line1
-    denominator = yn0*xn1 - xn0*yn1
+    det = yn0*xn1 - xn0*yn1
     return (
-        int((rho1*yn0 - rho0*yn1) / denominator),
-        int((rho0*xn1 - rho1*xn0) / denominator)
+        int((rho1*yn0 - rho0*yn1) / det),
+        int((rho0*xn1 - rho1*xn0) / det)
     )
 
