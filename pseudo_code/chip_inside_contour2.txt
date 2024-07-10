@@ -39,7 +39,7 @@ chip_inside_pts = new MutableSequence<Point>
 for i in range(H-1):
     edge: Line = edge_lines[i]
     for e in rasterized_line(edge):
-        selected_pts: Array(G, 1, 2)<int32> = ... // raycast selection in the group of index i
+        selected_pts: Array(G, 1, 2)<int32> = ... // raycast selection in the group of index i, from the point e
         if G > 0:
             distances: Array(G)<float32> = distance_vectorized(selected_pts, edge)
             inside_pt_idx: int = argmax(distances)

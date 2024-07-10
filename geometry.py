@@ -59,11 +59,17 @@ def parallel(line: Line, x: float, y: float) -> Line:
 
 def line_from_two_points(a: tuple[float, float], b: tuple[float, float]) -> Line:
     """Return the line passing through the two points a and b."""
-    (xa, ya), (xb, yb) = a, b
-    xn, yn = yb - ya, xa - xb
-    norm = np.linalg.norm((xn, yn))
-    xn, yn = xn / norm, yn / norm
-    return (xa*xn + ya*yn, xn, yn)
+    xa, ya = a
+    xb, yb = b
+
+    dy = yb - ya
+    dx = xb - xa
+
+    norm = np.linalg.norm((-dy, dx))
+    xn, yn = -dy / norm, dx / norm
+    rho = xn * xa + yn * ya
+
+    return (rho, xn, yn)
 
 
 def above_lines(points: PointArray, lines: Iterable[Line], margins: Iterable[int]) -> PointArray:
