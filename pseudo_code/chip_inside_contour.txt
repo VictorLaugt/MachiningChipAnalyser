@@ -2,8 +2,8 @@ type Point = Tuple<int32, int32>
 type Line = Tuple<float32, float32, float32>
 
 
-chip_hull_pts: Array(H, 1, 2)<int32> = ...
 chip_pts: Array(N, 1, 2)<int32> = ...
+chip_hull_pts: Array(H, 1, 2)<int32> = ...
 
 
 // O(H)
@@ -42,7 +42,7 @@ thickness = new HashMap<Point, float32>
 for j in range(N):
     p = chip_pts[j, 0, :]
     nearest_edge = edge_lines[nearest_edge_idx[j]]
-    dist, e = orthogonal_projection(*p, nearest_edge)
+    dist, e = orthogonal_projection(p, nearest_edge)
 
     max_dist = thickness.get(e, -1.0)
     if dist > max_dist:

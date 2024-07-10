@@ -2,9 +2,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import TypeVar, Iterable
+    Point = tuple[int, int]
+    Line = tuple[float, float, float]  # (rho, xn, yn), xn = cos(theta), yn = sin(theta)
     T = TypeVar('T', int, float, np.ndarray)
     PointArray = TypeVar('PointArray', bound=np.ndarray)  # ~ (n, 1, 2)
-    Line = tuple[float, float, float]  # (rho, xn, yn), xn = cos(theta), yn = sin(theta)
 
 import cv2 as cv
 import numpy as np
@@ -26,8 +27,19 @@ def rotate(x: T, y: T, angle: T) -> tuple[T, T]:
 def orthogonal_projection(x: T, y: T, line: Line) -> tuple[T, T]:
     """Compute the orthogonal projection of a point on a line."""
     rho, xn, yn = line
-    dist = xn*x + yn*y - rho
-    return (x - dist*xn, y - dist*yn)
+    signed_dist = xn*x + yn*y - rho
+    return (x - signed_dist*xn, y - signed_dist*yn)
+
+
+def dist_orthogonal_projection(p: Point, line: Line) -> tuple[float, Point]:
+    """Return the distance of a point from a line and its orthogonal projection
+    on the line.
+    """
+    rho, xn, yn = line
+    x, y = p
+    signed_dist = xn*x + yn*y - rho
+    proj = (x - signed_dist*xn, y - signed_dist*yn)
+    return (np.abs(signed_dist), proj)
 
 
 def standard_polar_param(rho: float, theta: float) -> tuple[float, float]:
@@ -57,7 +69,7 @@ def parallel(line: Line, x: float, y: float) -> Line:
     return (x*xn + y*yn, xn, yn)
 
 
-def line_from_two_points(a: tuple[float, float], b: tuple[float, float]) -> Line:
+def line_from_two_points(a: Point, b: Point) -> Line:
     """Return the line passing through the two points a and b."""
     xa, ya = a
     xb, yb = b
@@ -70,6 +82,12 @@ def line_from_two_points(a: tuple[float, float], b: tuple[float, float]) -> Line
     rho = xn * xa + yn * ya
 
     return (rho, xn, yn)
+
+
+def line_points_distance(points: PointArray, line: Line) -> np.ndarray[float]:
+    rho, xn, yn = line
+    x, y = points[:, 0, 0], points[:, 0, 1]
+    return np.abs(xn*x + yn*y - rho)
 
 
 def above_lines(points: PointArray, lines: Iterable[Line], margins: Iterable[int]) -> PointArray:
@@ -112,7 +130,7 @@ def line_furthest_point(points: PointArray, line: Line) -> tuple[int, float]:
     return i, distances[i]
 
 
-def intersect_line(line0: Line, line1: Line) -> tuple[int, int]:
+def intersect_line(line0: Line, line1: Line) -> Point:
     """Compute the intersection points of two lines."""
     (rho0, xn0, yn0), (rho1, xn1, yn1) = line0, line1
     det = yn0*xn1 - xn0*yn1

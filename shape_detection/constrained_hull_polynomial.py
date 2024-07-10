@@ -1,7 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-import preprocessing.log_tresh_erode_blobfilter
 if TYPE_CHECKING:
     from geometry import PointArray
     from chip_extraction import MainFeatures
@@ -178,7 +177,7 @@ class ChipFeatureCollector:
         self.chip_features.append(chip_ft)
         self.contact_lengths.append(self.scale * np.linalg.norm((xc-xi, yc-yi)))
 
-    def extract_and_render(self, binary_img: np.ndarray, background: np.ndarray=None) -> np.ndarray:
+    def extract_and_render(self, binary_img: np.ndarray, background: np.ndarray|None=None) -> np.ndarray:
         main_ft, chip_ft = extract_chip_features(binary_img)
         self.collect(main_ft, chip_ft)
         if background is None:
