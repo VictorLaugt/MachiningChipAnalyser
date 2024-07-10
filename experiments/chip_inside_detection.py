@@ -65,6 +65,14 @@ if __name__ == '__main__':
         pass
     cv.destroyAllWindows()
 
+
+    from scipy.signal import savgol_filter
+    window_size_sg = 15
+    poly_order = 2
+    smoothed_thickness = savgol_filter(inside_ft.thickness, window_size_sg, poly_order)
+
+    plt.figure(figsize=(14, 9))
     plt.plot(inside_ft.thickness)
+    plt.plot(smoothed_thickness)
     plt.grid()
     plt.show()
