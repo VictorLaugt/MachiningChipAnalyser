@@ -13,7 +13,6 @@ from shape_detection.constrained_hull_polynomial import (
 from shape_detection.chip_extraction import extract_main_features
 
 from dataclasses import dataclass
-from collections import OrderedDict
 
 import numpy as np
 import cv2 as cv
