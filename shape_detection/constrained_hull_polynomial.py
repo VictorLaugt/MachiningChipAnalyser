@@ -8,6 +8,7 @@ if TYPE_CHECKING:
 from dataclasses import dataclass
 
 import sys
+import matplotlib.pyplot as plt
 
 import geometry
 from shape_detection.chip_extraction import extract_main_features
@@ -189,11 +190,19 @@ class ChipFeatureCollector:
             render_chip_features(ft_repr, main_ft, chip_ft)
         return ft_repr
 
+    def show_contact_length_graph(self) -> None:
+        plt.figure(figsize=(10, 5))
+        plt.plot(range(1, len(self.contact_lengths)+1), self.contact_lengths, 'x-')
+        plt.xlabel('frame')
+        plt.ylabel('contact length (µm)')
+        plt.grid()
+        plt.show()
+
+
 
 if __name__ == '__main__':
     import os
     from pathlib import Path
-    import matplotlib.pyplot as plt
 
     import image_loader
     import preprocessing.log_tresh_blobfilter_erode
@@ -239,10 +248,4 @@ if __name__ == '__main__':
 
     processing.show_frame_comp(min(15, len(loader)-1), ("chipcurve", "input"))
     processing.show_video_comp(("chipcurve", "input"))
-
-    plt.figure(figsize=(10, 5))
-    plt.plot(range(1, len(collector.contact_lengths)+1), collector.contact_lengths, 'x-')
-    plt.xlabel('frame')
-    plt.ylabel('contact length (µm)')
-    plt.grid()
-    plt.show()
+    collector.show_contact_length_graph()

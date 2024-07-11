@@ -54,6 +54,7 @@ def render_chip_inside(binary_img: np.ndarray) -> tuple[ChipInsideFeatures, np.n
 if __name__ == '__main__':
     from pathlib import Path
     import matplotlib.pyplot as plt
+    from scipy.signal import savgol_filter
 
     img = cv.imread(str(Path('experiments', 'preprocessed_machining_image.png')))
     binary_img = cv.cvtColor(img, cv.COLOR_RGB2GRAY)
@@ -66,8 +67,6 @@ if __name__ == '__main__':
         pass
     cv.destroyAllWindows()
 
-
-    from scipy.signal import savgol_filter
     window_size_sg = 15
     poly_order = 2
     smoothed_thickness = savgol_filter(inside_ft.thickness, window_size_sg, poly_order)

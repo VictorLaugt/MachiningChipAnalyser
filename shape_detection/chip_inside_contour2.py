@@ -5,6 +5,10 @@ if TYPE_CHECKING:
     from geometry import Line, Point, PointArray
     from shape_detection.chip_extraction import MainFeatures
 
+import matplotlib.pyplot as plt
+import matplotlib.animation as anim
+import scipy.signal as scs
+
 import geometry
 from shape_detection.constrained_hull_polynomial import (
     compute_chip_convex_hull,
@@ -141,11 +145,75 @@ class InsideFeatureCollector:
             render_inside_features(ft_repr, main_ft, inside_ft)
         return ft_repr
 
+    # def chip_smoothed_thicknesses(self, frame_index: int) -> Sequence[float]:
+    #     return scs.savgol_filter(
+    #         self.chip_thickness_sequences[frame_index],
+    #         window_length=15,
+    #         polyorder=2
+    #     ).tolist()
+
+    def chip_smoothed_thicknesses(self, frame_index: int) -> Sequence[float]:
+        return scs.medfilt(
+            self.chip_thickness_sequences[frame_index],
+            kernel_size=11
+        ).tolist()
+
+    def _init_graph(self, ax, frame_index, padding=0):
+        pad = padding * [0.] if padding != 0 else []
+        (line,) = ax.plot(self.chip_thickness_sequences[frame_index] + pad, '-x')
+        (smoothed_line,) = ax.plot(self.chip_smoothed_thicknesses(frame_index) + pad, '-x')
+        ax.set_xlabel('inside contour point index')
+        ax.set_ylabel('thickness along the chip (µm)')
+        ax.grid(True)
+        return line, smoothed_line
+
+    def show_thickness_graph(self, frame_index):
+        fig, ax = plt.subplots(figsize=(16, 9))
+        self._init_graph(ax, frame_index)
+        plt.show()
+
+    def show_thickness_animated_graph(self):
+        max_seq_length = max(len(seq) for seq in self.chip_thickness_sequences)
+        initial_padding = max_seq_length - len(self.chip_thickness_sequences[0])
+
+        fig, ax = plt.subplots(figsize=(16, 9))
+        frame_text = ax.text(0.02, 0.95, '1', transform=ax.transAxes)
+        line, smoothed_line = self._init_graph(ax, 0, initial_padding)
+
+        play = True
+        skip_frame = False
+        frame_index = 0
+
+        def animate(_):
+            nonlocal frame_index, skip_frame
+            if play or skip_frame:
+                skip_frame = False
+                frame_index = (frame_index + 1) % len(self.chip_thickness_sequences)
+                pad = (max_seq_length - len(self.chip_thickness_sequences[frame_index])) * [0.]
+                line.set_ydata(self.chip_thickness_sequences[frame_index] + pad)
+                smoothed_line.set_ydata(self.chip_smoothed_thicknesses(frame_index) + pad)
+                frame_text.set_text(f"frame: {frame_index+1}")
+            return (line, smoothed_line, frame_text)
+
+        def on_press(event):
+            nonlocal frame_index, play, skip_frame
+            if event.key == ' ':
+                play = not play
+            elif event.key == '6':
+                skip_frame = True
+            elif event.key == '4':
+                frame_index = (frame_index - 2) % len(self.chip_thickness_sequences)
+                skip_frame = True
+
+        _animation = anim.FuncAnimation(fig, animate, interval=30, blit=True, frames=range(len(self.chip_thickness_sequences)))
+        fig.canvas.mpl_connect('key_press_event', on_press)
+        plt.show()
+
+
 
 if __name__ == '__main__':
     import os
     from pathlib import Path
-    import matplotlib.pyplot as plt
 
     import image_loader
     import preprocessing.log_tresh_blobfilter_erode
@@ -184,5 +252,5 @@ if __name__ == '__main__':
     # ---- visualization
     processing.show_frame_comp(min(15, len(loader)-1), ("chipinside", "morph"))
     processing.show_video_comp(("chipinside", "morph"))
-
-
+    # collector.show_thickness_graph(min(15, len(loader)-1))
+    collector.show_thickness_animated_graph()
