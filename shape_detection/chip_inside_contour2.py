@@ -17,6 +17,7 @@ from collections import OrderedDict
 
 import numpy as np
 import cv2 as cv
+import skimage as ski
 
 
 
@@ -26,31 +27,53 @@ class ChipInsideFeatures:
     inside_contour_pts: Sequence[Point]
 
 
-def create_edge_lines(chip_curve_pts: PointArray) -> Sequence[Line]:
-    edge_lines = []
-    for i in range(len(chip_curve_pts)-1):
-        a, b = chip_curve_pts[i, 0, :], chip_curve_pts[i+1, 0, :]
-        edge_lines.append(geometry.line_from_two_points(a, b))
-    return edge_lines
+def direct_rotated_90(p: Point) -> Point:
+    x, y = p
+    return (-y, x)
+
+def indirect_rotated_90(p: Point) -> Point:
+    x, y = p
+    return (y, -x)
+
+def normalized(vector: Point) -> Point:
+    x, y = vector
+    norm = np.linalg.norm(vector)
+    return (x / norm, y / norm)
 
 
-def compute_distance_edge_points(chip_pts: PointArray, edge_lines: Sequence[Line]) -> np.ndarray[float]:
-    # dist_edge_pt[i, j] == distance from edge_lines[i] to chip_pts[j]
-    dist_edge_pt = np.empty((len(edge_lines), len(chip_pts)), dtype=np.float32)
-    for i, edge in enumerate(edge_lines):
-        dist_edge_pt[i, :] = geometry.line_points_distance(chip_pts, edge)
-    return dist_edge_pt
+def rasterized_line(p0: Point, p1: Point, img_height: int, img_width: int) -> tuple[np.ndarray[int], np.ndarray[int]]:
+    line_x, line_y = ski.draw.line(*p0, *p1)
+    inside_mask = (0 <= line_x) & (line_x < img_width) & (0 <= line_y) & (line_y < img_height)
+    return line_x[inside_mask], line_y[inside_mask]
 
 
 def find_inside_contour(
-            chip_pts: PointArray,
-            edge_lines: Sequence[Line],
-            nearest_edge_idx: np.ndarray[int],
-            thickness_majorant: float
+    binary_img: np.ndarray,
+    chip_curve_pts: PointArray,
+    thickness_majorant: int
         ) -> ChipInsideFeatures:
+    h, w = binary_img.shape
     thickness = []
     inside_contour_pts = []
-    ...
+
+    for i in range(len(chip_curve_pts)-1):
+        a, b = chip_curve_pts[i, 0, :], chip_curve_pts[i+1, 0, :]
+        n = np.asarray(normalized(indirect_rotated_90(b - a)))
+        c, d = (a + thickness_majorant*n).astype(np.int32), (b + thickness_majorant*n).astype(np.int32)
+
+        for p0, p1 in zip(zip(*rasterized_line(a, b, h, w)), zip(*rasterized_line(c, d, h, w))):
+            ray_x, ray_y = rasterized_line(p0, p1, h, w)
+
+            selected_idx = np.nonzero(binary_img[ray_y, ray_x])[0]
+            if len(selected_idx) > 0:
+                selected_x, selected_y = ray_x[selected_idx], ray_y[selected_idx]
+
+                distances = np.linalg.norm((selected_x - p0[0], selected_y - p0[1]), axis=0)
+                furthest_idx = np.argmax(distances)
+
+                thickness.append(distances[furthest_idx])
+                inside_contour_pts.append((selected_x[furthest_idx], selected_y[furthest_idx]))
+
     return ChipInsideFeatures(thickness, inside_contour_pts)
 
 
@@ -64,10 +87,7 @@ def extract_chip_inside_contour(binary_img: np.ndarray) -> tuple[MainFeatures, C
     chip_hull_pts = compute_chip_convex_hull(main_ft, chip_pts)
     chip_curve_pts = extract_chip_curve_points(main_ft, chip_hull_pts)
 
-    edge_lines = create_edge_lines(chip_curve_pts)
-    dist_edge_pt = compute_distance_edge_points(chip_pts, edge_lines)
-    nearest_edge_idx = np.argmin(dist_edge_pt, axis=0)
-    inside_ft = find_inside_contour(chip_pts, edge_lines, nearest_edge_idx, thickness_majorant=125.)
+    inside_ft = find_inside_contour(binary_img, chip_curve_pts, thickness_majorant=125)
 
     return main_ft, inside_ft
 

@@ -2,8 +2,9 @@ type Point = Tuple<int32, int32>
 type Line = Tuple<float32, float32, float32>
 
 
-chip_hull_pts: Array(H, 1, 2)<int32> = ...
-chip_pts: Array(N, 1, 2)<int32> = ...
+Inputs:
+    chip_hull_pts: Array(H, 1, 2)<int32>
+    chip_pts: Array(N, 1, 2)<int32>
 
 
 // O(H)
@@ -52,3 +53,7 @@ for j in range(N):
 chip_thickness = new Sequence<float32>(thickness.values())
 chip_inside_contour_pts = new Sequence<Point>(opposite.values())
 
+
+Outputs:
+    chip_thickness: Sequence<float32>
+    chip_inside_contour_pts: Sequence<Point>

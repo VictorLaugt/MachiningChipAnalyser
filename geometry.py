@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 import cv2 as cv
 import numpy as np
 
+
 def draw_line(img: np.ndarray, line: Line, color: int, thickness: int) -> None:
     """Draw on img a line."""
     rho, xn, yn = line
@@ -29,17 +30,6 @@ def orthogonal_projection(x: T, y: T, line: Line) -> tuple[T, T]:
     rho, xn, yn = line
     signed_dist = xn*x + yn*y - rho
     return (x - signed_dist*xn, y - signed_dist*yn)
-
-
-def dist_orthogonal_projection(p: Point, line: Line) -> tuple[float, Point]:
-    """Return the distance of a point from a line and its orthogonal projection
-    on the line.
-    """
-    rho, xn, yn = line
-    x, y = p
-    signed_dist = xn*x + yn*y - rho
-    proj = (x - signed_dist*xn, y - signed_dist*yn)
-    return (np.abs(signed_dist), proj)
 
 
 def standard_polar_param(rho: float, theta: float) -> tuple[float, float]:
@@ -69,22 +59,7 @@ def parallel(line: Line, x: float, y: float) -> Line:
     return (x*xn + y*yn, xn, yn)
 
 
-def line_from_two_points(a: Point, b: Point) -> Line:
-    """Return the line passing through the two points a and b."""
-    xa, ya = a
-    xb, yb = b
-
-    dy = yb - ya
-    dx = xb - xa
-
-    norm = np.linalg.norm((-dy, dx))
-    xn, yn = -dy / norm, dx / norm
-    rho = xn * xa + yn * ya
-
-    return (rho, xn, yn)
-
-
-def line_points_distance(points: PointArray, line: Line) -> np.ndarray[float]:
+def pts2line_dist(points: PointArray, line: Line) -> np.ndarray[float]:
     rho, xn, yn = line
     x, y = points[:, 0, 0], points[:, 0, 1]
     return np.abs(xn*x + yn*y - rho)

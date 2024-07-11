@@ -26,11 +26,33 @@ class ChipInsideFeatures:
     inside_contour_pts: Sequence[Point]
 
 
+def line_from_two_points(a: Point, b: Point) -> Line:
+    xa, ya = a
+    xb, yb = b
+
+    dy = yb - ya
+    dx = xb - xa
+
+    norm = np.linalg.norm((-dy, dx))
+    xn, yn = -dy / norm, dx / norm
+    rho = xn * xa + yn * ya
+
+    return (rho, xn, yn)
+
+
+def dist_orthogonal_projection(p: Point, line: Line) -> tuple[float, Point]:
+    rho, xn, yn = line
+    x, y = p
+    signed_dist = xn*x + yn*y - rho
+    proj = (x - signed_dist*xn, y - signed_dist*yn)
+    return (np.abs(signed_dist), proj)
+
+
 def create_edge_lines(chip_curve_pts: PointArray) -> Sequence[Line]:
     edge_lines = []
     for i in range(len(chip_curve_pts)-1):
         a, b = chip_curve_pts[i, 0, :], chip_curve_pts[i+1, 0, :]
-        edge_lines.append(geometry.line_from_two_points(a, b))
+        edge_lines.append(line_from_two_points(a, b))
     return edge_lines
 
 
@@ -38,7 +60,7 @@ def compute_distance_edge_points(chip_pts: PointArray, edge_lines: Sequence[Line
     # dist_edge_pt[i, j] == distance from edge_lines[i] to chip_pts[j]
     dist_edge_pt = np.empty((len(edge_lines), len(chip_pts)), dtype=np.float32)
     for i, edge in enumerate(edge_lines):
-        dist_edge_pt[i, :] = geometry.line_points_distance(chip_pts, edge)
+        dist_edge_pt[i, :] = geometry.pts2line_dist(chip_pts, edge)
     return dist_edge_pt
 
 
