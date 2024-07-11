@@ -2,8 +2,8 @@ type Point = Tuple<int32, int32>
 type Line = Tuple<float32, float32, float32>
 
 
-chip_pts: Array(N, 1, 2)<int32> = ...
 chip_hull_pts: Array(H, 1, 2)<int32> = ...
+chip_pts: Array(N, 1, 2)<int32> = ...
 
 
 // O(H)
@@ -34,10 +34,10 @@ nearest_edge_idx: Array(N)<int32> = argmin(dist_edge_pt, axis=0)
 // O(N)
 // measure the thickness of the chip along its curve
 // if `e` is a point from an edge, then
-// `opposite[e]` is the closest point from `chip_pts` in front of `e` and
+// `opposite[e]` is the furthest point from `chip_pts` in front of `e` and
 // `thickness[e]` is its distance from `e`
-opposite = new HashMap<Point, Point>
-thickness = new HashMap<Point, float32>
+opposite = new OrderedHashMap<Point, Point>
+thickness = new OrderedHashMap<Point, float32>
 
 for j in range(N):
     p = chip_pts[j, 0, :]

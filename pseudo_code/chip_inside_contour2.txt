@@ -15,7 +15,7 @@ for i in range(H-1):
 
 
 // O(H*N)
-// compute distance from each edge to echo chip point
+// compute distance from each edge to each chip point
 dist_edge_pt = new Array(H-1, N)<float32>
 for i in range(H-1):
     dist_edge_pt[i, :] = distance_vectorized(chip_pts, edge_lines[i])
@@ -31,7 +31,7 @@ nearest_edge_idx: Array(N)<int32> = argmin(dist_edge_pt, axis=0)
 //     nearest_edge_idx[j] = argmin(dist_edge_pt[:, j])
 
 
-// O(hull_length * mean(G))
+// O(hull_length * thickness_majorant)
 // measure the thickness of the chip along its curve
 chip_thickness = new MutableSequence<float32>
 chip_inside_pts = new MutableSequence<Point>
@@ -39,9 +39,9 @@ chip_inside_pts = new MutableSequence<Point>
 for i in range(H-1):
     edge: Line = edge_lines[i]
     for e in rasterized_line(edge):
-        selected_pts: Array(G, 1, 2)<int32> = ... // raycast selection in the group of index i, from the point e
-        if G > 0:
-            distances: Array(G)<float32> = distance_vectorized(selected_pts, edge)
+        selected_pts: Array(S, 1, 2)<int32> = ... // raycast selection in the group of index i, from the point e
+        if S > 0:
+            distances: Array(S)<float32> = distance_vectorized(selected_pts, edge)
             inside_pt_idx: int = argmax(distances)
             chip_inside_pts.append(selected_pts[inside_pt_idx])
             chip_thickness.append(distances[inside_pt_idx])

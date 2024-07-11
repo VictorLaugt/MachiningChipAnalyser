@@ -42,32 +42,16 @@ def compute_distance_edge_points(chip_pts: PointArray, edge_lines: Sequence[Line
     return dist_edge_pt
 
 
-def round_to_nearest(x, s):
-    return round(x / s) * s
-
 def find_inside_contour(
             chip_pts: PointArray,
             edge_lines: Sequence[Line],
             nearest_edge_idx: np.ndarray[int],
             thickness_majorant: float
         ) -> ChipInsideFeatures:
-    step = 2.5  # constant to reduce the noise in the thickness measurement
-    opposite = OrderedDict()
-    thickness = OrderedDict()
-    last_edge_idx = len(edge_lines) - 1
-
-    for j in range(len(chip_pts)):
-        p = chip_pts[j, 0, :]
-        edge_idx = nearest_edge_idx[j]
-        if edge_idx < last_edge_idx:
-            dist, (xe, ye) = geometry.dist_orthogonal_projection(p, edge_lines[edge_idx])
-            e = (round_to_nearest(xe, step), round_to_nearest(ye, step))
-            max_dist = thickness.get(e, -1.)
-            if max_dist < dist < thickness_majorant:
-                thickness[e] = dist
-                opposite[e] = p
-
-    return ChipInsideFeatures(list(thickness.values()), list(opposite.values()))
+    thickness = []
+    inside_pts = []
+    ...
+    return ChipInsideFeatures(thickness, inside_pts)
 
 
 def extract_chip_inside_contour(binary_img: np.ndarray) -> tuple[MainFeatures, ChipInsideFeatures]:
