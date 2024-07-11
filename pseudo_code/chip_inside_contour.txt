@@ -50,5 +50,5 @@ for j in range(N):
         opposite[e] = p
 
 chip_thickness = new Sequence<float32>(thickness.values())
-chip_inside_pts = new Sequence<Point>(opposite.values())
+chip_inside_contour_pts = new Sequence<Point>(opposite.values())
 

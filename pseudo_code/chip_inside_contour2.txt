@@ -9,7 +9,7 @@ chip_pts: Array(N, 1, 2)<int32> = ...
 // O(hull_length * thickness_majorant)  ~=  O(N)
 // measure the thickness of the chip along its curve
 chip_thickness = new MutableSequence<float32>
-chip_inside_pts = new MutableSequence<Point>
+chip_inside_contour_pts = new MutableSequence<Point>
 
 for i in range(H-1):
     edge: Line = edge_lines[i]
@@ -18,5 +18,5 @@ for i in range(H-1):
         if S > 0:
             distances: Array(S)<float32> = distance_vectorized(selected_pts, edge)
             inside_pt_idx: int = argmax(distances)
-            chip_inside_pts.append(selected_pts[inside_pt_idx])
+            chip_inside_contour_pts.append(selected_pts[inside_pt_idx])
             chip_thickness.append(distances[inside_pt_idx])
