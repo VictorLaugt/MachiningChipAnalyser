@@ -23,7 +23,7 @@ import cv2 as cv
 @dataclass
 class ChipInsideFeatures:
     thickness: Sequence[float]
-    inside_pts: Sequence[Point]
+    inside_contour_pts: Sequence[Point]
 
 
 def create_edge_lines(chip_curve_pts: PointArray) -> Sequence[Line]:
@@ -49,9 +49,9 @@ def find_inside_contour(
             thickness_majorant: float
         ) -> ChipInsideFeatures:
     thickness = []
-    inside_pts = []
+    inside_contour_pts = []
     ...
-    return ChipInsideFeatures(thickness, inside_pts)
+    return ChipInsideFeatures(thickness, inside_contour_pts)
 
 
 def extract_chip_inside_contour(binary_img: np.ndarray) -> tuple[MainFeatures, ChipInsideFeatures]:
@@ -74,7 +74,7 @@ def extract_chip_inside_contour(binary_img: np.ndarray) -> tuple[MainFeatures, C
 
 def render_inside_features(render: np.ndarray, main_ft: MainFeatures, inside_ft: ChipInsideFeatures) -> None:
     """Draw a representation of features `main_ft` and `inside_ft` on image `render`."""
-    for x, y in inside_ft.inside_pts:
+    for x, y in inside_ft.inside_contour_pts:
         render[y, x] = (0, 0, 255)  # red
 
 

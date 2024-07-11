@@ -45,7 +45,7 @@ def render_chip_inside(binary_img: np.ndarray) -> tuple[ChipInsideFeatures, np.n
         cv.circle(ft_repr, pt, 3, color=green, thickness=-1)
     for edge in edge_lines:
         geometry.draw_line(ft_repr, edge, yellow, 1)
-    for x, y in inside_ft.inside_pts:
+    for x, y in inside_ft.inside_contour_pts:
         ft_repr[y, x] = red
 
     return inside_ft, ft_repr

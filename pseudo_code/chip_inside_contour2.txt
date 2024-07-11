@@ -6,32 +6,7 @@ chip_hull_pts: Array(H, 1, 2)<int32> = ...
 chip_pts: Array(N, 1, 2)<int32> = ...
 
 
-// O(H)
-// create edge lines
-edge_lines = new MutableSequence<Line>
-for i in range(H-1):
-    p0, p1 = chip_hull_pts[i, 0, :], chip_hull_pts[i+1, 0, :]
-    edge_lines.append(line_from_two_points(p0, p1))
-
-
-// O(H*N)
-// compute distance from each edge to each chip point
-dist_edge_pt = new Array(H-1, N)<float32>
-for i in range(H-1):
-    dist_edge_pt[i, :] = distance_vectorized(chip_pts, edge_lines[i])
-    // for j in range(N):
-    //     dist_edge_pt[i, j] = distance(chip_pts[j], edge_lines[i])
-
-
-// O(H*N)
-// find the nearest edge of each chip point
-nearest_edge_idx: Array(N)<int32> = argmin(dist_edge_pt, axis=0)
-// nearest_edge_idx = new Array(N)<int32>
-// for j in range(N):
-//     nearest_edge_idx[j] = argmin(dist_edge_pt[:, j])
-
-
-// O(hull_length * thickness_majorant)
+// O(hull_length * thickness_majorant)  ~=  O(N)
 // measure the thickness of the chip along its curve
 chip_thickness = new MutableSequence<float32>
 chip_inside_pts = new MutableSequence<Point>
@@ -45,7 +20,3 @@ for i in range(H-1):
             inside_pt_idx: int = argmax(distances)
             chip_inside_pts.append(selected_pts[inside_pt_idx])
             chip_thickness.append(distances[inside_pt_idx])
-
-
-
-
