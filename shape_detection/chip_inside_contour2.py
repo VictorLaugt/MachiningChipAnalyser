@@ -119,19 +119,37 @@ def render_inside_features(render: np.ndarray, main_ft: MainFeatures, inside_ft:
         render[y, x] = (0, 0, 255)  # red
 
 
+def erase_down_spikes(signal: Sequence[float], kernel_size:int) -> Sequence[float]:
+    assert kernel_size % 2 == 1, 'kernel_size must be odd'
+    off = kernel_size // 2
+    smoothed = []
+    for i in range(len(signal)):
+        values = sorted(signal[max(0, i-off):i+off+1])
+        median = values[len(values) // 2]
+        smoothed.append(max(signal[i], median))
+    return smoothed
+
+
 class InsideFeatureCollector:
     def __init__(self, scale: float=1.0):
         self.scale = scale
         self.inside_features: list[InsideFeatures] = []
         self.main_features: list[MainFeatures] = []
-        self.chip_thickness_sequences: list[Sequence[float]] = []
+        self.thickness_seqs: list[Sequence[float]] = []
+        self.smoothed_seqs: list[Sequence[float]] = []
+        self.extra_smoothed_seqs: list[Sequence[float]] = []
 
     def collect(self, main_ft: MainFeatures, inside_ft: InsideFeatures) -> None:
         self.main_features.append(main_ft)
         self.inside_features.append(inside_ft)
-        self.chip_thickness_sequences.append(
-            [self.scale * t for t in inside_ft.thickness]
-        )
+
+        signal = [self.scale * t for t in inside_ft.thickness]
+        smoothed = erase_down_spikes(signal, kernel_size=5)
+        extra_smoothed = scs.medfilt(smoothed, kernel_size=7)
+
+        self.thickness_seqs.append(signal)
+        self.smoothed_seqs.append(smoothed)
+        self.extra_smoothed_seqs.append(extra_smoothed)
 
     def extract_and_render(self, binary_img: np.ndarray, background: np.ndarray|None=None) -> np.ndarray:
         main_ft, inside_ft = extract_chip_inside_contour(binary_img)
@@ -145,70 +163,24 @@ class InsideFeatureCollector:
             render_inside_features(ft_repr, main_ft, inside_ft)
         return ft_repr
 
-    # def chip_smoothed_thicknesses(self, frame_index: int) -> Sequence[float]:
-    #     return scs.savgol_filter(
-    #         self.chip_thickness_sequences[frame_index],
-    #         window_length=15,
-    #         polyorder=2
-    #     ).tolist()
-
-    def chip_smoothed_thicknesses(self, frame_index: int) -> Sequence[float]:
-        return scs.medfilt(
-            self.chip_thickness_sequences[frame_index],
-            kernel_size=11
-        ).tolist()
-
-    def _init_graph(self, ax, frame_index, padding=0):
-        pad = padding * [0.] if padding != 0 else []
-        (line,) = ax.plot(self.chip_thickness_sequences[frame_index] + pad, '-x')
-        (smoothed_line,) = ax.plot(self.chip_smoothed_thicknesses(frame_index) + pad, '-x')
-        ax.set_xlabel('inside contour point index')
-        ax.set_ylabel('thickness along the chip (µm)')
+    def show_thickness_graph(self, frame_index: int) -> None:
+        fig, ax = plt.subplots(figsize=(16, 9))
+        ax.set_xlabel("inside contour point index")
+        ax.set_ylabel("thickness along the chip (µm)")
         ax.grid(True)
-        return line, smoothed_line
-
-    def show_thickness_graph(self, frame_index):
-        fig, ax = plt.subplots(figsize=(16, 9))
-        self._init_graph(ax, frame_index)
+        ax.plot(self.thickness_seqs[frame_index], '-x')
+        ax.plot(self.smoothed_seqs[frame_index], '-x')
+        ax.plot(self.extra_smoothed_seqs[frame_index], '-x')
         plt.show()
 
-    def show_thickness_animated_graph(self):
-        max_seq_length = max(len(seq) for seq in self.chip_thickness_sequences)
-        initial_padding = max_seq_length - len(self.chip_thickness_sequences[0])
-
-        fig, ax = plt.subplots(figsize=(16, 9))
-        frame_text = ax.text(0.02, 0.95, '1', transform=ax.transAxes)
-        line, smoothed_line = self._init_graph(ax, 0, initial_padding)
-
-        play = True
-        skip_frame = False
-        frame_index = 0
-
-        def animate(_):
-            nonlocal frame_index, skip_frame
-            if play or skip_frame:
-                skip_frame = False
-                frame_index = (frame_index + 1) % len(self.chip_thickness_sequences)
-                pad = (max_seq_length - len(self.chip_thickness_sequences[frame_index])) * [0.]
-                line.set_ydata(self.chip_thickness_sequences[frame_index] + pad)
-                smoothed_line.set_ydata(self.chip_smoothed_thicknesses(frame_index) + pad)
-                frame_text.set_text(f"frame: {frame_index+1}")
-            return (line, smoothed_line, frame_text)
-
-        def on_press(event):
-            nonlocal frame_index, play, skip_frame
-            if event.key == ' ':
-                play = not play
-            elif event.key == '6':
-                skip_frame = True
-            elif event.key == '4':
-                frame_index = (frame_index - 2) % len(self.chip_thickness_sequences)
-                skip_frame = True
-
-        _animation = anim.FuncAnimation(fig, animate, interval=30, blit=True, frames=range(len(self.chip_thickness_sequences)))
-        fig.canvas.mpl_connect('key_press_event', on_press)
-        plt.show()
-
+    def show_thickness_animated_graph(self) -> None:
+        from graph_animation import GraphAnimation
+        anim = GraphAnimation(
+            (self.thickness_seqs, self.smoothed_seqs, self.extra_smoothed_seqs),
+            "inside contour point index",
+            "thickness along the chip (µm)"
+        )
+        anim.play()
 
 
 if __name__ == '__main__':
