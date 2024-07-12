@@ -25,7 +25,7 @@ def render_chip_inside(binary_img: np.ndarray) -> tuple[ChipInsideFeatures, np.n
     yellow = (0, 255, 255)
     green = (0, 255, 0)
     ft_repr = np.zeros((binary_img.shape[0], binary_img.shape[1], 3), dtype=np.uint8)
-    # ft_repr[np.nonzero(binary_img)] = (255, 255, 255)
+    # ft_repr[binary_img > 0] = (255, 255, 255)
 
     main_ft = extract_main_features(binary_img)
 

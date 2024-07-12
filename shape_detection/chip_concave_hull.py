@@ -55,11 +55,11 @@ class ChipFeatureCollector:
     def __init__(self):
         pass
 
-    def extract_and_render(self, binary_img: np.ndarray, background: np.ndarray=None) -> np.ndarray:
+    def extract_and_render(self, binary_img: np.ndarray, background: np.ndarray|None=None) -> np.ndarray:
         main_ft, chip_hull_pts = extract_chip_features(binary_img)
         if background is None:
             ft_repr = np.zeros((binary_img.shape[0], binary_img.shape[1], 3), dtype=np.uint8)
-            ft_repr[np.nonzero(binary_img)] = (255, 255, 255)
+            ft_repr[binary_img > 0] = (255, 255, 255)
             render_chip_features(ft_repr, main_ft, chip_hull_pts)
         else:
             ft_repr = background.copy()

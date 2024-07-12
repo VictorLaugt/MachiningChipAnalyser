@@ -82,7 +82,7 @@ def find_inside_contour(
         p = chip_pts[j, 0, :]
         edge_idx = nearest_edge_idx[j]
         if edge_idx < last_edge_idx:
-            dist, (xe, ye) = geometry.dist_orthogonal_projection(p, edge_lines[edge_idx])
+            dist, (xe, ye) = dist_orthogonal_projection(p, edge_lines[edge_idx])
             e = (round_to_nearest(xe, step), round_to_nearest(ye, step))
             max_dist = thickness.get(e, -1.)
             if max_dist < dist < thickness_majorant:
@@ -121,7 +121,7 @@ def extract_and_render(binary_img: np.ndarray, background: np.ndarray|None=None)
     if background is None:
         ft_repr = np.zeros((binary_img.shape[0], binary_img.shape[1], 3), dtype=np.uint8)
         render_inside_features(ft_repr, main_ft, inside_ft)
-        # ft_repr[np.nonzero(binary_img)] = (255, 255, 255)
+        # ft_repr[binary_img > 0] = (255, 255, 255)
     else:
         ft_repr = background.copy()
         render_inside_features(ft_repr, main_ft, inside_ft)

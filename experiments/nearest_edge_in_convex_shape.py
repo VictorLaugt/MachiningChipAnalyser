@@ -2,13 +2,26 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Sequence
-    from geometry import PointArray, Line
+    from geometry import Line, Point, PointArray
 
 import numpy as np
 import cv2 as cv
 
 import geometry
 
+
+def line_from_two_points(a: Point, b: Point) -> Line:
+    xa, ya = a
+    xb, yb = b
+
+    dy = yb - ya
+    dx = xb - xa
+
+    norm = np.linalg.norm((-dy, dx))
+    xn, yn = -dy / norm, dx / norm
+    rho = xn * xa + yn * ya
+
+    return (rho, xn, yn)
 
 def line_points_distance(points: PointArray, line: Line) -> np.ndarray[float]:
     rho, xn, yn = line
@@ -36,7 +49,7 @@ if __name__ == '__main__':
     edge_lines = []
     for i in range(len(edge_points)-1):
         a, b = edge_points[i, 0], edge_points[i+1, 0]
-        edge_lines.append(geometry.line_from_two_points(a, b))
+        edge_lines.append(line_from_two_points(a, b))
 
     n_points = 1000
     points = np.column_stack((
@@ -46,7 +59,7 @@ if __name__ == '__main__':
 
 
     labels = classify_by_nearest_edge(points, edge_lines)
-    groups = [points[np.where(labels == lbl)] for lbl in range(len(edge_lines))]
+    groups = [points[labels == lbl] for lbl in range(len(edge_lines))]
 
     group_colors = ((127, 0, 0), (0, 127, 0), (0, 0, 127))
     edge_colors = ((255, 0, 0), (0, 255, 0), (0, 0, 255))

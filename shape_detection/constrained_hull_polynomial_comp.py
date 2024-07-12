@@ -210,13 +210,13 @@ class ChipFeatureCollector:
         self.contact_lengths.append(self.scale * np.linalg.norm((xc-xi, yc-yi)))
         self.weighted_contact_lengths.append(self.scale * np.linalg.norm((xwc-xi, ywc-yi)))
 
-    def extract_and_render(self, binary_img: np.ndarray, background: np.ndarray=None) -> np.ndarray:
+    def extract_and_render(self, binary_img: np.ndarray, background: np.ndarray|None=None) -> np.ndarray:
         main_ft, chip_ft = extract_chip_features(binary_img)
         self.collect(main_ft, chip_ft)
         if background is None:
             ft_repr = np.zeros((binary_img.shape[0], binary_img.shape[1], 3), dtype=np.uint8)
             render_chip_features(ft_repr, main_ft, chip_ft)
-            ft_repr[np.nonzero(binary_img)] = (255, 255, 255)
+            ft_repr[binary_img > 0] = (255, 255, 255)
         else:
             ft_repr = background.copy()
             render_chip_features(ft_repr, main_ft, chip_ft)

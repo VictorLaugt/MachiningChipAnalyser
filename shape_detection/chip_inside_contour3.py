@@ -30,6 +30,39 @@ class InsideFeatures:
     inside_contour_pts: Sequence[Point]
 
 
+
+def compute_bisectors(chip_curve_pts: PointArray) -> np.ndarray[float]:
+    pts = chip_curve_pts.reshape(-1, 2)
+    result = np.zeros((len(chip_curve_pts), 2), dtype=np.float32)
+
+    # TODO:
+    # result[0] = ...
+    # result[-1] = ...
+
+    prev_vect = pts[:-1] - pts[1:]
+    next_vect = pts[1:] - pts[:-1]
+
+    prev_dot_next = (prev_vect * next_vect).sum(1)
+
+    small_angle_mask = np.where
+
+
+
+
+
+
+
+
+    # result[1:-1] = ...
+
+
+
+
+
+
+
+
+
 def extract_chip_curve_points(main_ft: MainFeatures, chip_hull_pts: PointArray) -> PointArray:
     """Return the points of the chip hull which belong to the chip curve."""
     return geometry.under_lines(
@@ -39,12 +72,12 @@ def extract_chip_curve_points(main_ft: MainFeatures, chip_hull_pts: PointArray) 
     )
 
 
-def direct_rotated_90(p: Point) -> Point:
+def rotate90(p: Point) -> Point:
     x, y = p
     return (-y, x)
 
 
-def indirect_rotated_90(p: Point) -> Point:
+def rotate270(p: Point) -> Point:
     x, y = p
     return (y, -x)
 
@@ -68,7 +101,7 @@ def find_inside_contour(
     thickness_majorant: int
         ) -> InsideFeatures:
     h, w = binary_img.shape
-    rotated_90 = indirect_rotated_90 if indirect_rotation else direct_rotated_90
+    rotated_90 = rotate270 if indirect_rotation else rotate90
     thickness = []
     inside_contour_pts = []
 
