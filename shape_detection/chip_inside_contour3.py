@@ -31,36 +31,35 @@ class InsideFeatures:
 
 
 
-def compute_bisectors(chip_curve_pts: PointArray) -> np.ndarray[float]:
+def compute_bisectors(
+            chip_curve_pts: PointArray,
+            indirect_chip_rotation: bool
+        ) -> np.ndarray[float]:
+    """Return the unit vectors bisecting the edges of the chip curve."""
     pts = chip_curve_pts.reshape(-1, 2)
-    result = np.zeros((len(chip_curve_pts), 2), dtype=np.float32)
+    bisectors = np.zeros((len(chip_curve_pts), 2), dtype=np.float32)
 
-    # TODO:
-    # result[0] = ...
-    # result[-1] = ...
+    u = pts[:-1] - pts[1:]
+    v = pts[1:] - pts[:-1]
+    w = v * (np.linalg.norm(u, axis=1) / np.linalg.norm(v, axis=1))
 
-    prev_vect = pts[:-1] - pts[1:]
-    next_vect = pts[1:] - pts[:-1]
+    # numerical instability to be corrected if the angle between u and v is greater than pi/2
+    stable = (np.sum(u*v, axis=1) > 0)
+    unstable = ~stable
 
-    prev_dot_next = (prev_vect * next_vect).sum(1)
+    bisectors[1:-1][stable] = u[stable] + w[stable]
+    bn = u[unstable] - w[unstable]
 
-    small_angle_mask = np.where
+    if indirect_chip_rotation:
+        bisectors[1:-1][unstable] = np.column_stack((-bn[:, 1], bn[:, 0]))
+        bisectors[0] = (bisectors[0, 1], -bisectors[0, 0])
+        bisectors[-1] = (bisectors[-1, 1], -bisectors[-1, 0])
+    else:
+        bisectors[1:-1][unstable] = np.column_stack((bn[:, 1], -bn[:, 0]))
+        bisectors[0] = (-bisectors[0, 1], bisectors[0, 0])
+        bisectors[-1] = (-bisectors[-1, 1], bisectors[-1, 0])
 
-
-
-
-
-
-
-
-    # result[1:-1] = ...
-
-
-
-
-
-
-
+    return bisectors / np.linalg.norm(bisectors, axis=1)
 
 
 def extract_chip_curve_points(main_ft: MainFeatures, chip_hull_pts: PointArray) -> PointArray:
@@ -70,22 +69,6 @@ def extract_chip_curve_points(main_ft: MainFeatures, chip_hull_pts: PointArray) 
         (main_ft.base_line, main_ft.base_opp_border, main_ft.tool_opp_border),
         (0, 15, 15)
     )
-
-
-def rotate90(p: Point) -> Point:
-    x, y = p
-    return (-y, x)
-
-
-def rotate270(p: Point) -> Point:
-    x, y = p
-    return (y, -x)
-
-
-def normalized(vector: Point) -> Point:
-    x, y = vector
-    norm = np.linalg.norm(vector)
-    return (x / norm, y / norm)
 
 
 def rasterized_line(p0: Point, p1: Point, img_height: int, img_width: int) -> tuple[np.ndarray[int], np.ndarray[int]]:
@@ -101,15 +84,17 @@ def find_inside_contour(
     thickness_majorant: int
         ) -> InsideFeatures:
     h, w = binary_img.shape
-    rotated_90 = rotate270 if indirect_rotation else rotate90
     thickness = []
     inside_contour_pts = []
 
+    bisectors = compute_bisectors(chip_curve_pts, indirect_rotation)
+
     for i in range(len(chip_curve_pts)-1):
         a, b = chip_curve_pts[i, 0, :], chip_curve_pts[i+1, 0, :]
-        n = np.asarray(normalized(rotated_90(b - a)))
-        c, d = (a + thickness_majorant*n).astype(np.int32), (b + thickness_majorant*n).astype(np.int32)
+        ua, ub = bisectors[i], bisectors[i+1]
+        c, d = (a + thickness_majorant*ua).astype(np.int32), (b + thickness_majorant*ub).astype(np.int32)
 
+        # TODO: change the p1 iteration over the [c, d] rasterization
         for p0, p1 in zip(zip(*rasterized_line(a, b, h, w)), zip(*rasterized_line(c, d, h, w))):
             ray_x, ray_y = rasterized_line(p0, p1, h, w)
 
