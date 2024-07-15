@@ -30,6 +30,13 @@ class InsideFeatures:
     chip_curve_pts: PointArray
 
 
+def rasterized_line(p0: Point, p1: Point, img_height: int, img_width: int) -> tuple[int, np.ndarray[int], np.ndarray[int]]:
+    line_x, line_y = ski.draw.line(*p0, *p1)
+    inside_mask = (0 <= line_x) & (line_x < img_width) & (0 <= line_y) & (line_y < img_height)
+    raster_x, raster_y = line_x[inside_mask], line_y[inside_mask]
+    return raster_x, raster_y
+
+
 def compute_bisectors(
             chip_curve_pts: PointArray,
             indirect_chip_rotation: bool
@@ -61,13 +68,6 @@ def compute_bisectors(
         bisectors[-1] = (normal_last[1], -normal_last[0])
 
     return bisectors / np.linalg.norm(bisectors, axis=1).reshape(-1, 1)
-
-
-def rasterized_line(p0: Point, p1: Point, img_height: int, img_width: int) -> tuple[int, np.ndarray[int], np.ndarray[int]]:
-    line_x, line_y = ski.draw.line(*p0, *p1)
-    inside_mask = (0 <= line_x) & (line_x < img_width) & (0 <= line_y) & (line_y < img_height)
-    raster_x, raster_y = line_x[inside_mask], line_y[inside_mask]
-    return raster_x, raster_y
 
 
 def find_inside_contour(
@@ -115,13 +115,13 @@ def extract_chip_inside_contour(binary_img: np.ndarray) -> tuple[MainFeatures, I
     chip_pts = geometry.under_lines(pts, (main_ft.base_line, main_ft.tool_line), (10, 10))
 
     chip_hull_pts = compute_chip_convex_hull(main_ft, chip_pts)
-    _rho, base_normal_x, base_normal_y = main_ft.base_line
-    chip_hull_pts[0] -= (int(20*base_normal_x), int(20*base_normal_y))
-
     chip_curve_pts = extract_chip_curve_points(main_ft, chip_hull_pts)
 
+    chip_binary_img = np.zeros_like(binary_img)
+    chip_binary_img[chip_pts[:, 0, 1], chip_pts[:, 0, 0]] = 255
+
     inside_ft = find_inside_contour(
-        binary_img,
+        chip_binary_img,
         chip_curve_pts,
         main_ft.indirect_rotation,
         thickness_majorant=125
@@ -243,5 +243,4 @@ if __name__ == '__main__':
     # ---- visualization
     processing.show_frame_comp(min(15, len(loader)-1), ("chipinside", "morph"))
     processing.show_video_comp(("chipinside", "morph"))
-    # collector.show_thickness_graph(min(15, len(loader)-1))
     collector.show_thickness_animated_graph()

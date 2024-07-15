@@ -138,8 +138,7 @@ def render_main_features(binary_img: np.ndarray) -> np.ndarray:
     contours, _ = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
     pts = np.vstack(contours)
     chip_pts = geometry.under_lines(pts, (main_ft.base_line, main_ft.tool_line), (10, 10))
-    x, y = chip_pts[:, 0, 0], chip_pts[:, 0, 1]
-    render[y, x] = white
+    render[chip_pts[:, 0, 1], chip_pts[:, 0, 0]] = white
 
     return render
 
