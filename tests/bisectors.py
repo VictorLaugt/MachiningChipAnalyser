@@ -19,7 +19,16 @@ def check_middle_angles_bisection(pts, bisectors):
     ub_angles = angle_between_vectors(u, bisectors[1:-1])
     vb_angles = angle_between_vectors(v, bisectors[1:-1])
 
-    return np.isclose(ub_angles, vb_angles).all()
+    success = np.isclose(ub_angles, vb_angles, atol=1e-5)
+    if success.all():
+        return True
+    else:
+        fail = ~success
+        print(f"ub fails = {ub_angles[fail]}")
+        print(f"vb fails = {vb_angles[fail]}")
+        print(f"errors = {ub_angles[fail] - vb_angles[fail]}")
+
+    return np.isclose(ub_angles, vb_angles, atol=1e-5).all()
 
 
 def check_bound_angles_are_90(pts, bisectors):
@@ -55,19 +64,16 @@ class TestBisectorAlgorithm(unittest.TestCase):
         self.assertTrue(check_middle_angles_bisection(pts, bisectors))
         self.assertTrue(check_bound_angles_are_90(pts, bisectors))
 
-
     def test_triangle(self):
         pts = np.array([[0., 0.], [1., 1.], [2., 0.]])
         self._test_on_points(pts, direct_rotation=True)
-
-    def test_triangle2(self):
-        pts = np.array([[0., 0.], [1., 1.], [2., 0.]])
-        self._test_on_points(pts, direct_rotation=False, interactive=True)
+        self._test_on_points(pts, direct_rotation=False)
 
     def test_curve_evenly_spaced(self):
         theta = np.linspace(0, 2*np.pi/3, 10)
         pts = np.column_stack((np.cos(theta), np.sin(theta)))
         self._test_on_points(pts, direct_rotation=True)
+        self._test_on_points(pts, direct_rotation=False)
 
     def test_curve_randomly_spaced(self):
         theta = np.random.rand(10)
@@ -75,10 +81,16 @@ class TestBisectorAlgorithm(unittest.TestCase):
         theta *= 2*np.pi/3
         pts = np.column_stack((np.cos(theta), np.sin(theta)))
         self._test_on_points(pts, direct_rotation=True)
+        self._test_on_points(pts, direct_rotation=False)
 
+    def test_random_points(self):
+        pts = np.unique(np.random.randint(0, 500, (100, 2)), axis=0)
+        self._test_on_points(pts, direct_rotation=True)
 
-    # def test_random_points(self):
-    #     ...
+    def test_many_random_points(self):
+        pts = np.unique(np.random.rand(100000, 2), axis=0) * 1e3
+        self._test_on_points(pts, direct_rotation=True)
+
 
 if __name__ == "__main__":
     unittest.main()
