@@ -52,17 +52,8 @@ def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: PointArray) -> Poi
 
 def extract_chip_curve_points(main_ft: MainFeatures, chip_hull_pts: PointArray) -> PointArray:
     """Return the points of the chip hull which belong to the chip curve."""
-    # _, base_distance = geometry.line_nearest_point(chip_hull_pts, main_ft.base_line)
-    # _, tool_distance = geometry.line_nearest_point(chip_hull_pts, main_ft.tool_line)
-
-    # return geometry.under_lines(
-    #     chip_hull_pts,
-    #     (main_ft.base_line, main_ft.tool_line, main_ft.base_opp_border, main_ft.tool_opp_border),
-    #     (base_distance+20, tool_distance+5, 15, 15)
-    # )
-
     return geometry.under_lines(
-        chip_hull_pts[1:],
+        chip_hull_pts,
         (main_ft.base_line, main_ft.base_opp_border, main_ft.tool_opp_border),
         (0, 15, 15)
     )
@@ -128,7 +119,7 @@ def extract_chip_features(binary_img: np.ndarray) -> tuple[MainFeatures, ChipFea
     chip_pts = geometry.under_lines(pts, (main_ft.base_line, main_ft.tool_line), (10, 10))
 
     chip_hull_pts = compute_chip_convex_hull(main_ft, chip_pts)
-    chip_curve_pts = extract_chip_curve_points(main_ft, chip_hull_pts)
+    chip_curve_pts = extract_chip_curve_points(main_ft, chip_hull_pts[1:])
     key_pts = extract_key_points(main_ft, chip_curve_pts, np.pi/4)
     polynomial = fit_polynomial(main_ft, key_pts)
     contact = chip_tool_contact_point(main_ft, polynomial)

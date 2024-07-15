@@ -1,3 +1,6 @@
+TEST_DIR = tests
+TEST_SRC = $(wildcard $(TEST_DIR)/*.py)
+
 PREPROCESSING_DIR = preprocessing
 PREPROCESSING_SRC = $(wildcard $(PREPROCESSING_DIR)/*.py)
 
@@ -11,6 +14,15 @@ all: preprocessing_all shape_detection_all
 debug:
 	@echo "PREPROCESSING_DIR = $(PREPROCESSING_DIR)"
 	@echo "PREPROCESSING_SRC = $(PREPROCESSING_SRC)"
+
+test_all:
+	@$(foreach SCRIPT,$(TEST_SRC),\
+		printf "\n======= running $(SCRIPT) =======\n";\
+		python3 $(SCRIPT);)
+
+test_%:
+	@printf "\n======= running $(TEST_DIR)/$*.py =======\n"
+	@python3 $(TEST_DIR)/$*.py
 
 preprocessing_all:
 	@$(foreach SCRIPT,$(PREPROCESSING_SRC),\

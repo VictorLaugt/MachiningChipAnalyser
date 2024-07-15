@@ -12,7 +12,7 @@ import scipy.signal as scs
 import geometry
 from shape_detection.constrained_hull_polynomial import (
     compute_chip_convex_hull,
-    # extract_chip_curve_points
+    extract_chip_curve_points
 )
 from shape_detection.chip_extraction import extract_main_features
 
@@ -23,12 +23,11 @@ import cv2 as cv
 import skimage as ski
 
 
-
 @dataclass
 class InsideFeatures:
     thickness: Sequence[float]
     inside_contour_pts: Sequence[Point]
-
+    chip_curve_pts: PointArray
 
 
 def compute_bisectors(
@@ -43,7 +42,7 @@ def compute_bisectors(
     v = pts[2:] - pts[1:-1]
     w = v * ((np.linalg.norm(u, axis=1) / np.linalg.norm(v, axis=1))).reshape(-1, 1)
 
-    # numerical instability to be corrected if the angle between u and v is greater than pi/2
+    # numerical instability correction if the angle between u and v is greater than pi/2
     stable = (np.sum(u*v, axis=1) > 0)
     unstable = ~stable
 
@@ -64,19 +63,11 @@ def compute_bisectors(
     return bisectors / np.linalg.norm(bisectors, axis=1).reshape(-1, 1)
 
 
-def extract_chip_curve_points(main_ft: MainFeatures, chip_hull_pts: PointArray) -> PointArray:
-    """Return the points of the chip hull which belong to the chip curve."""
-    return geometry.under_lines(
-        chip_hull_pts,
-        (main_ft.base_line, main_ft.base_opp_border, main_ft.tool_opp_border),
-        (0, 15, 15)
-    )
-
-
-def rasterized_line(p0: Point, p1: Point, img_height: int, img_width: int) -> tuple[np.ndarray[int], np.ndarray[int]]:
+def rasterized_line(p0: Point, p1: Point, img_height: int, img_width: int) -> tuple[int, np.ndarray[int], np.ndarray[int]]:
     line_x, line_y = ski.draw.line(*p0, *p1)
     inside_mask = (0 <= line_x) & (line_x < img_width) & (0 <= line_y) & (line_y < img_height)
-    return line_x[inside_mask], line_y[inside_mask]
+    raster_x, raster_y = line_x[inside_mask], line_y[inside_mask]
+    return raster_x, raster_y
 
 
 def find_inside_contour(
@@ -90,14 +81,17 @@ def find_inside_contour(
     inside_contour_pts = []
 
     bisectors = compute_bisectors(chip_curve_pts, indirect_rotation)
-
     for i in range(len(chip_curve_pts)-1):
         a, b = chip_curve_pts[i, 0, :], chip_curve_pts[i+1, 0, :]
         ua, ub = bisectors[i], bisectors[i+1]
         c, d = (a + thickness_majorant*ua).astype(np.int32), (b + thickness_majorant*ub).astype(np.int32)
 
-        # TODO: change the p1 iteration over the [c, d] rasterization
-        for p0, p1 in zip(zip(*rasterized_line(a, b, h, w)), zip(*rasterized_line(c, d, h, w))):
+        out_raster_x, out_raster_y = rasterized_line(a, b, h, w)
+        in_raster_x, in_raster_y = rasterized_line(c, d, h, w)
+        out_length, in_length = len(out_raster_x), len(in_raster_x)
+        for i in range(out_length):
+            j = i * in_length // out_length
+            p0, p1 = (out_raster_x[i], out_raster_y[i]), (in_raster_x[j], in_raster_y[j])
             ray_x, ray_y = rasterized_line(p0, p1, h, w)
 
             selected_idx = np.nonzero(binary_img[ray_y, ray_x])[0]
@@ -110,7 +104,7 @@ def find_inside_contour(
                 thickness.append(distances[furthest_idx])
                 inside_contour_pts.append((selected_x[furthest_idx], selected_y[furthest_idx]))
 
-    return InsideFeatures(thickness, inside_contour_pts)
+    return InsideFeatures(thickness, inside_contour_pts, chip_curve_pts)
 
 
 def extract_chip_inside_contour(binary_img: np.ndarray) -> tuple[MainFeatures, InsideFeatures]:
@@ -121,6 +115,9 @@ def extract_chip_inside_contour(binary_img: np.ndarray) -> tuple[MainFeatures, I
     chip_pts = geometry.under_lines(pts, (main_ft.base_line, main_ft.tool_line), (10, 10))
 
     chip_hull_pts = compute_chip_convex_hull(main_ft, chip_pts)
+    _rho, base_normal_x, base_normal_y = main_ft.base_line
+    chip_hull_pts[0] -= (int(20*base_normal_x), int(20*base_normal_y))
+
     chip_curve_pts = extract_chip_curve_points(main_ft, chip_hull_pts)
 
     inside_ft = find_inside_contour(
@@ -137,6 +134,8 @@ def render_inside_features(render: np.ndarray, main_ft: MainFeatures, inside_ft:
     """Draw a representation of features `main_ft` and `inside_ft` on image `render`."""
     for x, y in inside_ft.inside_contour_pts:
         render[y, x] = (0, 0, 255)  # red
+    for pt in inside_ft.chip_curve_pts.reshape(-1, 2):
+        cv.circle(render, pt, 3, (0, 255, 0), -1)
 
 
 def erase_down_spikes(signal: Sequence[float], kernel_size:int) -> Sequence[float]:
