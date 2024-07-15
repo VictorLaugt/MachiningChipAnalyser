@@ -37,29 +37,31 @@ def compute_bisectors(
         ) -> np.ndarray[float]:
     """Return the unit vectors bisecting the edges of the chip curve."""
     pts = chip_curve_pts.reshape(-1, 2)
-    bisectors = np.zeros((len(chip_curve_pts), 2), dtype=np.float32)
+    bisectors = np.zeros_like(pts, dtype=np.float32)
 
-    u = pts[:-1] - pts[1:]
-    v = pts[1:] - pts[:-1]
-    w = v * (np.linalg.norm(u, axis=1) / np.linalg.norm(v, axis=1))
+    u = pts[:-2] - pts[1:-1]
+    v = pts[2:] - pts[1:-1]
+    w = v * ((np.linalg.norm(u, axis=1) / np.linalg.norm(v, axis=1))).reshape(-1, 1)
 
     # numerical instability to be corrected if the angle between u and v is greater than pi/2
     stable = (np.sum(u*v, axis=1) > 0)
     unstable = ~stable
 
     bisectors[1:-1][stable] = u[stable] + w[stable]
-    bn = u[unstable] - w[unstable]
+    normal = u[unstable] - w[unstable]
 
+    normal_first = pts[0] - pts[1]
+    normal_last = pts[-2] - pts[-1]
     if indirect_chip_rotation:
-        bisectors[1:-1][unstable] = np.column_stack((-bn[:, 1], bn[:, 0]))
-        bisectors[0] = (bisectors[0, 1], -bisectors[0, 0])
-        bisectors[-1] = (bisectors[-1, 1], -bisectors[-1, 0])
+        bisectors[1:-1][unstable] = np.column_stack((-normal[:, 1], normal[:, 0]))
+        bisectors[0] = (-normal_first[1], normal_first[0])
+        bisectors[-1] = (-normal_last[1], normal_last[0])
     else:
-        bisectors[1:-1][unstable] = np.column_stack((bn[:, 1], -bn[:, 0]))
-        bisectors[0] = (-bisectors[0, 1], bisectors[0, 0])
-        bisectors[-1] = (-bisectors[-1, 1], bisectors[-1, 0])
+        bisectors[1:-1][unstable] = np.column_stack((normal[:, 1], -normal[:, 0]))
+        bisectors[0] = (normal_first[1], -normal_first[0])
+        bisectors[-1] = (normal_last[1], -normal_last[0])
 
-    return bisectors / np.linalg.norm(bisectors, axis=1)
+    return bisectors / np.linalg.norm(bisectors, axis=1).reshape(-1, 1)
 
 
 def extract_chip_curve_points(main_ft: MainFeatures, chip_hull_pts: PointArray) -> PointArray:
