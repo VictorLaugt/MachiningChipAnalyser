@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import matplotlib.pyplot as plt
 
-from shape_detection.chip_inside_contour3 import compute_bisectors
+from shape_detection.chip_inside_contour import compute_bisectors
 
 
 def angle_between_vectors(u, v):
