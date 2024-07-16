@@ -11,6 +11,7 @@ from shape_detection.constrained_hull_polynomial import (
     extract_chip_curve_points
 )
 from shape_detection.chip_extraction import extract_main_features
+import connected_components
 
 from dataclasses import dataclass
 
@@ -116,6 +117,8 @@ def extract_chip_inside_contour(binary_img: np.ndarray) -> tuple[MainFeatures, I
 
     chip_binary_img = np.zeros_like(binary_img)
     chip_binary_img[chip_pts[:, 0, 1], chip_pts[:, 0, 0]] = 255
+    # TODO: try to replace this connected component filter by a more generic process
+    # chip_binary_img = connected_components.remove_small_components(chip_binary_img, min_area=20)
 
     inside_ft = find_inside_contour(
         chip_binary_img,

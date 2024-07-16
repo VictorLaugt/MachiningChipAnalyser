@@ -2,7 +2,7 @@ import cv2 as cv
 import numpy as np
 
 
-def remove_small_components(img, min_area=45):
+def remove_small_components(img, min_area):
     num_labels, labels, stats, _ = cv.connectedComponentsWithStats(img, connectivity=8)
 
     filtered_img = np.zeros_like(img)
@@ -19,7 +19,7 @@ def remove_small_components(img, min_area=45):
 
 if __name__ == "__main__":
     img = cv.imread("morph2.png", cv.IMREAD_GRAYSCALE)
-    filtered_img = remove_small_components(img)
+    filtered_img = remove_small_components(img, min_area=45)
 
     cv.imshow("original", img)
     cv.imshow("filtered", filtered_img)

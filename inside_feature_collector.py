@@ -18,7 +18,7 @@ import matplotlib.animation as anim
 
 import scipy.signal as scs
 from filterpy.kalman import KalmanFilter  # pip install filterpy
-import pywt
+import pywt  # pip install pywavelets
 
 from shape_detection.chip_inside_contour import (
     extract_chip_inside_contour,

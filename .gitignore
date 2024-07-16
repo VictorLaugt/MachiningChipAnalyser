@@ -3,6 +3,7 @@ imgs
 __pycache__
 .vscode
 
+*.csv
 *.png
 *.avi
 *.mp4
