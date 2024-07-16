@@ -17,6 +17,7 @@ from shape_detection.constrained_hull_polynomial import (
 from shape_detection.chip_extraction import extract_main_features
 
 from dataclasses import dataclass
+import abc
 
 import numpy as np
 import cv2 as cv
@@ -154,21 +155,10 @@ class InsideFeatureCollector:
         self.scale = scale
         self.inside_features: list[InsideFeatures] = []
         self.main_features: list[MainFeatures] = []
-        self.thickness_seqs: list[Sequence[float]] = []
-        self.smoothed_seqs: list[Sequence[float]] = []
-        self.extra_smoothed_seqs: list[Sequence[float]] = []
 
     def collect(self, main_ft: MainFeatures, inside_ft: InsideFeatures) -> None:
         self.main_features.append(main_ft)
         self.inside_features.append(inside_ft)
-
-        signal = [self.scale * t for t in inside_ft.thickness]
-        smoothed = erase_down_spikes(signal, kernel_size=5)
-        extra_smoothed = scs.medfilt(smoothed, kernel_size=7)
-
-        self.thickness_seqs.append(signal)
-        self.smoothed_seqs.append(smoothed)
-        self.extra_smoothed_seqs.append(extra_smoothed)
 
     def extract_and_render(self, binary_img: np.ndarray, background: np.ndarray|None=None) -> np.ndarray:
         main_ft, inside_ft = extract_chip_inside_contour(binary_img)
@@ -181,6 +171,25 @@ class InsideFeatureCollector:
             ft_repr = background.copy()
             render_inside_features(ft_repr, main_ft, inside_ft)
         return ft_repr
+
+
+class ThicknessSmoother(InsideFeatureCollector):
+    def __init__(self, scale: float=1.0):
+        super().__init__(scale)
+        self.thickness_seqs: list[Sequence[float]] = []
+        self.smoothed_seqs: list[Sequence[float]] = []
+        self.extra_smoothed_seqs: list[Sequence[float]] = []
+
+    def collect(self, main_ft: MainFeatures, inside_ft: InsideFeatures) -> None:
+        super().collect(main_ft, inside_ft)
+
+        signal = [self.scale * t for t in inside_ft.thickness]
+        smoothed = erase_down_spikes(signal, kernel_size=5)
+        extra_smoothed = scs.medfilt(smoothed, kernel_size=7)
+
+        self.thickness_seqs.append(signal)
+        self.smoothed_seqs.append(smoothed)
+        self.extra_smoothed_seqs.append(extra_smoothed)
 
     def show_thickness_graph(self, frame_index: int) -> None:
         fig, ax = plt.subplots(figsize=(16, 9))
@@ -200,6 +209,11 @@ class InsideFeatureCollector:
             "thickness along the chip (µm)"
         )
         anim.play()
+
+
+class ThicknessKalmanFilter(InsideFeatureCollector):
+    ... # TODO: using kalman filter
+
 
 
 if __name__ == '__main__':
@@ -231,7 +245,7 @@ if __name__ == '__main__':
 
 
     # ---- processing
-    collector = InsideFeatureCollector(scale_um)
+    collector = ThicknessSmoother(scale_um)
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
 
     processing.add("chipinside", collector.extract_and_render)
