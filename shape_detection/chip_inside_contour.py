@@ -242,5 +242,6 @@ if __name__ == '__main__':
 
     # ---- visualization
     processing.show_frame_comp(min(15, len(loader)-1), ("chipinside", "morph"))
+    processing.save_frame_comp(output_dir, min(15, len(loader)-1), ("chipinside",))
     processing.show_video_comp(("chipinside", "morph"))
     collector.show_thickness_animated_graph()
