@@ -5,10 +5,6 @@ if TYPE_CHECKING:
     from geometry import Line, Point, PointArray
     from shape_detection.chip_extraction import MainFeatures
 
-import matplotlib.pyplot as plt
-import matplotlib.animation as anim
-import scipy.signal as scs
-
 import geometry
 from shape_detection.constrained_hull_polynomial import (
     compute_chip_convex_hull,
@@ -17,11 +13,11 @@ from shape_detection.constrained_hull_polynomial import (
 from shape_detection.chip_extraction import extract_main_features
 
 from dataclasses import dataclass
-import abc
 
 import numpy as np
 import cv2 as cv
 import skimage as ski
+from filterpy.kalman import KalmanFilter
 
 
 @dataclass
@@ -139,82 +135,6 @@ def render_inside_features(render: np.ndarray, main_ft: MainFeatures, inside_ft:
         cv.circle(render, pt, 3, (0, 255, 0), -1)
 
 
-def erase_down_spikes(signal: Sequence[float], kernel_size:int) -> Sequence[float]:
-    assert kernel_size % 2 == 1, 'kernel_size must be odd'
-    off = kernel_size // 2
-    smoothed = []
-    for i in range(len(signal)):
-        values = sorted(signal[max(0, i-off):i+off+1])
-        median = values[len(values) // 2]
-        smoothed.append(max(signal[i], median))
-    return smoothed
-
-
-class InsideFeatureCollector:
-    def __init__(self, scale: float=1.0):
-        self.scale = scale
-        self.inside_features: list[InsideFeatures] = []
-        self.main_features: list[MainFeatures] = []
-
-    def collect(self, main_ft: MainFeatures, inside_ft: InsideFeatures) -> None:
-        self.main_features.append(main_ft)
-        self.inside_features.append(inside_ft)
-
-    def extract_and_render(self, binary_img: np.ndarray, background: np.ndarray|None=None) -> np.ndarray:
-        main_ft, inside_ft = extract_chip_inside_contour(binary_img)
-        self.collect(main_ft, inside_ft)
-        if background is None:
-            ft_repr = np.zeros((binary_img.shape[0], binary_img.shape[1], 3), dtype=np.uint8)
-            render_inside_features(ft_repr, main_ft, inside_ft)
-            # ft_repr[binary_img > 0] = (255, 255, 255)
-        else:
-            ft_repr = background.copy()
-            render_inside_features(ft_repr, main_ft, inside_ft)
-        return ft_repr
-
-
-class ThicknessSmoother(InsideFeatureCollector):
-    def __init__(self, scale: float=1.0):
-        super().__init__(scale)
-        self.thickness_seqs: list[Sequence[float]] = []
-        self.smoothed_seqs: list[Sequence[float]] = []
-        self.extra_smoothed_seqs: list[Sequence[float]] = []
-
-    def collect(self, main_ft: MainFeatures, inside_ft: InsideFeatures) -> None:
-        super().collect(main_ft, inside_ft)
-
-        signal = [self.scale * t for t in inside_ft.thickness]
-        smoothed = erase_down_spikes(signal, kernel_size=5)
-        extra_smoothed = scs.medfilt(smoothed, kernel_size=7)
-
-        self.thickness_seqs.append(signal)
-        self.smoothed_seqs.append(smoothed)
-        self.extra_smoothed_seqs.append(extra_smoothed)
-
-    def show_thickness_graph(self, frame_index: int) -> None:
-        fig, ax = plt.subplots(figsize=(16, 9))
-        ax.set_xlabel("inside contour point index")
-        ax.set_ylabel("thickness along the chip (µm)")
-        ax.grid(True)
-        ax.plot(self.thickness_seqs[frame_index], '-x')
-        ax.plot(self.smoothed_seqs[frame_index], '-x')
-        ax.plot(self.extra_smoothed_seqs[frame_index], '-x')
-        plt.show()
-
-    def show_thickness_animated_graph(self) -> None:
-        from graph_animation import GraphAnimation
-        anim = GraphAnimation(
-            (self.thickness_seqs, self.smoothed_seqs, self.extra_smoothed_seqs),
-            "inside contour point index",
-            "thickness along the chip (µm)"
-        )
-        anim.play()
-
-
-class ThicknessKalmanFilter(InsideFeatureCollector):
-    ... # TODO: using kalman filter
-
-
 
 if __name__ == '__main__':
     import os
@@ -222,6 +142,7 @@ if __name__ == '__main__':
 
     import image_loader
     import preprocessing.log_tresh_blobfilter_erode
+    import inside_feature_collector
 
     # ---- environment variables
     input_dir_str = os.environ.get("INPUT_DIR")
@@ -245,7 +166,9 @@ if __name__ == '__main__':
 
 
     # ---- processing
-    collector = ThicknessSmoother(scale_um)
+    collector = inside_feature_collector.MedianFilterCollector(scale_um)
+    # collector = inside_feature_collector.KalmanFilterCollector(scale_um)
+
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
 
     processing.add("chipinside", collector.extract_and_render)
