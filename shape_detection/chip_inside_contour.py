@@ -157,7 +157,7 @@ if __name__ == '__main__':
     if output_dir_str is not None:
         output_dir = Path(output_dir_str)
     else:
-        output_dir = Path("results", "chipvurve")
+        output_dir = Path("results", "chipcurve")
 
     if scale_str is not None:
         scale_um = float(scale_str)
@@ -166,11 +166,11 @@ if __name__ == '__main__':
 
 
     # ---- processing
-    collector = inside_feature_collector.MedianFilterCollector(scale_um)
-    # collector = inside_feature_collector.KalmanFilterCollector(scale_um)
+    collector = inside_feature_collector.CollectorMedian(scale_um)
+    # collector = inside_feature_collector.CollectorWavelet(scale_um)
+    # collector = inside_feature_collector.CollectorKalman(scale_um)
 
     processing = preprocessing.log_tresh_blobfilter_erode.processing.copy()
-
     processing.add("chipinside", collector.extract_and_render)
 
     loader = image_loader.ImageLoader(input_dir)
@@ -182,3 +182,5 @@ if __name__ == '__main__':
     processing.save_frame_comp(output_dir, min(15, len(loader)-1), ("chipinside",))
     processing.show_video_comp(("chipinside", "morph"))
     collector.show_thickness_animated_graph()
+    # collector.show_thickness_graph(14)
+    collector.save_measures(output_dir.joinpath("thickness.csv"), 14)

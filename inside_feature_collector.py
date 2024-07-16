@@ -4,16 +4,21 @@ if TYPE_CHECKING:
     from typing import Iterable, Sequence
     from shape_detection.chip_extraction import MainFeatures
     from shape_detection.chip_inside_contour import InsideFeatures
+    from pathlib import Path
 
 import abc
+
+import csv
 
 import cv2 as cv
 import numpy as np
 
 import matplotlib.pyplot as plt
 import matplotlib.animation as anim
+
 import scipy.signal as scs
 from filterpy.kalman import KalmanFilter  # pip install filterpy
+import pywt
 
 from shape_detection.chip_inside_contour import (
     extract_chip_inside_contour,
@@ -76,8 +81,16 @@ class AbstractInsideFeatureCollector(abc.ABC):
     def get_measures(self) -> Sequence[list[Sequence[float]]]:
         pass
 
+    def save_measures(self, save_file_path: Path, frame_index: int) -> None:
+        if save_file_path.suffix.lower() != '.csv':
+            raise ValueError("the save file must be a csv file")
+        with save_file_path.open(mode='w') as csv_save_file:
+            csv_writer = csv.writer(csv_save_file)
+            for measure in self.get_measures():
+                csv_writer.writerow(measure[frame_index])
 
-class KalmanFilterCollector(AbstractInsideFeatureCollector):
+
+class CollectorKalman(AbstractInsideFeatureCollector):
     def __init__(self, scale: float=1.0):
         super().__init__(scale)
         self.thickness_seqs: list[Sequence[float]] = []
@@ -106,14 +119,14 @@ class KalmanFilterCollector(AbstractInsideFeatureCollector):
         self.smoothed_seqs.append(smoothed)
 
 
-class MedianFilterCollector(AbstractInsideFeatureCollector):
+class CollectorMedian(AbstractInsideFeatureCollector):
     def __init__(self, scale: float=1.0):
         super().__init__(scale)
         self.thickness_seqs: list[Sequence[float]] = []
         self.smoothed_seqs: list[Sequence[float]] = []
         self.extra_smoothed_seqs: list[Sequence[float]] = []
 
-    def get_measures(self) -> np.Sequence[list[Sequence[float]]]:
+    def get_measures(self) -> Sequence[list[Sequence[float]]]:
         return (self.thickness_seqs, self.smoothed_seqs, self.extra_smoothed_seqs)
 
     def collect(self, main_ft: MainFeatures, inside_ft: InsideFeatures) -> None:
@@ -128,13 +141,41 @@ class MedianFilterCollector(AbstractInsideFeatureCollector):
         self.extra_smoothed_seqs.append(extra_smoothed)
 
 
-class DerivativeFilterCollector(AbstractInsideFeatureCollector):
+
+class CollectorWavelet(AbstractInsideFeatureCollector):
+    def __init__(self, scale: float=1.0):
+        super().__init__(scale)
+        self.thickness_seqs: list[Sequence[float]] = []
+        self.smoothed_seqs: list[Sequence[float]] = []
+
+    def get_measures(self) -> Sequence[list[Sequence[float]]]:
+        return (self.thickness_seqs, self.smoothed_seqs)
+
+    def collect(self, main_ft: MainFeatures, inside_ft: InsideFeatures) -> None:
+        super().collect(main_ft, inside_ft)
+
+        signal = [self.scale * t for t in inside_ft.thickness]
+
+        wavelet = 'db4'
+        coeffs = pywt.wavedec(signal, wavelet, level=3)
+        sigma = np.median(np.abs(coeffs[-1])) / 0.6745
+        threshold = 10 * sigma * np.sqrt(2 * np.log(len(signal)))
+        filtered_coeffs = [pywt.threshold(c, threshold, mode='hard') for c in coeffs]
+        denoised_signal = pywt.waverec(filtered_coeffs, wavelet)
+
+        self.thickness_seqs.append(signal)
+        self.smoothed_seqs.append(denoised_signal)
+
+
+
+# TODO:
+class CollectorDerivative(AbstractInsideFeatureCollector):
     def __init__(self, scale: float=1.0):
         super().__init__(scale)
         self.thickness_seqs: list[Sequence[float]] = []
         ...
 
-    def get_measures(self) -> np.Sequence[list[Sequence[float]]]:
+    def get_measures(self) -> Sequence[list[Sequence[float]]]:
         ...
 
     def collect(self, main_ft: MainFeatures, inside_ft: InsideFeatures) -> None:
