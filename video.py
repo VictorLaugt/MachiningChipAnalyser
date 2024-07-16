@@ -66,9 +66,9 @@ class AbstractVideoPlayer(abc.ABC):
                 return True
             elif key == 113:  # Q => quit
                 return False
-            elif key == 83 or key == 110:  # Right arrow or N => step
+            elif key == 83 or key == 110 or key == 54:  # Right arrow or N or 6 => step
                 self.step()
-            elif key == 81 or key == 112:  # Left arrow or P => rewind
+            elif key == 81 or key == 112 or key == 52:  # Left arrow or P or 4 => rewind
                 self.rewind()
 
     @abc.abstractmethod
