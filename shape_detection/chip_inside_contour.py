@@ -78,30 +78,36 @@ def find_inside_contour(
     inside_contour_pts = []
 
     bisectors = compute_bisectors(chip_curve_pts, indirect_rotation)
-    for i in range(len(chip_curve_pts)-1):
-        a, b = chip_curve_pts[i, 0, :], chip_curve_pts[i+1, 0, :]
-        ua, ub = bisectors[i], bisectors[i+1]
-        c, d = (a + thickness_majorant*ua).astype(np.int32), (b + thickness_majorant*ub).astype(np.int32)
+    out_curve = chip_curve_pts.reshape(-1, 2)
+    in_curve = (out_curve + thickness_majorant*bisectors).astype(np.int32)
 
-        out_raster_x, out_raster_y = rasterized_line(a, b, h, w)
-        in_raster_x, in_raster_y = rasterized_line(c, d, h, w)
-        out_length, in_length = len(out_raster_x), len(in_raster_x)
-        for i in range(out_length):
-            j = i * in_length // out_length
-            p0, p1 = (out_raster_x[i], out_raster_y[i]), (in_raster_x[j], in_raster_y[j])
-            ray_x, ray_y = rasterized_line(p0, p1, h, w)
+    for block_idx in range(len(out_curve)-1):
+        out_edge_x, out_edge_y = rasterized_line(
+            out_curve[block_idx], out_curve[block_idx+1], h, w
+        )
+        in_edge_x, in_edge_y = rasterized_line(
+            in_curve[block_idx], in_curve[block_idx+1], h, w
+        )
+        out_edge_length, in_edge_length = len(out_edge_x), len(in_edge_x)
+
+        for i in range(out_edge_length):
+            j = i * in_edge_length // out_edge_length
+
+            out_x, out_y = out_edge_x[i], out_edge_y[i]
+            in_x, in_y = in_edge_x[j], in_edge_y[j]
+            ray_x, ray_y = rasterized_line((out_x, out_y), (in_x, in_y), h, w)
 
             selected_idx = np.nonzero(binary_img[ray_y, ray_x])[0]
             if len(selected_idx) > 0:
                 selected_x, selected_y = ray_x[selected_idx], ray_y[selected_idx]
+                distances = np.linalg.norm((selected_x - out_x, selected_y - out_y), axis=0)
+                innermost_idx = np.argmax(distances)
 
-                distances = np.linalg.norm((selected_x - p0[0], selected_y - p0[1]), axis=0)
-                furthest_idx = np.argmax(distances)
+                thickness.append(distances[innermost_idx])
+                inside_contour_pts.append((selected_x[innermost_idx], selected_y[innermost_idx]))
 
-                thickness.append(distances[furthest_idx])
-                inside_contour_pts.append((selected_x[furthest_idx], selected_y[furthest_idx]))
+    return InsideFeatures(thickness, inside_contour_pts, out_curve)
 
-    return InsideFeatures(thickness, inside_contour_pts, chip_curve_pts)
 
 
 def extract_chip_inside_contour(binary_img: np.ndarray) -> tuple[MainFeatures, InsideFeatures]:
