@@ -18,7 +18,6 @@ from dataclasses import dataclass
 import numpy as np
 import cv2 as cv
 import skimage as ski
-from filterpy.kalman import KalmanFilter
 
 
 @dataclass

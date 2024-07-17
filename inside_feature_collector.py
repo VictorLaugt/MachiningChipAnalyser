@@ -8,13 +8,10 @@ if TYPE_CHECKING:
 
 import abc
 
-import csv
-
-import cv2 as cv
 import numpy as np
 
+import csv
 import matplotlib.pyplot as plt
-import matplotlib.animation as anim
 
 import scipy.signal as scs
 from filterpy.kalman import KalmanFilter  # pip install filterpy
@@ -24,8 +21,8 @@ from shape_detection.chip_inside_contour import (
     extract_chip_inside_contour,
     render_inside_features
 )
-
 from graph_animation import GraphAnimation
+
 
 
 def erase_down_spikes(signal: Sequence[float], kernel_size:int) -> Sequence[float]:
