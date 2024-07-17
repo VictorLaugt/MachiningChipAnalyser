@@ -22,9 +22,14 @@ import skimage as ski
 
 @dataclass
 class InsideFeatures:
-    thickness: Sequence[float]
-    inside_contour_pts: Sequence[Point]
     chip_curve_pts: PointArray
+
+    noised_inside_contour_pts: Sequence[Point]
+    noised_thickness: Sequence[float]
+
+    inside_contour_pts: Sequence[Point]
+    thickness: Sequence[float]
+
 
 
 def rasterized_line(p0: Point, p1: Point, img_height: int, img_width: int) -> tuple[int, np.ndarray[int], np.ndarray[int]]:
@@ -68,12 +73,12 @@ def compute_bisectors(
 
 
 def find_inside_contour(
-    binary_img: np.ndarray,
+    chip_bin_img: np.ndarray,
     chip_curve_pts: PointArray,
     indirect_rotation: bool,
     thickness_majorant: int
-        ) -> InsideFeatures:
-    h, w = binary_img.shape
+        ) -> tuple[Sequence[Point], Sequence[float]]:
+    h, w = chip_bin_img.shape
     thickness = []
     inside_contour_pts = []
 
@@ -97,7 +102,7 @@ def find_inside_contour(
             in_x, in_y = in_edge_x[j], in_edge_y[j]
             ray_x, ray_y = rasterized_line((out_x, out_y), (in_x, in_y), h, w)
 
-            selected_idx = np.nonzero(binary_img[ray_y, ray_x])[0]
+            selected_idx = np.nonzero(chip_bin_img[ray_y, ray_x])[0]
             if len(selected_idx) > 0:
                 selected_x, selected_y = ray_x[selected_idx], ray_y[selected_idx]
                 distances = np.linalg.norm((selected_x - out_x, selected_y - out_y), axis=0)
@@ -106,8 +111,45 @@ def find_inside_contour(
                 thickness.append(distances[innermost_idx])
                 inside_contour_pts.append((selected_x[innermost_idx], selected_y[innermost_idx]))
 
-    return InsideFeatures(thickness, inside_contour_pts, out_curve)
+    return inside_contour_pts, thickness
 
+
+NEIGHBORHOOD_MASKS = (
+    cv.circle(np.zeros((9, 9), dtype=np.uint8), (4, 4), 1, 1, -1),
+    cv.circle(np.zeros((9, 9), dtype=np.uint8), (4, 4), 2, 1, -1),
+    cv.circle(np.zeros((9, 9), dtype=np.uint8), (4, 4), 3, 1, -1),
+    cv.circle(np.zeros((9, 9), dtype=np.uint8), (4, 4), 4, 1, -1),
+)
+
+
+def clean_inside_contour(
+    chip_bin_img: np.ndarray,
+    inside_contour_pts: Sequence[Point],
+    thickness: Sequence[float],
+    min_neighbors_count: int
+        ) -> tuple[Sequence[Point], Sequence[float]]:
+
+    print()
+    h, w = chip_bin_img.shape
+    inside_contour_bin_img = np.zeros((h+8, w+8), dtype=np.uint8)
+    for x, y in inside_contour_pts:
+        inside_contour_bin_img[y, x] = 1
+    max_thickness = max(thickness)
+
+    filtered_inside_contour_pts = []
+    filtered_thickness = []
+
+    for (x, y), t in zip(inside_contour_pts, thickness):
+        # mask_index = round(3 * t / thickness_majorant)
+        mask_index = round(3 * t / max_thickness)
+        print(f"thickness = {t}, mask index = {mask_index}")
+        mask = NEIGHBORHOOD_MASKS[mask_index]
+        count = np.sum(inside_contour_bin_img[y-4:y+5, x-4:x+5] * mask)
+        if count > min_neighbors_count:
+            filtered_inside_contour_pts.append((x, y))
+            filtered_thickness.append(t)
+
+    return filtered_inside_contour_pts, filtered_thickness
 
 
 def extract_chip_inside_contour(binary_img: np.ndarray) -> tuple[MainFeatures, InsideFeatures]:
@@ -125,22 +167,37 @@ def extract_chip_inside_contour(binary_img: np.ndarray) -> tuple[MainFeatures, I
     # TODO: try to replace this connected component filter by a more generic process
     # chip_binary_img = connected_components.remove_small_components(chip_binary_img, min_area=20)
 
-    inside_ft = find_inside_contour(
+    noised_inside_contour_pts, noised_thickness = find_inside_contour(
         chip_binary_img,
         chip_curve_pts,
         main_ft.indirect_rotation,
         thickness_majorant=125
     )
+    clean_inside_contour_pts, clean_thickness = clean_inside_contour(
+        chip_binary_img,
+        noised_inside_contour_pts,
+        noised_thickness,
+        min_neighbors_count=2
+    )
 
+    inside_ft = InsideFeatures(
+        chip_curve_pts,
+        noised_inside_contour_pts,
+        noised_thickness,
+        clean_inside_contour_pts,
+        clean_thickness
+    )
     return main_ft, inside_ft
 
 
 def render_inside_features(render: np.ndarray, main_ft: MainFeatures, inside_ft: InsideFeatures) -> None:
     """Draw a representation of features `main_ft` and `inside_ft` on image `render`."""
-    for x, y in inside_ft.inside_contour_pts:
+    for x, y in inside_ft.noised_inside_contour_pts:
         render[y, x] = (0, 0, 255)  # red
+    for x, y in inside_ft.inside_contour_pts:
+        render[y, x] = (0, 255, 0)  # green
     for pt in inside_ft.chip_curve_pts.reshape(-1, 2):
-        cv.circle(render, pt, 3, (0, 255, 0), -1)
+        cv.circle(render, pt, 3, (255, 0, 0), -1)
 
 
 

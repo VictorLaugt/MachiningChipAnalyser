@@ -39,7 +39,7 @@ def render_chip_inside(binary_img: np.ndarray) -> tuple[ChipInsideFeatures, np.n
     edge_lines = create_edge_lines(chip_curve_pts)
     dist_edge_pt = compute_distance_edge_points(chip_pts, edge_lines)
     nearest_edge_idx = np.argmin(dist_edge_pt, axis=0)
-    inside_ft = find_inside_contour(chip_pts, edge_lines, nearest_edge_idx, thickness_majorant=125.)
+    inside_ft = find_inside_contour(chip_pts, edge_lines, nearest_edge_idx, thickness_majorant=125)
 
     for pt in chip_curve_pts.reshape(-1, 2):
         cv.circle(ft_repr, pt, 3, color=green, thickness=-1)

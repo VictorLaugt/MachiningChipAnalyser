@@ -11,7 +11,7 @@ Inputs:
     binary_img: Array(R, C)<uint8>
     chip_curve_pts: Array(H, 1, 2)<int32>
     chip_pts: Array(N, 1, 2)<int32>
-    thickness_majorant: float
+    thickness_majorant: int
 
 
 // O(hull_length * thickness_majorant)  ~=  O(N)
