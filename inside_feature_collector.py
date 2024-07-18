@@ -123,8 +123,11 @@ class CollectorMedian(AbstractInsideFeatureCollector):
         self.smoothed_seqs: list[Sequence[float]] = []
         self.extra_smoothed_seqs: list[Sequence[float]] = []
 
+    # def get_measures(self) -> Sequence[list[Sequence[float]]]:
+    #     return (self.thickness_seqs, self.smoothed_seqs, self.extra_smoothed_seqs)
+
     def get_measures(self) -> Sequence[list[Sequence[float]]]:
-        return (self.thickness_seqs, self.smoothed_seqs, self.extra_smoothed_seqs)
+        return (self.thickness_seqs, self.smoothed_seqs)
 
     def collect(self, main_ft: MainFeatures, inside_ft: InsideFeatures) -> None:
         super().collect(main_ft, inside_ft)
@@ -165,7 +168,7 @@ class CollectorWavelet(AbstractInsideFeatureCollector):
 
 
 
-# TODO:
+# TODO: derivative filter
 class CollectorDerivative(AbstractInsideFeatureCollector):
     def __init__(self, scale: float=1.0):
         super().__init__(scale)

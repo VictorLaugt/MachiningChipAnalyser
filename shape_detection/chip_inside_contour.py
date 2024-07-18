@@ -71,7 +71,8 @@ def compute_bisectors(
 
     return bisectors / np.linalg.norm(bisectors, axis=1).reshape(-1, 1)
 
-
+#TODO: in find_inside_contour and clean_inside_contour: linear interpollation to recreate missing points
+#TODO: in find_inside_contour and clean_inside_contour: return arrays instead of sequences
 def find_inside_contour(
     chip_bin_img: np.ndarray,
     chip_curve_pts: PointArray,
@@ -128,8 +129,6 @@ def clean_inside_contour(
     thickness: Sequence[float],
     min_neighbors_count: int
         ) -> tuple[Sequence[Point], Sequence[float]]:
-
-    print()
     h, w = chip_bin_img.shape
     inside_contour_bin_img = np.zeros((h+8, w+8), dtype=np.uint8)
     for x, y in inside_contour_pts:
@@ -140,9 +139,7 @@ def clean_inside_contour(
     filtered_thickness = []
 
     for (x, y), t in zip(inside_contour_pts, thickness):
-        # mask_index = round(3 * t / thickness_majorant)
         mask_index = round(3 * t / max_thickness)
-        print(f"thickness = {t}, mask index = {mask_index}")
         mask = NEIGHBORHOOD_MASKS[mask_index]
         count = np.sum(inside_contour_bin_img[y-4:y+5, x-4:x+5] * mask)
         if count > min_neighbors_count:
@@ -164,8 +161,6 @@ def extract_chip_inside_contour(binary_img: np.ndarray) -> tuple[MainFeatures, I
 
     chip_binary_img = np.zeros_like(binary_img)
     chip_binary_img[chip_pts[:, 0, 1], chip_pts[:, 0, 0]] = 255
-    # TODO: try to replace this connected component filter by a more generic process
-    # chip_binary_img = connected_components.remove_small_components(chip_binary_img, min_area=20)
 
     noised_inside_contour_pts, noised_thickness = find_inside_contour(
         chip_binary_img,
