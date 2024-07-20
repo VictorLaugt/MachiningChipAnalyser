@@ -45,7 +45,7 @@ def rasterized_line(p0: Point, p1: Point, img_height: int, img_width: int) -> tu
     -------
     raster_x, raster_y: (n,)-array of int
         Respectively the x and y coordinates of the image pixels crossed by the
-        line segment (p0, p1).
+        line segment (p0, p1). 0 <= x < img_width and 0 <= y < img_height.
     """
     line_x, line_y = ski.draw.line(*p0, *p1)
     inside_mask = (0 <= line_x) & (line_x < img_width) & (0 <= line_y) & (line_y < img_height)
