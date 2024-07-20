@@ -383,7 +383,11 @@ if __name__ == '__main__':
     processing.save_frame_comp(output_dir, min(15, len(loader)-1), ("chipinside",))
     processing.show_video_comp(("chipinside", "morph"))
     collector.show_thickness_animated_graph()
-    collector.save_measures(output_dir.joinpath("thickness.csv"), 14)
+    collector.save_measures(output_dir.joinpath("thickness_frame_19.csv"), 19)
+    collector.save_measures(output_dir.joinpath("thickness_frame_26.csv"), 26)
+    collector.save_measures(output_dir.joinpath("thickness_frame_27.csv"), 27)
+    collector.save_measures(output_dir.joinpath("thickness_frame_28.csv"), 28)
+    collector.save_measures(output_dir.joinpath("thickness_frame_36.csv"), 36)
 
     # processing.show_frame_comp(0, ("chipinside", "morph"))
     # collector.show_thickness_graph(0)
