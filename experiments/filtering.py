@@ -83,14 +83,15 @@ def routine_wavelet(csv_path):
 
 def routine_savgol_peak_characterization(csv_path):
     signal = extract_signal_from_csv(csv_path)
+    # TODO: try to make the window_length non-arbitrary
     smoothed = scipy.signal.savgol_filter(signal, window_length=15, polyorder=2)
     rough = scipy.signal.savgol_filter(signal, window_length=45, polyorder=2)
 
     rough_max, _ = scipy.signal.find_peaks(rough, prominence=5)
     period = np.mean(np.diff(rough_max))
 
-    maximums, _ = scipy.signal.find_peaks(smoothed, distance=0.8*period, width=(0.2*period, period))
-    minimums, _ = scipy.signal.find_peaks(-smoothed, distance=0.8*period, width=(0.2*period, period))
+    maximums, _ = scipy.signal.find_peaks(smoothed, distance=0.7*period)
+    minimums, _ = scipy.signal.find_peaks(-smoothed, distance=0.7*period, width=0.2*period)
 
     fig, ax = plt.subplots(figsize=(16, 9))
     plt.scatter(rough_max, rough[rough_max], color='red', marker='o', s=300)
