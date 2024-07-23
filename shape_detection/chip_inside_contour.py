@@ -19,6 +19,21 @@ import cv2 as cv
 import skimage as ski
 
 
+# class InsideFeatures:
+#     __slots__ = (
+#         "thickness",  # type: Sequence[float]
+#     )
+
+
+# class InsideFeaturesRender(InsideFeatures):
+#     __slots__ = (
+#         "chip_curve_pts",             # type: PointArray
+#         "noised_inside_contour_pts",  # type: Sequence[Point]
+#         "noised_thickness",           # type: Sequence[float]
+#         "inside_contour_pts",         # type: Sequence[Point]
+#     )
+
+
 @dataclass
 class InsideFeatures:
     chip_curve_pts: PointArray

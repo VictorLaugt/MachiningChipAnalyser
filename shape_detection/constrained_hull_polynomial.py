@@ -19,6 +19,19 @@ from numpy.polynomial import Polynomial
 import cv2 as cv
 
 
+# class ContactFeatures:
+#     __slots__ = (
+#         "contact_point",  # type: tuple[float, float]
+#     )
+
+# class ContactFeaturesRender(ContactFeatures):
+#     __slots__ = (
+#         "hull_pts",    # type: PointArray
+#         "key_pts",     # type: Pointarray
+#         "polynomial",  # type: Polynomial
+#     )
+
+
 @dataclass
 class ChipFeatures:
     hull_pts: PointArray

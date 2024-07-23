@@ -13,6 +13,19 @@ import cv2 as cv
 import geometry
 
 
+# class MainFeatures:
+#     __slots__ = (
+#         "indirect_rotation",       # type: bool
+#         "base_line",               # type: Line
+#         "tool_line",               # type: Line
+#         "tool_angle",              # type: float
+#         "base_border",             # type: Line
+#         "base_opp_border",         # type: Line
+#         "tool_opp_border",         # type: Line
+#         "tool_base_intersection",  # type: tuple[float, float]
+#     )
+
+
 @dataclass
 class MainFeatures:
     def __init__(self):
