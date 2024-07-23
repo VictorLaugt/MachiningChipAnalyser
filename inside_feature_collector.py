@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from typing import Iterable, Sequence
+    from typing import Sequence, Optional
     from shape_detection.chip_extraction import MainFeatures
     from shape_detection.chip_inside_contour import InsideFeatures
     from pathlib import Path
@@ -49,7 +49,7 @@ class AbstractInsideFeatureCollector(abc.ABC):
         self.main_features.append(main_ft)
         self.inside_features.append(inside_ft)
 
-    def extract_and_render(self, binary_img: np.ndarray, background: np.ndarray|None=None) -> np.ndarray:
+    def extract_and_render(self, binary_img: np.ndarray, background: Optional[np.ndarray]=None) -> np.ndarray:
         main_ft, inside_ft = extract_chip_inside_contour(binary_img)
         self.collect(main_ft, inside_ft)
         if background is None:
@@ -167,16 +167,11 @@ class CollectorWavelet(AbstractInsideFeatureCollector):
         self.smoothed_seqs.append(denoised_signal)
 
 
-
-# TODO: derivative filter
-class CollectorDerivative(AbstractInsideFeatureCollector):
+class CollectorSpikeFilter(AbstractInsideFeatureCollector):
     def __init__(self, scale: float=1.0):
         super().__init__(scale)
         self.thickness_seqs: list[Sequence[float]] = []
-        ...
+        self.smoothed_seqs: list[Sequence[float]] = []
+        self.rough_seqs: list[Sequence[float]] = []
 
-    def get_measures(self) -> Sequence[list[Sequence[float]]]:
-        ...
-
-    def collect(self, main_ft: MainFeatures, inside_ft: InsideFeatures) -> None:
-        super().collect(main_ft, inside_ft)
+    ...

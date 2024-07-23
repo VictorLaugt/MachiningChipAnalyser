@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
+    from typing import Optional
     from geometry import PointArray
     from chip_extraction import MainFeatures
 
@@ -55,7 +56,7 @@ class ChipFeatureCollector:
     def __init__(self):
         pass
 
-    def extract_and_render(self, binary_img: np.ndarray, background: np.ndarray|None=None) -> np.ndarray:
+    def extract_and_render(self, binary_img: np.ndarray, background: Optional[np.ndarray]=None) -> np.ndarray:
         main_ft, chip_hull_pts = extract_chip_features(binary_img)
         if background is None:
             ft_repr = np.zeros((binary_img.shape[0], binary_img.shape[1], 3), dtype=np.uint8)
