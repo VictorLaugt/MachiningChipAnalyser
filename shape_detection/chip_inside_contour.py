@@ -6,10 +6,7 @@ if TYPE_CHECKING:
     from shape_detection.chip_extraction import MainFeatures
 
 import geometry
-from shape_detection.constrained_hull_polynomial import (
-    compute_chip_convex_hull,
-    extract_chip_curve_points
-)
+from shape_detection.constrained_hull_polynomial import compute_chip_convex_hull
 from shape_detection.chip_extraction import extract_main_features
 
 from dataclasses import dataclass
@@ -311,10 +308,18 @@ def extract_chip_inside_contour(binary_img: np.ndarray) -> tuple[MainFeatures, I
 
     contours, _ = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
     pts = np.vstack(contours)
-    chip_pts = geometry.under_lines(pts, (main_ft.base_line, main_ft.tool_line), (10, 10))
+    chip_pts = geometry.under_lines(
+        pts,
+        (main_ft.base_line, main_ft.tool_line),
+        (10, 10)
+    )
 
     chip_hull_pts = compute_chip_convex_hull(main_ft, chip_pts)
-    chip_curve_pts = extract_chip_curve_points(main_ft, chip_hull_pts)
+    chip_curve_pts = geometry.under_lines(
+        chip_hull_pts,
+        (main_ft.base_line, main_ft.base_opp_border, main_ft.tool_opp_border),
+        (-5, 15, 15)
+    )
 
     chip_binary_img = np.zeros_like(binary_img)
     chip_binary_img[chip_pts[:, 0, 1], chip_pts[:, 0, 0]] = 255
@@ -348,6 +353,8 @@ def render_inside_features(render: np.ndarray, main_ft: MainFeatures, inside_ft:
         render[y, x] = (0, 0, 255)  # red
     for x, y in inside_ft.inside_contour_pts:
         render[y, x] = (0, 255, 0)  # green
+    for x, y in inside_ft.chip_curve_pts.reshape(-1, 2):
+        cv.circle(render, (x, y), 3, (255, 0, 0), -1)
 
 
 if __name__ == '__main__':
