@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pathlib import Path
     from chip_extract import MainFeatures
-    from contact_measurement import ContactFeatures
-    from thickness_measurement import InsideFeatures
+    from features_contact import ContactFeatures
+    from features_thickness import InsideFeatures
 
-from contact_measurement import render_contact_features
+from features_contact import render_contact_features
 
 import abc
 

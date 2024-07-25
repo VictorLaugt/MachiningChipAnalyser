@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Optional
     from type_hints import ColorImage, OpenCVIntArray
     from chip_extract import MainFeatures
 

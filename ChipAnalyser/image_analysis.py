@@ -4,15 +4,15 @@ if TYPE_CHECKING:
     from pathlib import Path
     from type_hints import GrayImage, OpenCVIntArray
     from chip_extract import MainFeatures
-    from contact_measurement import ContactFeatures
-    from thickness_measurement import InsideFeatures
+    from features_contact import ContactFeatures
+    from features_thickness import InsideFeatures
 
 import numpy as np
 import cv2 as cv
 
 import geometry
 from chip_extract import extract_main_features
-from contact_measurement import extract_contact_features, render_contact_features
+from features_contact import extract_contact_features, render_contact_features
 
 
 def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: OpenCVIntArray) -> OpenCVIntArray:
@@ -37,15 +37,6 @@ def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: OpenCVIntArray) ->
     )[0][0]
 
     return np.roll(chip_hull_pts, -first_pt_idx, axis=0)
-
-
-# def extract_chip_curve_points(main_ft: MainFeatures, chip_hull_pts: OpenCVIntArray) -> OpenCVIntArray:
-#     """Return the points of the chip hull which belong to the chip curve."""
-#     return geometry.under_lines(
-#         chip_hull_pts,
-#         (main_ft.base_line, main_ft.base_opp_border, main_ft.tool_opp_border),
-#         (0, 15, 15)
-#     )
 
 
 def geometrical_analysis(binary_img: GrayImage) -> tuple[MainFeatures, ContactFeatures, InsideFeatures]:
