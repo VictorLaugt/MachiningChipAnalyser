@@ -1,10 +1,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from type_hints import ColorImage, OpenCVIntArray
-    from chip_extract import MainFeatures
-
+    from features_main import MainFeatures
 
 import sys
 import matplotlib.pyplot as plt
@@ -83,6 +81,12 @@ def extract_contact_features(main_ft: MainFeatures, outside_segments: OpenCVIntA
     contact_ft.contact = chip_tool_contact_point(main_ft, contact_ft.polynomial)
 
     return contact_ft
+
+
+def measure_contact_length(main_ft: MainFeatures, contact_ft: ContactFeatures) -> float:
+    xi, yi = main_ft.tool_base_intersection
+    xc, yc = contact_ft.contact_point
+    return np.linalg.norm((xc-xi, yc-yi))
 
 
 def render_contact_features(render: ColorImage, main_ft: MainFeatures, contact_ft: ContactFeatures) -> ColorImage:

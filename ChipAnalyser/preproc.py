@@ -36,7 +36,7 @@ def remove_small_components(bin_src_img: GrayImage, min_area: int, bin_dst_img: 
     return bin_dst_img
 
 
-def image_preprocessing(input_img: Image) -> GrayImage:
+def preprocess(input_img: Image) -> GrayImage:
     # conversion in grayscale (out-of-place)
     x = cv.cvtColor(input_img, cv.COLOR_RGB2GRAY)
 

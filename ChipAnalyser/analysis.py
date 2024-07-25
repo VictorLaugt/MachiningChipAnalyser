@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pathlib import Path
     from type_hints import GrayImage, OpenCVIntArray
-    from chip_extract import MainFeatures
+    from features_main import MainFeatures
     from features_contact import ContactFeatures
     from features_thickness import InsideFeatures
 
@@ -11,8 +11,8 @@ import numpy as np
 import cv2 as cv
 
 import geometry
-from chip_extract import extract_main_features
-from features_contact import extract_contact_features, render_contact_features
+from features_main import extract_main_features
+from features_contact import extract_contact_features, measure_contact_length, render_contact_features
 
 
 def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: OpenCVIntArray) -> OpenCVIntArray:
@@ -39,7 +39,7 @@ def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: OpenCVIntArray) ->
     return np.roll(chip_hull_pts, -first_pt_idx, axis=0)
 
 
-def geometrical_analysis(binary_img: GrayImage) -> tuple[MainFeatures, ContactFeatures, InsideFeatures]:
+def extract_geometrical_features(binary_img: GrayImage) -> tuple[MainFeatures, ContactFeatures, InsideFeatures]:
     main_ft = extract_main_features(binary_img)
 
     contours, _ = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
@@ -57,3 +57,14 @@ def geometrical_analysis(binary_img: GrayImage) -> tuple[MainFeatures, ContactFe
     inside_ft = ...
 
     return main_ft, contact_ft, inside_ft
+
+
+def measure_parameters(
+    scale: float,
+    main_ft: MainFeatures,
+    contact_ft: ContactFeatures,
+    inside_ft: InsideFeatures
+) -> tuple[float, float, float]:
+
+    contact_len = scale * measure_contact_length(main_ft, contact_ft)
+    spike_mean_thk, valley_mean_thk = ...

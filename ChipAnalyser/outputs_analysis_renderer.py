@@ -2,15 +2,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pathlib import Path
-    from chip_extract import MainFeatures
+    from features_main import MainFeatures
     from features_contact import ContactFeatures
-    from features_thickness import InsideFeatures
-
-from features_contact import render_contact_features
+    from features_thickness import InsideFeatures, ThicknessAnalysis
 
 import abc
-
 import cv2 as cv
+
+from features_contact import render_contact_features
 
 
 # TODO: GraphAnimator
@@ -18,9 +17,16 @@ class GraphAnimator:
     ...
 
 
-class AbstractFeatureRenderer(abc.ABC):
+class AbstractAnalysisRenderer(abc.ABC):
     @abc.abstractmethod
-    def render_frame(self, main_ft: MainFeatures, contact_ft: ContactFeatures, inside_ft: InsideFeatures) -> None:
+    def render_frame(
+        self,
+        main_ft: MainFeatures,
+        contact_ft: ContactFeatures,
+        inside_ft: InsideFeatures,
+        thickness_analysis: ThicknessAnalysis,
+        scale: float
+    ) -> None:
         pass
 
     @abc.abstractmethod
@@ -28,8 +34,15 @@ class AbstractFeatureRenderer(abc.ABC):
         pass
 
 
-class NoRendering(AbstractFeatureRenderer):
-    def render_frame(self, _main_ft: MainFeatures, _contact_ft: ContactFeatures, _inside_ft: InsideFeatures) -> None:
+class NoRendering(AbstractAnalysisRenderer):
+    def render_frame(
+        self,
+        _main_ft: MainFeatures,
+        _contact_ft: ContactFeatures,
+        _inside_ft: InsideFeatures,
+        _thickness_analysis: ThicknessAnalysis,
+        _scale: float
+    ) -> None:
         return
 
     def release(self) -> None:
@@ -37,7 +50,7 @@ class NoRendering(AbstractFeatureRenderer):
 
 
 # TODO: FeatureRenderer
-class FeatureRenderer(AbstractFeatureRenderer):
+class AnalysisRenderer(AbstractAnalysisRenderer):
     def __init__(self, render_dir: Path, h: int, w: int) -> None:
         codec = cv.VideoWriter_fourcc(*'mp4v')
 
@@ -49,7 +62,14 @@ class FeatureRenderer(AbstractFeatureRenderer):
         # self.thickness_animator = GraphAnimator()
 
 
-    def render_frame(self, main_ft: MainFeatures, contact_ft: ContactFeatures, inside_ft: InsideFeatures) -> None:
+    def render_frame(
+        self,
+        main_ft: MainFeatures,
+        contact_ft: ContactFeatures,
+        inside_ft: InsideFeatures,
+        thickness_analysis: ThicknessAnalysis,
+        scale: float
+    ) -> None:
         ...
 
     def release(self) -> None:

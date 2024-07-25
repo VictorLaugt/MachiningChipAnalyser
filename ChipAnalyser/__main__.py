@@ -3,17 +3,19 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from img_loader import AbstractImageLoader
     from outputs_measurement_writer import AbstractMeasurementWriter
-    from outputs_feature_renderer import AbstractFeatureRenderer
+    from outputs_analysis_renderer import AbstractAnalysisRenderer
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from pathlib import Path
 
 from img_loader import ImageDirectoryLoader, VideoFrameLoader
 from outputs_measurement_writer import MeasurementWriter
-from outputs_feature_renderer import FeatureRenderer, NoRendering
+from outputs_analysis_renderer import AnalysisRenderer, NoRendering
 
-from preproc import image_preprocessing
-from image_analysis import geometrical_analysis
+from preproc import preprocess
+from analysis import extract_geometrical_features
+from features_contact import measure_contact_length
+from features_thickness import measure_spike_valley_thickness
 
 
 def build_arg_parser() -> ArgumentParser:
@@ -50,10 +52,15 @@ In addition to make the measurements, the program can also produce graphical ren
             "image."
         )
     )
+    parser.add_argument('-s',
+        dest='scale',
+        type=float,
+        default=1.0,
+        help="length of a pixel in µm (1 by default)."
+    )
     parser.add_argument('-r',
         dest='rendering_directory',
         type=Path,
-        required=False,
         help=(
             "if given, the program produces graphical renderings of the feature "
             "extractions, in the form of video that are stored in the specified "
@@ -72,18 +79,22 @@ In addition to make the measurements, the program can also produce graphical ren
 
 def analysis_loop(
     loader: AbstractImageLoader,
+    scale: float,
     measurement_writer: AbstractMeasurementWriter,
-    feature_renderer: AbstractFeatureRenderer
+    analysis_renderer: AbstractAnalysisRenderer
 ) -> None:
     for img in loader:
-        binary_img = image_preprocessing(img)
-        main_ft, contact_ft, inside_ft = geometrical_analysis(binary_img)
+        # image processing
+        binary_img = preprocess(img)
+        main_ft, contact_ft, inside_ft = extract_geometrical_features(binary_img)
 
-        contact_length = ...  # compute from main_ft and contact_ft
-        spike_mean_thickness, valley_mean_thickness = ...  # compute from [main_ft and] inside_ft
+        # signal processing
+        contact_len = measure_contact_length(main_ft, contact_ft)
+        thickness_analysis = measure_spike_valley_thickness(main_ft, inside_ft)
 
-        measurement_writer.write(contact_length, spike_mean_thickness, valley_mean_thickness)
-        feature_renderer.render_frame(main_ft, contact_ft, inside_ft)
+        # output result
+        measurement_writer.write(contact_len, thickness_analysis)
+        analysis_renderer.render_frame(main_ft, contact_ft, inside_ft, thickness_analysis, scale)
 
 
 def main():
@@ -105,13 +116,13 @@ def main():
     measurement_writer = MeasurementWriter(args.output_file)
     if args.rendering_directory is not None:
         h, w = loader.img_shape()
-        feature_renderer = FeatureRenderer(args.rendering_directory, h, w)
+        analysis_renderer = AnalysisRenderer(args.rendering_directory, h, w)
     else:
-        feature_renderer = NoRendering()
+        analysis_renderer = NoRendering()
 
-    analysis_loop(loader, measurement_writer, feature_renderer)
+    analysis_loop(loader, args.scale, measurement_writer, analysis_renderer)
     measurement_writer.release()
-    feature_renderer.release()
+    analysis_renderer.release()
 
     if args.rendering_directory is not None and args.display_render:
         # TODO: display rendering videos
