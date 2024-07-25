@@ -89,7 +89,7 @@ def measure_contact_length(main_ft: MainFeatures, contact_ft: ContactFeatures) -
     return np.linalg.norm((xc-xi, yc-yi))
 
 
-def render_contact_features(render: ColorImage, main_ft: MainFeatures, contact_ft: ContactFeatures) -> ColorImage:
+def render_contact_features(render: ColorImage, main_ft: MainFeatures, contact_ft: ContactFeatures) -> None:
     contact_line = geometry.parallel(main_ft.base_line, *contact_ft.contact_point)
     if contact_ft.polynomial is not None:
         # FIXME: clarify these type castings

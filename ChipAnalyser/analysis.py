@@ -1,7 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from pathlib import Path
     from type_hints import GrayImage, OpenCVIntArray
     from features_main import MainFeatures
     from features_contact import ContactFeatures
@@ -13,6 +12,7 @@ import cv2 as cv
 import geometry
 from features_main import extract_main_features
 from features_contact import extract_contact_features, measure_contact_length, render_contact_features
+from features_thickness import extract_inside_features, measure_spike_valley_thickness, render_inside_features
 
 
 def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: OpenCVIntArray) -> OpenCVIntArray:
@@ -54,17 +54,6 @@ def extract_geometrical_features(binary_img: GrayImage) -> tuple[MainFeatures, C
     )
 
     contact_ft = extract_contact_features(main_ft, outside_segments)
-    inside_ft = ...
+    inside_ft = extract_inside_features(main_ft, outside_segments)  # MOCK inside feature extraction
 
     return main_ft, contact_ft, inside_ft
-
-
-def measure_parameters(
-    scale: float,
-    main_ft: MainFeatures,
-    contact_ft: ContactFeatures,
-    inside_ft: InsideFeatures
-) -> tuple[float, float, float]:
-
-    contact_len = scale * measure_contact_length(main_ft, contact_ft)
-    spike_mean_thk, valley_mean_thk = ...

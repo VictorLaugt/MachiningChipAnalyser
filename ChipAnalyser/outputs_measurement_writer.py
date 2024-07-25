@@ -35,14 +35,19 @@ class MeasurementPrinter(AbstractMeasurementWriter):
 class MeasurementWriter(AbstractMeasurementWriter):
     header = ("contact length", "spike mean thickness", "valley mean thickness")
 
-    def __init__(self, data_file_path: Path) -> None:
+    def __init__(self, data_file_path: Path, scale: float) -> None:
         self.save_file = data_file_path.open(mode='w')
-        self.csv_writer = csv.writer(data_file_path)
+        self.scale = scale
+        self.csv_writer = csv.writer(self.save_file)
         self.csv_writer.writerow(self.header)
 
-    def write(self, contact_length: float, spike_mean_thickness: float, valley_mean_thickness: float) -> None:
-        ...
-        # self.csv_writer.writerow((contact_length, spike_mean_thickness, valley_mean_thickness))
+    def write(self, contact_length: float, thickness_analysis: ThicknessAnalysis) -> None:
+        spike_mean_thickness = valley_mean_thickness = 0.0  # MOCK mean thickness value to write into the csv file
+        self.csv_writer.writerow((
+            self.scale * contact_length,
+            self.scale * spike_mean_thickness,
+            self.scale * valley_mean_thickness
+        ))
 
     def release(self) -> None:
         self.save_file.close()

@@ -79,7 +79,6 @@ In addition to make the measurements, the program can also produce graphical ren
 
 def analysis_loop(
     loader: AbstractImageLoader,
-    scale: float,
     measurement_writer: AbstractMeasurementWriter,
     analysis_renderer: AbstractAnalysisRenderer
 ) -> None:
@@ -90,11 +89,11 @@ def analysis_loop(
 
         # signal processing
         contact_len = measure_contact_length(main_ft, contact_ft)
-        thickness_analysis = measure_spike_valley_thickness(main_ft, inside_ft)
+        thickness_analysis = measure_spike_valley_thickness(main_ft, inside_ft)  # MOCK find spikes and valleys
 
         # output result
         measurement_writer.write(contact_len, thickness_analysis)
-        analysis_renderer.render_frame(main_ft, contact_ft, inside_ft, thickness_analysis, scale)
+        analysis_renderer.render_frame(main_ft, contact_ft, inside_ft, contact_len, thickness_analysis)  # MOCK analysis rendering
 
 
 def main():
@@ -116,11 +115,11 @@ def main():
     measurement_writer = MeasurementWriter(args.output_file)
     if args.rendering_directory is not None:
         h, w = loader.img_shape()
-        analysis_renderer = AnalysisRenderer(args.rendering_directory, h, w)
+        analysis_renderer = AnalysisRenderer(args.rendering_directory, args.scale, h, w)
     else:
         analysis_renderer = NoRendering()
 
-    analysis_loop(loader, args.scale, measurement_writer, analysis_renderer)
+    analysis_loop(loader, measurement_writer, analysis_renderer)
     measurement_writer.release()
     analysis_renderer.release()
 

@@ -16,6 +16,9 @@ from features_contact import render_contact_features
 class GraphAnimator:
     ...
 
+    def save_animation(animation_path: Path) -> None:
+        ...
+
 
 class AbstractAnalysisRenderer(abc.ABC):
     @abc.abstractmethod
@@ -24,8 +27,8 @@ class AbstractAnalysisRenderer(abc.ABC):
         main_ft: MainFeatures,
         contact_ft: ContactFeatures,
         inside_ft: InsideFeatures,
+        contact_len: float,
         thickness_analysis: ThicknessAnalysis,
-        scale: float
     ) -> None:
         pass
 
@@ -40,8 +43,8 @@ class NoRendering(AbstractAnalysisRenderer):
         _main_ft: MainFeatures,
         _contact_ft: ContactFeatures,
         _inside_ft: InsideFeatures,
+        _contact_len: float,
         _thickness_analysis: ThicknessAnalysis,
-        _scale: float
     ) -> None:
         return
 
@@ -49,28 +52,45 @@ class NoRendering(AbstractAnalysisRenderer):
         return
 
 
-# TODO: FeatureRenderer
+"""
+TODO: AnalysisRenderer
+- video which illustrates the contact length measurement
+- video which illustrates the detection of the chip inside contour
+- graph animation which shows the chip thickness measured on each input frame
+- single graph shiwh shows the evolution of the contact length vs the frame
+"""
 class AnalysisRenderer(AbstractAnalysisRenderer):
-    def __init__(self, render_dir: Path, h: int, w: int) -> None:
+    def __init__(self, render_dir: Path, scale: float, h: int, w: int) -> None:
+        self.scale = scale
+
+        contact_render_path = render_dir.joinpath("contact-length-extraction.avi")
+        inside_render_path = render_dir.joinpath("inside-contour-extraction.avi")
+        self.thickness_animation_path = render_dir.joinpath("chip-thickness-evolution.avi")
+
         codec = cv.VideoWriter_fourcc(*'mp4v')
+        self.contact_vid_writer = cv.VideoWriter(str(contact_render_path), codec, 30, (h, w))
+        self.inside_vid_writer = cv.VideoWriter(str(inside_render_path), codec, 30, (h, w))
 
-        contact_render_path = str(render_dir.joinpath("contact.avi"))
-        inside_contour_render_path = str(render_dir.joinpath("inside_contour.avi"))
+        self.thickness_animator = GraphAnimator()  # MOCK: GraphAnimator
 
-        self.contact_vid_writer = cv.VideoWriter(contact_render_path, codec, 30, (h, w))
-        self.inside_contour_vid_writer = cv.VideoWriter(inside_contour_render_path, codec, 30, (h, w))
-        # self.thickness_animator = GraphAnimator()
-
+        self.contact_lengths: list[float] = []
 
     def render_frame(
         self,
         main_ft: MainFeatures,
         contact_ft: ContactFeatures,
         inside_ft: InsideFeatures,
+        contact_len: float,
         thickness_analysis: ThicknessAnalysis,
-        scale: float
     ) -> None:
         ...
+        self.contact_lengths.append(self.scale * contact_len)
+
 
     def release(self) -> None:
-        ...
+        self.contact_vid_writer.release()
+        self.inside_vid_writer.release()
+        self.thickness_animator.save_animation(self.thickness_animation_path)
+
+
+
