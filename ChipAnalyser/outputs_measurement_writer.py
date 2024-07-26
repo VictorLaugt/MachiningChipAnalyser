@@ -19,16 +19,23 @@ class AbstractMeasurementWriter(abc.ABC):
     def release(self) -> None:
         pass
 
+    def __enter__(self) -> AbstractMeasurementWriter:
+        return self
+
+    def __exit__(self, _exc_type, _exc_value, _exc_backtrace) -> None:
+        self.release()
+
 
 class MeasurementPrinter(AbstractMeasurementWriter):
+    def __init__(self, scale: float) -> None:
+        self.scale = scale
+
     def write(self, contact_length: float, thickness_analysis: ThicknessAnalysis) -> None:
-        ...
-        # print(
-        #     f"contact length = {contact_length}, "
-        #     f"spike mean thickness = {spike_mean_thickness}, "
-        #     f"valley mean thickness = {valley_mean_thickness}"
-        # )
-        print(f"contact length = {contact_length}")
+        print(
+            f"contact length = {self.scale * contact_length}, "
+            f"mean spike thickness = {self.scale * thickness_analysis.mean_spike_thickness}, "
+            f"mean valley thickness = {self.scale * thickness_analysis.mean_valley_thickness}"
+        )
 
     def release(self) -> None:
         return

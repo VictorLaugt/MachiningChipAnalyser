@@ -40,6 +40,12 @@ class AbstractAnalysisRenderer(abc.ABC):
     def release(self) -> None:
         pass
 
+    def __enter__(self) -> AbstractAnalysisRenderer:
+        return self
+
+    def __exit__(self, _exc_type, _exc_value, _exc_traceback) -> None:
+        self.release()
+
 
 class NoRendering(AbstractAnalysisRenderer):
     def render_frame(self, *_unused_args) -> None:

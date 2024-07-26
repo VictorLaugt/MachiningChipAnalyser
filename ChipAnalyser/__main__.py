@@ -158,9 +158,8 @@ def main():
         progress_bar_func = progress_bar
 
     # analyse the input images and produce the outputs
-    analysis_loop(args.input_images, measurement_writer, analysis_renderer, progress_bar_func)
-    measurement_writer.release()
-    analysis_renderer.release()
+    with args.input_images, measurement_writer, analysis_renderer:
+        analysis_loop(args.input_images, measurement_writer, analysis_renderer, progress_bar_func)
 
 
 if __name__ == '__main__':

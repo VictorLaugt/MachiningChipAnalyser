@@ -24,6 +24,16 @@ class AbstractImageLoader(abc.ABC):
     def __iter__(self) -> Iterator[Image]:
         pass
 
+    @abc.abstractmethod
+    def release(self) -> None:
+        pass
+
+    def __enter__(self) -> AbstractImageLoader:
+        return self
+
+    def __exit__(self, _exc_type, _exc_value, _exc_traceback) -> None:
+        self.release()
+
 
 class ImageDirectoryLoader(AbstractImageLoader):
     def __init__(self, image_dir: Path, image_suffixes: Container[str]) -> None:
@@ -40,17 +50,31 @@ class ImageDirectoryLoader(AbstractImageLoader):
         for path in self.img_paths:
             yield cv.imread(str(path))
 
+    def release(self) -> None:
+        return
+
 
 # TODO: VideoFrameLoader
 class VideoFrameLoader(AbstractImageLoader):
     def __init__(self, video_path: Path) -> None:
-        ...
+        self.reader = cv.VideoCapture(str(video_path))
 
-    def img_shape(self) -> tuple[int, int] | tuple[int, int, int]:
-        ...
+    def img_shape(self) -> tuple[int, int, int]:
+        return (
+            int(self.reader.get(cv.CAP_PROP_FRAME_HEIGHT)),
+            int(self.reader.get(cv.CAP_PROP_FRAME_WIDTH)),
+            3
+        )
 
     def __len__(self) -> int:
-        ...
+        return int(self.reader.get(cv.CAP_PROP_FRAME_COUNT))
 
     def __iter__(self) -> Iterator[Image]:
-        ...
+        while True:
+            ret, frame = self.reader.read()
+            if not ret:
+                break
+            yield frame
+
+    def release(self) -> None:
+        self.reader.release()
