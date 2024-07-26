@@ -107,6 +107,7 @@ In addition to make the measurements, the program can also produce graphical ren
 def no_progress_bar(_iteration: int, _total: int, _step: int) -> None:
     return
 
+
 def progress_bar(iteration: int, total: int, step: int) -> None:
     if iteration % step == 0:
         progress = iteration / total
@@ -122,9 +123,9 @@ def analysis_loop(
     progress: Callable[[int, int, int], None]
 ) -> None:
     img_nb = len(loader)
-    for i, img in enumerate(loader):
+    for i, input_img in enumerate(loader, start=1):
         # image processing
-        binary_img = preprocess(img)
+        binary_img = preprocess(input_img)
         features = extract_geometrical_features(binary_img)
 
         # signal processing
@@ -133,7 +134,7 @@ def analysis_loop(
 
         # output result
         measurement_writer.write(contact_len, thickness_analysis)
-        analysis_renderer.render_frame(img, binary_img, features, contact_len, thickness_analysis)
+        analysis_renderer.render_frame(i, input_img, binary_img, features, contact_len, thickness_analysis)
 
         progress(i, img_nb, 10)
 

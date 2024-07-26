@@ -58,8 +58,6 @@ TODO: AnalysisRenderer
 """
 class AnalysisRenderer(AbstractAnalysisRenderer):
     def __init__(self, output_dir: Path, scale: float, image_height: int, image_width: int) -> None:
-        self.frame_nb = 1
-
         self.scale = scale
         self.h = image_height
         self.w = image_width
@@ -77,6 +75,7 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
 
     def render_frame(
         self,
+        frame_num: int,
         input_img: ColorImage,
         preproc_img: GrayImage,
         geom_ft: GeometricalFeatures,
@@ -84,16 +83,14 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         thickness_analysis: ThicknessAnalysis
     ) -> None:
         contact_render = input_img.copy()
-        render_contact_features(self.frame_nb, contact_render, geom_ft.main_ft, geom_ft.contact_ft)
+        render_contact_features(frame_num, contact_render, geom_ft.main_ft, geom_ft.contact_ft)
         self.contact_vid_writer.write(contact_render)
 
         inside_render = input_img.copy()
-        render_inside_features(self.frame_nb, inside_render, geom_ft.main_ft, geom_ft.inside_ft)
+        render_inside_features(frame_num, inside_render, geom_ft.main_ft, geom_ft.inside_ft)
         self.inside_vid_writer.write(inside_render)
 
         self.contact_lengths.append(self.scale * contact_len)
-
-        self.frame_nb += 1
 
     def release(self) -> None:
         self.contact_vid_writer.release()
