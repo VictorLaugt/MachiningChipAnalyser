@@ -8,16 +8,18 @@ if TYPE_CHECKING:
 
 import abc
 import cv2 as cv
+import numpy as np
 import matplotlib.pyplot as plt
 
 from features_contact import render_contact_features
+from features_thickness import render_inside_features
 
 
 # TODO: GraphAnimator
 class GraphAnimator:
     ...
 
-    def save_animation(self, anim_file: Path, frame_dir: Path) -> None:
+    def save(self, anim_file: Path, frame_dir: Path) -> None:
         ...
 
 
@@ -27,7 +29,7 @@ class AbstractAnalysisRenderer(abc.ABC):
     def render_frame(
         self,
         input_img: ColorImage,
-        preprocessed_img: GrayImage,
+        preproc_img: GrayImage,
         geom_ft: GeometricalFeatures,
         contact_len: float,
         thickness_analysis: ThicknessAnalysis
@@ -47,16 +49,17 @@ class NoRendering(AbstractAnalysisRenderer):
         return
 
 
-
 """
 TODO: AnalysisRenderer
-- video which illustrates the contact length measurement
-- video which illustrates the detection of the chip inside contour
-- graph animation which shows the chip thickness measured on each input frame
-- directory which contains chip thickness graph for each input frame
+[x] video which illustrates the contact length measurement
+[x] video which illustrates the detection of the chip inside contour
+[ ] graph animation which shows the chip thickness measured on each input frame
+[ ] directory which contains chip thickness graph for each input frame
 """
 class AnalysisRenderer(AbstractAnalysisRenderer):
     def __init__(self, output_dir: Path, scale: float, image_height: int, image_width: int) -> None:
+        self.frame_nb = 1
+
         self.scale = scale
         self.h = image_height
         self.w = image_width
@@ -81,10 +84,16 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         thickness_analysis: ThicknessAnalysis
     ) -> None:
         contact_render = input_img.copy()
-        render_contact_features(contact_render, geom_ft.main_ft, geom_ft.contact_ft)
+        render_contact_features(self.frame_nb, contact_render, geom_ft.main_ft, geom_ft.contact_ft)
         self.contact_vid_writer.write(contact_render)
 
+        inside_render = input_img.copy()
+        render_inside_features(self.frame_nb, inside_render, geom_ft.main_ft, geom_ft.inside_ft)
+        self.inside_vid_writer.write(inside_render)
+
         self.contact_lengths.append(self.scale * contact_len)
+
+        self.frame_nb += 1
 
     def release(self) -> None:
         self.contact_vid_writer.release()

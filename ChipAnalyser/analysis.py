@@ -55,8 +55,11 @@ def extract_geometrical_features(binary_img: GrayImage) -> GeometricalFeatures:
     contours, _ = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
     pts = np.vstack(contours)
     chip_pts = geometry.under_lines(pts, (main_ft.base_line, main_ft.tool_line), (10, 10))
-    chip_convex_hull_pts = compute_chip_convex_hull(main_ft, chip_pts)
 
+    chip_binary_img = np.zeros_like(binary_img)
+    chip_binary_img[chip_pts[:, 0, 1], chip_pts[:, 0, 0]] = 255
+
+    chip_convex_hull_pts = compute_chip_convex_hull(main_ft, chip_pts)
     outside_segments = geometry.under_lines(
         chip_convex_hull_pts,
         (main_ft.base_line, main_ft.base_opp_border, main_ft.tool_opp_border),
@@ -65,6 +68,6 @@ def extract_geometrical_features(binary_img: GrayImage) -> GeometricalFeatures:
 
     geometrical_ft.main_ft = main_ft
     geometrical_ft.contact_ft = extract_contact_features(main_ft, outside_segments)
-    geometrical_ft.inside_ft = extract_inside_features(main_ft, outside_segments)  # MOCK inside feature extraction
+    geometrical_ft.inside_ft = extract_inside_features(main_ft, outside_segments, chip_binary_img)
 
     return geometrical_ft
