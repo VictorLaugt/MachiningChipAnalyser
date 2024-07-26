@@ -15,6 +15,14 @@ from features_contact import extract_contact_features, measure_contact_length, r
 from features_thickness import extract_inside_features, measure_spike_valley_thickness, render_inside_features
 
 
+class GeometricalFeatures:
+    __slots__ = (
+        'main_ft',     # type: MainFeatures
+        'contact_ft',  # type: ContactFeatures
+        'inside_ft'    # type: InsideFeatures
+    )
+
+
 def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: OpenCVIntArray) -> OpenCVIntArray:
     """Compute the convex hull of the chip while constraining it to go through
     three anchor points.
@@ -39,7 +47,9 @@ def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: OpenCVIntArray) ->
     return np.roll(chip_hull_pts, -first_pt_idx, axis=0)
 
 
-def extract_geometrical_features(binary_img: GrayImage) -> tuple[MainFeatures, ContactFeatures, InsideFeatures]:
+def extract_geometrical_features(binary_img: GrayImage) -> GeometricalFeatures:
+    geometrical_ft = GeometricalFeatures()
+
     main_ft = extract_main_features(binary_img)
 
     contours, _ = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
@@ -53,7 +63,8 @@ def extract_geometrical_features(binary_img: GrayImage) -> tuple[MainFeatures, C
         (-5, 15, 15)
     )
 
-    contact_ft = extract_contact_features(main_ft, outside_segments)
-    inside_ft = extract_inside_features(main_ft, outside_segments)  # MOCK inside feature extraction
+    geometrical_ft.main_ft = main_ft
+    geometrical_ft.contact_ft = extract_contact_features(main_ft, outside_segments)
+    geometrical_ft.inside_ft = extract_inside_features(main_ft, outside_segments)  # MOCK inside feature extraction
 
-    return main_ft, contact_ft, inside_ft
+    return geometrical_ft

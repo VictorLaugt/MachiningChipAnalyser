@@ -1,7 +1,9 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
+    from type_hints import ColorImage, GrayImage
     from pathlib import Path
+    from analysis import GeometricalFeatures
     from features_main import MainFeatures
     from features_contact import ContactFeatures
     from features_thickness import InsideFeatures, ThicknessAnalysis
@@ -25,11 +27,11 @@ class AbstractAnalysisRenderer(abc.ABC):
     @abc.abstractmethod
     def render_frame(
         self,
-        main_ft: MainFeatures,
-        contact_ft: ContactFeatures,
-        inside_ft: InsideFeatures,
+        input_img: ColorImage,
+        preprocessed_img: GrayImage,
+        geom_ft: GeometricalFeatures,
         contact_len: float,
-        thickness_analysis: ThicknessAnalysis,
+        thickness_analysis: ThicknessAnalysis
     ) -> None:
         pass
 
@@ -39,14 +41,7 @@ class AbstractAnalysisRenderer(abc.ABC):
 
 
 class NoRendering(AbstractAnalysisRenderer):
-    def render_frame(
-        self,
-        _main_ft: MainFeatures,
-        _contact_ft: ContactFeatures,
-        _inside_ft: InsideFeatures,
-        _contact_len: float,
-        _thickness_analysis: ThicknessAnalysis,
-    ) -> None:
+    def render_frame(self, *_unused_args) -> None:
         return
 
     def release(self) -> None:
@@ -58,12 +53,21 @@ TODO: AnalysisRenderer
 - video which illustrates the contact length measurement
 - video which illustrates the detection of the chip inside contour
 - graph animation which shows the chip thickness measured on each input frame
-- single graph shiwh shows the evolution of the contact length vs the frame
+- single graph which shows the evolution of the contact length vs the frame
 """
 class AnalysisRenderer(AbstractAnalysisRenderer):
-    def __init__(self, render_dir: Path, scale: float, h: int, w: int) -> None:
-        self.h = h
-        self.w = w
+    def __init__(
+        self,
+        scale: float,
+        image_height: int,
+        image_width: int,
+        contact_length_vid: Path,
+        inside_contour_vid: Path,
+        thickness_graph: Path,
+        contact_length_graph: Path
+    ) -> None:
+        self.h = image_height
+        self.w = image_width
         self.scale = scale
 
         contact_render_path = render_dir.joinpath("contact-length-extraction.avi")
@@ -71,8 +75,8 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         self.thickness_animation_path = render_dir.joinpath("chip-thickness-evolution.avi")
 
         codec = cv.VideoWriter_fourcc(*'mp4v')
-        self.contact_vid_writer = cv.VideoWriter(str(contact_render_path), codec, 30, (w, h))
-        self.inside_vid_writer = cv.VideoWriter(str(inside_render_path), codec, 30, (w, h))
+        self.contact_vid_writer = cv.VideoWriter(str(contact_render_path), codec, 30, (image_width, image_height))
+        self.inside_vid_writer = cv.VideoWriter(str(inside_render_path), codec, 30, (image_width, image_height))
 
         self.thickness_animator = GraphAnimator()  # MOCK: GraphAnimator
 
@@ -80,15 +84,14 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
 
     def render_frame(
         self,
-        main_ft: MainFeatures,
-        contact_ft: ContactFeatures,
-        inside_ft: InsideFeatures,
+        input_img: ColorImage,
+        preprocessed_img: GrayImage,
+        geom_ft: GeometricalFeatures,
         contact_len: float,
-        thickness_analysis: ThicknessAnalysis,
+        thickness_analysis: ThicknessAnalysis
     ) -> None:
-
-        contact_render = np.zeros((self.h, self.w, 3), dtype=np.uint8)
-        render_contact_features(contact_render, main_ft, contact_ft)
+        contact_render = input_img.copy()
+        render_contact_features(contact_render, geom_ft.main_ft, geom_ft.contact_ft)
         self.contact_vid_writer.write(contact_render)
 
         self.contact_lengths.append(self.scale * contact_len)

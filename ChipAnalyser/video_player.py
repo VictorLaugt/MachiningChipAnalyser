@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Sequence
+    from pathlib import Path
     from type_hints import Image
 
 import abc
@@ -32,6 +33,7 @@ class AbstractVideoPlayer(abc.ABC):
                 continue_playing = self.pause()
                 self.erase_info()
         cv.destroyAllWindows()
+        self.stop()
 
     def pause(self) -> None:
         while True:
@@ -58,11 +60,15 @@ class AbstractVideoPlayer(abc.ABC):
     def rewind(self) -> None:
         pass
 
+    @abc.abstractmethod
+    def stop(self) -> None:
+        pass
+
 
 class VideoFilePlayer(AbstractVideoPlayer):
-    def __init__(self, reader: cv.VideoCapture, window_name: str):
+    def __init__(self, video_file_path: Path, window_name: str):
         super().__init__()
-        self.reader = reader
+        self.reader = cv.VideoCapture(str(video_file_path))
         self.window_name = window_name
 
     def frame_count_message(self) -> str:
@@ -82,6 +88,9 @@ class VideoFilePlayer(AbstractVideoPlayer):
         i = self.reader.get(cv.CAP_PROP_FRAME_COUNT) - 1 if i < 0 else i
         self.reader.set(cv.CAP_PROP_POS_FRAMES, i)
         self.step()
+
+    def stop(self) -> None:
+        self.reader.release()
 
 
 class VideoImgSeqPlayer(AbstractVideoPlayer):
@@ -107,3 +116,5 @@ class VideoImgSeqPlayer(AbstractVideoPlayer):
         self.frame_index = i
         self.step()
 
+    def stop(self) -> None:
+        return
