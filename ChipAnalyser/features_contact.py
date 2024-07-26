@@ -15,7 +15,7 @@ from numpy.polynomial import Polynomial
 import cv2 as cv
 
 
-# OPTIMIZE: in each case, use the best array type between OpenCVxxxArray or xxxArray
+# OPTIMIZE: in each case, use the best array type between OpenCVxxxArray or xxxPtArray
 # [ ] features_main.py
 # [ ] features_contact.py
 # [ ] features_thickness.py
