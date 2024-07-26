@@ -11,6 +11,22 @@ import cv2 as cv
 import geometry
 
 
+class MainFeatures:
+    __slots__ = (
+        "indirect_rotation",       # type: bool
+        "base_line",               # type: Line
+        "tool_line",               # type: Line
+
+        "tool_angle",              # type: float
+
+        "base_border",             # type: Line
+        "base_opp_border",         # type: Line
+        "tool_opp_border",         # type: Line
+
+        "tool_base_intersection",  # type: FloatPt
+    )
+
+
 def best_base_line(lines: OpenCVFloatArray) -> tuple[float, float]:
     """Return the best horizontal line."""
     for rho, theta in lines[:, 0, :]:
@@ -42,22 +58,6 @@ def locate_base_and_tool(binary_img: GrayImage) -> tuple[Line, Line, float, floa
     xn_tool, yn_tool = np.cos(theta_tool), np.sin(theta_tool)
 
     return (rho_base, xn_base, yn_base), (rho_tool, xn_tool, yn_tool), theta_base, theta_tool
-
-
-class MainFeatures:
-    __slots__ = (
-        "indirect_rotation",       # type: bool
-        "base_line",               # type: Line
-        "tool_line",               # type: Line
-
-        "tool_angle",              # type: float
-
-        "base_border",             # type: Line
-        "base_opp_border",         # type: Line
-        "tool_opp_border",         # type: Line
-
-        "tool_base_intersection",  # type: FloatPt
-    )
 
 
 def extract_main_features(binary_img: GrayImage) -> MainFeatures:

@@ -5,15 +5,12 @@ if TYPE_CHECKING:
     from outputs_measurement_writer import AbstractMeasurementWriter
     from outputs_analysis_renderer import AbstractAnalysisRenderer
 
-import sys
-import os
 from argparse import ArgumentParser, RawDescriptionHelpFormatter, ArgumentTypeError
 from pathlib import Path
 
 from img_loader import ImageDirectoryLoader, VideoFrameLoader
 from outputs_measurement_writer import MeasurementWriter
 from outputs_analysis_renderer import AnalysisRenderer, NoRendering
-from video_player import VideoFilePlayer
 
 from preproc import preprocess
 from analysis import extract_geometrical_features

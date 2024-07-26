@@ -4,9 +4,7 @@ if TYPE_CHECKING:
     from type_hints import ColorImage, GrayImage
     from pathlib import Path
     from analysis import GeometricalFeatures
-    from features_main import MainFeatures
-    from features_contact import ContactFeatures
-    from features_thickness import InsideFeatures, ThicknessAnalysis
+    from features_thickness import ThicknessAnalysis
 
 import abc
 import cv2 as cv
@@ -92,4 +90,3 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         self.contact_vid_writer.release()
         self.inside_vid_writer.release()
         self.thickness_animator.save(self.thickness_graph_anim, self.thickness_graphs)
-

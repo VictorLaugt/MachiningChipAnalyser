@@ -106,38 +106,3 @@ def render_contact_features(render: ColorImage, main_ft: MainFeatures, contact_f
 
     for kpt in contact_ft.key_pts.reshape(-1, 2):
         cv.circle(render, kpt, 6, colors.GREEN, thickness=-1)
-
-
-# class ChipFeatureCollector:
-#     def __init__(self, scale: float=1.0):
-#         self.scale = scale
-#         self.chip_features: list[ContactFeatures] = []
-#         self.main_features: list[MainFeatures] = []
-#         self.contact_lengths: list[float] = []
-
-#     def collect(self, main_ft: MainFeatures, chip_ft: ContactFeatures) -> None:
-#         xi, yi = main_ft.tool_base_intersection
-#         xc, yc = chip_ft.contact_point
-#         self.main_features.append(main_ft)
-#         self.chip_features.append(chip_ft)
-#         self.contact_lengths.append(self.scale * np.linalg.norm((xc-xi, yc-yi)))
-
-#     def extract_and_render(self, binary_img: np.ndarray, background: Optional[np.ndarray]=None) -> np.ndarray:
-#         main_ft, chip_ft = extract_contact_features(binary_img)
-#         self.collect(main_ft, chip_ft)
-#         if background is None:
-#             ft_repr = np.zeros((binary_img.shape[0], binary_img.shape[1], 3), dtype=np.uint8)
-#             render_chip_features(ft_repr, main_ft, chip_ft)
-#             ft_repr[binary_img > 0] = (255, 255, 255)
-#         else:
-#             ft_repr = background.copy()
-#             render_chip_features(ft_repr, main_ft, chip_ft)
-#         return ft_repr
-
-#     def show_contact_length_graph(self) -> None:
-#         plt.figure(figsize=(10, 5))
-#         plt.plot(range(1, len(self.contact_lengths)+1), self.contact_lengths, 'x-')
-#         plt.xlabel('frame')
-#         plt.ylabel('contact length (µm)')
-#         plt.grid()
-#         plt.show()
