@@ -13,7 +13,6 @@ test_%:
 	@python3 $(TEST_DIR)/$*.py
 
 clean:
-	rm -rf outputs/*
 	find . -name __pycache__ -type d | while read -r pycachepath; do rm -rf $$pycachepath; done
 
 .PHONY: test clean

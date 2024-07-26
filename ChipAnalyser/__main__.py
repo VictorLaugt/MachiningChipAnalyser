@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
+    from typing import Callable
     from img_loader import AbstractImageLoader
     from outputs_measurement_writer import AbstractMeasurementWriter
     from outputs_analysis_renderer import AbstractAnalysisRenderer
@@ -65,6 +66,11 @@ Measurement results are stored in a csv file.
 In addition to make the measurements, the program can also produce graphical renderings to illustrate how the measurements are done.
 """
     )
+    parser.add_argument('-S', '--silent',
+        dest='no_progress_bar',
+        action='store_true',
+        help="if this option is enabled, the program does not display progress bar"
+    )
     parser.add_argument('-i',
         dest='input_images',
         type=arg_checker_input_images,
@@ -98,12 +104,25 @@ In addition to make the measurements, the program can also produce graphical ren
     return parser
 
 
+def no_progress_bar(_iteration: int, _total: int, _step: int) -> None:
+    return
+
+def progress_bar(iteration: int, total: int, step: int) -> None:
+    if iteration % step == 0:
+        progress = iteration / total
+        length = 25
+        done = int(length * progress)
+        print(f"\r|{'#' * done}{' ' * (length-done)}| {100*progress:.2f}%", end='\r')
+
+
 def analysis_loop(
     loader: AbstractImageLoader,
     measurement_writer: AbstractMeasurementWriter,
-    analysis_renderer: AbstractAnalysisRenderer
+    analysis_renderer: AbstractAnalysisRenderer,
+    progress: Callable[[int, int, int], None]
 ) -> None:
-    for img in loader:
+    img_nb = len(loader)
+    for i, img in enumerate(loader):
         # image processing
         binary_img = preprocess(img)
         features = extract_geometrical_features(binary_img)
@@ -115,6 +134,8 @@ def analysis_loop(
         # output result
         measurement_writer.write(contact_len, thickness_analysis)
         analysis_renderer.render_frame(img, binary_img, features, contact_len, thickness_analysis)
+
+        progress(i, img_nb, 10)
 
 
 def main():
@@ -129,8 +150,14 @@ def main():
     else:
         analysis_renderer = NoRendering()
 
+    # configure the verbosity
+    if args.no_progress_bar:
+        progress_bar_func = no_progress_bar
+    else:
+        progress_bar_func = progress_bar
+
     # analyse the input images and produce the outputs
-    analysis_loop(args.input_images, measurement_writer, analysis_renderer)
+    analysis_loop(args.input_images, measurement_writer, analysis_renderer, progress_bar_func)
     measurement_writer.release()
     analysis_renderer.release()
 
