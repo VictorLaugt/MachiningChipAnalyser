@@ -28,8 +28,8 @@ def valid_path(value: str) -> Path:
         raise ArgumentTypeError(f"invalid path {value}")
 
 
-def arg_checker_input_images(value: str) -> AbstractImageLoader:
-    input_images = valid_path(value)
+def arg_checker_input_images(arg: str) -> AbstractImageLoader:
+    input_images = valid_path(arg)
     if input_images.is_dir():
         try:
             loader = ImageDirectoryLoader(input_images, ('.bmp',))
@@ -45,19 +45,13 @@ def arg_checker_input_images(value: str) -> AbstractImageLoader:
     return loader
 
 
-def arg_checker_output_file(value: str) -> Path:
-    output_file = valid_path(value)
-    output_file_dir = output_file.parent
-    if not output_file_dir.is_dir():
-        raise ArgumentTypeError(f"directory not found: {output_file_dir}")
-    return output_file
-
-
-def arg_checker_rendering_directory(value: str) -> Path:
-    rendering_directory = valid_path(value)
-    if not rendering_directory.is_dir():
-        raise ArgumentTypeError(f"directory not found: {rendering_directory}")
-    return rendering_directory
+def arg_checker_output_directory(arg: str) -> Path:
+    output_directory = valid_path(arg)
+    if not output_directory.parent.is_dir():
+        raise ArgumentTypeError(f"invalid path: {output_directory}")
+    elif output_directory.exists():
+        raise ArgumentTypeError(f"file already exists: {output_directory}")
+    return output_directory
 
 
 def build_arg_parser() -> ArgumentParser:
@@ -74,25 +68,20 @@ Measurement results are stored in a csv file.
 In addition to make the measurements, the program can also produce graphical renderings to illustrate how the measurements are done.
 """
     )
-
     parser.add_argument('-i',
         dest='input_images',
         type=arg_checker_input_images,
         required=True,
         help=(
             "path to the directory containing the images to be analyzed, or "
-            "path to the video whose images are to be analyzed"
+            "path to the video whose images are to be analyzed."
         )
     )
     parser.add_argument('-o',
-        dest='output_file',
-        type=arg_checker_output_file,
+        dest='output_directory',
+        type=arg_checker_output_directory,
         required=True,
-        help=(
-            "path to the csv file where each column corresponds to one of the "
-            "three measured features and each row corresponds to an analyzed "
-            "image."
-        )
+        help="path to the directory where output files will be written"
     )
     parser.add_argument('-s',
         dest='scale',
@@ -101,21 +90,14 @@ In addition to make the measurements, the program can also produce graphical ren
         help="length of a pixel in µm (1 by default)."
     )
     parser.add_argument('-r',
-        dest='rendering_directory',
-        type=arg_checker_rendering_directory,
+        dest='produce_renderings',
+        action='store_true',
         help=(
-            "if given, the program produces graphical renderings of the feature "
-            "extractions, in the form of video that are stored in the specified "
-            "directory. If not given, no rendering is done and the program simply "
-            "extracts the features from the input."
+            "if this option is enabled, the program produces graphical renderings "
+            "of the feature extractions, else, no rendering is done and the "
+            "program simply extracts the features from the inputs."
         )
     )
-    parser.add_argument('-d',
-        dest='display_render',
-        action='store_true',
-        help=("# TODO: '-d' argument description")
-    )
-
     return parser
 
 
@@ -142,31 +124,18 @@ def main():
     args = build_arg_parser().parse_args()
 
     # configure the outputs
-    measurement_writer = MeasurementWriter(args.output_file, args.scale)
-    if args.rendering_directory is not None:
+    args.output_directory.mkdir(parents=True)
+    measurement_writer = MeasurementWriter(args.output_directory, args.scale)
+    if args.produce_renderings:
         image_height, image_width = args.input_images.img_shape()[:2]
-        contact_length_vid=args.rendering_directory.joinpath("contact-length-extraction.avi"),
-        inside_contour_vid=args.rendering_directory.joinpath("inside-contour-extraction.avi"),
-        thickness_graph=args.rendering_directory.joinpath("chip-thickness-evolution.avi"),
-        contact_length_graph=args.rendering_directory.joinpath("contact-length-evolution.png")
-        analysis_renderer = AnalysisRenderer(
-            args.scale,
-            image_height, image_width,
-            contact_length_vid, inside_contour_vid,
-            thickness_graph, contact_length_graph
-        )
+        analysis_renderer = AnalysisRenderer(args.output_directory, args.scale, image_height, image_width)
     else:
         analysis_renderer = NoRendering()
 
-    # analyse the image and produces the outputs
-    analysis_loop(loader, measurement_writer, analysis_renderer)
+    # analyse the input images and produce the outputs
+    analysis_loop(args.input_images, measurement_writer, analysis_renderer)
     measurement_writer.release()
     analysis_renderer.release()
-
-    # display the outputs
-    if args.rendering_directory is not None and args.display_render:
-        # TODO: display renders
-        ...
 
 
 if __name__ == '__main__':
