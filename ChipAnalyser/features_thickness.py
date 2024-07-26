@@ -13,26 +13,25 @@ from scipy.signal import savgol_filter, find_peaks
 import colors
 
 
-# TODO: InsideFeatures attributes type hinting
 class InsideFeatures:
     __slots__ = (
-        "noised_inside_contour_pts",
-        "noised_thickness",
+        "noised_inside_contour_pts",  # type: IntPtArray
+        "noised_thickness",           # type: FloatArray
 
-        "inside_contour_pts",
-        "thickness"
+        "inside_contour_pts",  # type: IntPtArray
+        "thickness"            # type: FloatArray
     )
 
 
 class ThicknessAnalysis:
     __slots__ = (
-        "rough_thk",  # type: FloatArray
+        "rough_thk",     # type: FloatArray
         "smoothed_thk",  # type: FloatArray
 
-        "spike_indices",  # type: IntArray
+        "spike_indices",   # type: IntArray
         "valley_indices",  # type: IntArray
 
-        "mean_spike_thickness",  # type: float
+        "mean_spike_thickness",   # type: float
         "mean_valley_thickness",  # type: float
     )
 
