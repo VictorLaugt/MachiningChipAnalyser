@@ -54,7 +54,6 @@ class ImageDirectoryLoader(AbstractImageLoader):
         return
 
 
-# TODO: VideoFrameLoader
 class VideoFrameLoader(AbstractImageLoader):
     def __init__(self, video_path: Path) -> None:
         self.reader = cv.VideoCapture(str(video_path))
