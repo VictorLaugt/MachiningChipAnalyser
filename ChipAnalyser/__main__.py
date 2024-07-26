@@ -110,7 +110,7 @@ def analysis_loop(
 
         # signal processing
         contact_len = measure_contact_length(features.main_ft, features.contact_ft)
-        thickness_analysis = measure_spike_valley_thickness(features.main_ft, features.inside_ft)  # MOCK find spikes and valleys
+        thickness_analysis = measure_spike_valley_thickness(features.main_ft, features.inside_ft)
 
         # output result
         measurement_writer.write(contact_len, thickness_analysis)

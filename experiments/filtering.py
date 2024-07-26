@@ -83,7 +83,6 @@ def routine_wavelet(csv_path):
 
 def routine_savgol_peak_characterization(csv_path):
     signal = extract_signal_from_csv(csv_path)
-    # TODO: try to make the window_length non-arbitrary
     smoothed = scipy.signal.savgol_filter(signal, window_length=15, polyorder=2)
     rough = scipy.signal.savgol_filter(signal, window_length=45, polyorder=2)
 

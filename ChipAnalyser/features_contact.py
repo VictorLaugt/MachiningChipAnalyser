@@ -15,6 +15,11 @@ from numpy.polynomial import Polynomial
 import cv2 as cv
 
 
+# OPTIMIZE: in each case, use the best array type between OpenCVxxxArray or xxxArray
+# [ ] features_main.py
+# [ ] features_contact.py
+# [ ] features_thickness.py
+
 class ContactFeatures:
     __slots__ = (
         "contact_point",  # type: FloatPt
@@ -94,7 +99,6 @@ def render_contact_features(frame_nb: int, render: ColorImage, main_ft: MainFeat
 
     contact_line = geometry.parallel(main_ft.base_line, *contact_ft.contact_point)
     if contact_ft.polynomial is not None:
-        # FIXME: clarify these type castings
         x = np.arange(0, render.shape[1], 1, dtype=np.int32)
         y = contact_ft.polynomial(x)
         x, y = geometry.rotate(x, y, main_ft.tool_angle)

@@ -7,7 +7,8 @@ if TYPE_CHECKING:
 
 import numpy as np
 import cv2 as cv
-import skimage as ski
+from skimage.draw import line
+from scipy.signal import savgol_filter, find_peaks
 
 import colors
 
@@ -24,8 +25,16 @@ class InsideFeatures:
 
 
 class ThicknessAnalysis:
-    ...
+    __slots__ = (
+        "rough_thk",  # type: FloatArray
+        "smoothed_thk",  # type: FloatArray
 
+        "spike_indices",  # type: IntArray
+        "valley_indices",  # type: IntArray
+
+        "mean_spike_thickness",  # type: float
+        "mean_valley_thickness",  # type: float
+    )
 
 
 def rasterized_line(p0: IntPt, p1: IntPt, img_height: int, img_width: int) -> tuple[IntArray, IntArray]:
@@ -44,7 +53,7 @@ def rasterized_line(p0: IntPt, p1: IntPt, img_height: int, img_width: int) -> tu
         Respectively the x and y coordinates of the image pixels crossed by the
         line segment (p0, p1). 0 <= x < img_width and 0 <= y < img_height.
     """
-    line_x, line_y = ski.draw.line(*p0, *p1)
+    line_x, line_y = line(*p0, *p1)
     inside_mask = (0 <= line_x) & (line_x < img_width) & (0 <= line_y) & (line_y < img_height)
     raster_x, raster_y = line_x[inside_mask], line_y[inside_mask]
     return raster_x, raster_y
@@ -314,7 +323,33 @@ def extract_inside_features(
 
 
 def measure_spike_valley_thickness(main_ft: MainFeatures, inside_ft: InsideFeatures) -> ThicknessAnalysis:
-    ...
+    an = ThicknessAnalysis()
+
+    # TODO: try to make the window_length non-arbitrary
+    an.rough_thk = savgol_filter(inside_ft.thickness, window_length=45, polyorder=2)
+    an.smoothed_thk = savgol_filter(inside_ft.thickness, window_length=15, polyorder=2)
+
+    rough_maximums, _ = find_peaks(an.rough_thk, prominence=5)
+    rough_period = np.mean(np.diff(rough_maximums))
+
+    an.spike_indices, _ = find_peaks(an.smoothed_thk, distance=0.7*rough_period)
+    an.valley_indices, _ = find_peaks(-an.smoothed_thk, distance=0.7*rough_period, width=0.2*rough_period)
+
+    an.mean_spike_thickness = np.mean(an.smoothed_thk[an.spike_indices])
+    an.mean_valley_thickness = np.mean(an.smoothed_thk[an.valley_indices])
+
+    return an
+
+    # fig, ax = plt.subplots(figsize=(16, 9))
+    # plt.scatter(rough_max, rough[rough_max], color='red', marker='o', s=300)
+    # plt.scatter(maximums, smoothed[maximums], color='black', marker='^', s=500)
+    # plt.scatter(minimums, smoothed[minimums], color='black', marker='v', s=500)
+    # ax.plot(signal, '-x', label='signal')
+    # ax.plot(rough, '-x', label='rough signal')
+    # ax.plot(smoothed, '-x', label='smoothed signal')
+    # ax.legend()
+    # ax.grid()
+    # plt.show()
 
 
 def render_inside_features(frame_nb: int, render: ColorImage, main_ft: MainFeatures, inside_ft: InsideFeatures) -> None:

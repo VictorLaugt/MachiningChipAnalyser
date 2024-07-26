@@ -51,13 +51,3 @@ def preprocess(input_img: Image) -> GrayImage:
     # morphological erosion (in-place)
     cv.erode(y, structuring_element, iterations=2, dst=y)
     return y
-
-
-#OPTIMIZE: preprocessing should reuse old arrays instead of allocate new ones
-def preprocess_outofplace(input_img: Image) -> GrayImage:
-    gray_img = cv.cvtColor(input_img, cv.COLOR_RGB2GRAY)
-    edge = cv.filter2D(gray_img, -1, log_kernel)
-    binary = cv.threshold(edge, 240, 255, cv.THRESH_BINARY)[1]
-    blobfilter = remove_small_components(binary, 20)
-    eroded = cv.erode(blobfilter, structuring_element, iterations=2)
-    return eroded
