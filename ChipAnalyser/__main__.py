@@ -99,7 +99,7 @@ def analysis_loop(
 def main():
     args = build_arg_parser().parse_args()
 
-    if not args.output_file.is_dir():
+    if not args.output_file.is_file():
         exit(f"Output file not found: {args.output_file}")
 
     if args.rendering_directory is not None and not args.rendering_directory.is_dir():
@@ -112,9 +112,9 @@ def main():
     else:
         exit(f"Input images not found: {args.input_images}")
 
-    measurement_writer = MeasurementWriter(args.output_file)
+    measurement_writer = MeasurementWriter(args.output_file, args.scale)
     if args.rendering_directory is not None:
-        h, w = loader.img_shape()
+        h, w = loader.img_shape()[:2]
         analysis_renderer = AnalysisRenderer(args.rendering_directory, args.scale, h, w)
     else:
         analysis_renderer = NoRendering()
@@ -124,7 +124,7 @@ def main():
     analysis_renderer.release()
 
     if args.rendering_directory is not None and args.display_render:
-        # TODO: display rendering videos
+        # TODO: display renders
         ...
 
 

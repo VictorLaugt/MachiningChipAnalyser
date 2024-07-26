@@ -42,14 +42,14 @@ def preprocess(input_img: Image) -> GrayImage:
 
     # Laplacian of Gaussian and treshold binarization (in-place)
     cv.filter2D(x, -1, log_kernel, dst=x)
-    cv.treshold(x, 240, 255, cv.TRESH_BINARY, dst=x)
+    cv.threshold(x, 240, 255, cv.THRESH_BINARY, dst=x)
 
     # blob filtering (out-of-place)
     y = np.zeros_like(x)
     remove_small_components(x, 20, bin_dst_img=y)
 
     # morphological erosion (in-place)
-    cv.erode(y, structuring_element, iteration=2, dst=y)
+    cv.erode(y, structuring_element, iterations=2, dst=y)
     return y
 
 
@@ -57,7 +57,7 @@ def preprocess(input_img: Image) -> GrayImage:
 def preprocess_outofplace(input_img: Image) -> GrayImage:
     gray_img = cv.cvtColor(input_img, cv.COLOR_RGB2GRAY)
     edge = cv.filter2D(gray_img, -1, log_kernel)
-    binary = cv.threshold(edge, 240, 255, cv.TRESH_BINARY)[1]
+    binary = cv.threshold(edge, 240, 255, cv.THRESH_BINARY)[1]
     blobfilter = remove_small_components(binary, 20)
-    eroded = cv.erode(blobfilter, structuring_element, iteration=2)
+    eroded = cv.erode(blobfilter, structuring_element, iterations=2)
     return eroded

@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from features_thickness import InsideFeatures, ThicknessAnalysis
 
 import abc
+import numpy as np
 import cv2 as cv
 
 from features_contact import render_contact_features
@@ -16,7 +17,7 @@ from features_contact import render_contact_features
 class GraphAnimator:
     ...
 
-    def save_animation(animation_path: Path) -> None:
+    def save_animation(self, animation_path: Path) -> None:
         ...
 
 
@@ -61,6 +62,8 @@ TODO: AnalysisRenderer
 """
 class AnalysisRenderer(AbstractAnalysisRenderer):
     def __init__(self, render_dir: Path, scale: float, h: int, w: int) -> None:
+        self.h = h
+        self.w = w
         self.scale = scale
 
         contact_render_path = render_dir.joinpath("contact-length-extraction.avi")
@@ -68,8 +71,8 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         self.thickness_animation_path = render_dir.joinpath("chip-thickness-evolution.avi")
 
         codec = cv.VideoWriter_fourcc(*'mp4v')
-        self.contact_vid_writer = cv.VideoWriter(str(contact_render_path), codec, 30, (h, w))
-        self.inside_vid_writer = cv.VideoWriter(str(inside_render_path), codec, 30, (h, w))
+        self.contact_vid_writer = cv.VideoWriter(str(contact_render_path), codec, 30, (w, h))
+        self.inside_vid_writer = cv.VideoWriter(str(inside_render_path), codec, 30, (w, h))
 
         self.thickness_animator = GraphAnimator()  # MOCK: GraphAnimator
 
@@ -83,7 +86,11 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         contact_len: float,
         thickness_analysis: ThicknessAnalysis,
     ) -> None:
-        ...
+
+        contact_render = np.zeros((self.h, self.w, 3), dtype=np.uint8)
+        render_contact_features(contact_render, main_ft, contact_ft)
+        self.contact_vid_writer.write(contact_render)
+
         self.contact_lengths.append(self.scale * contact_len)
 
 

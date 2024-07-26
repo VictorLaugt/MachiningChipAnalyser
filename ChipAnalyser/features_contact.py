@@ -76,9 +76,9 @@ def chip_tool_contact_point(main_ft: MainFeatures, polynomial: Polynomial) -> tu
 def extract_contact_features(main_ft: MainFeatures, outside_segments: OpenCVIntArray) -> ContactFeatures:
     contact_ft = ContactFeatures()
 
-    contact_ft.key_pts = extract_key_points(main_ft, outside_segments, np.pi/4)
+    contact_ft.key_pts = extract_key_points(main_ft, outside_segments[1:], np.pi/4)
     contact_ft.polynomial = fit_polynomial(main_ft, contact_ft.key_pts)
-    contact_ft.contact = chip_tool_contact_point(main_ft, contact_ft.polynomial)
+    contact_ft.contact_point = chip_tool_contact_point(main_ft, contact_ft.polynomial)
 
     return contact_ft
 
