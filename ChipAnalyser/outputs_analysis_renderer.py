@@ -17,12 +17,9 @@ from features_contact import render_contact_features
 
 # TODO: GraphAnimator
 class GraphAnimator:
-    def __init__(self, animation_path: Path) -> None:
-        ...
-
     ...
 
-    def save_animation(self) -> None:
+    def save_animation(self, anim_file: Path, frame_dir: Path) -> None:
         ...
 
 
@@ -68,12 +65,13 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
 
         contact_length_vid = output_dir.joinpath("contact-length-extraction.avi")
         inside_contour_vid = output_dir.joinpath("inside-contour-extraction.avi")
-        thickness_graph_anim = output_dir.joinpath("chip-thickness-evolution.avi")
+        self.thickness_graph_anim = output_dir.joinpath("chip-thickness-evolution.avi")
+        self.thickness_graphs = output_dir.joinpath("ChipThicknessEvolution")
 
         codec = cv.VideoWriter_fourcc(*'mp4v')
         self.contact_vid_writer = cv.VideoWriter(str(contact_length_vid), codec, 30, (image_width, image_height))
         self.inside_vid_writer = cv.VideoWriter(str(inside_contour_vid), codec, 30, (image_width, image_height))
-        self.thickness_animator = GraphAnimator(thickness_graph_anim)  # MOCK: GraphAnimator
+        self.thickness_animator = GraphAnimator()
         self.contact_lengths: list[float] = []
 
     def render_frame(
@@ -93,5 +91,5 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
     def release(self) -> None:
         self.contact_vid_writer.release()
         self.inside_vid_writer.release()
-        self.thickness_animator.save_animation()
+        self.thickness_animator.save(self.thickness_graph_anim, self.thickness_graphs)
 

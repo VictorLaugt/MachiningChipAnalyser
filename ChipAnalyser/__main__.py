@@ -117,7 +117,7 @@ def analysis_loop(
 
         # output result
         measurement_writer.write(contact_len, thickness_analysis)
-        analysis_renderer.render_frame(img, binary_img, features, contact_len, thickness_analysis)  # MOCK analysis rendering
+        analysis_renderer.render_frame(img, binary_img, features, contact_len, thickness_analysis)
 
 
 def main():
