@@ -134,7 +134,7 @@ def analysis_loop(
 
         # output result
         measurement_writer.write(contact_len, thickness_analysis)
-        analysis_renderer.render_frame(i, input_img, binary_img, features, contact_len, thickness_analysis)
+        analysis_renderer.render_frame(i, input_img, binary_img, features, thickness_analysis)
 
         progress(i, img_nb, 10)
 

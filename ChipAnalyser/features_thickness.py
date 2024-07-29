@@ -28,8 +28,9 @@ class ThicknessAnalysis:
         "rough_thk",     # type: FloatArray
         "smoothed_thk",  # type: FloatArray
 
-        "spike_indices",   # type: IntArray
-        "valley_indices",  # type: IntArray
+        "rough_spike_indices",  # type: IntArray
+        "spike_indices",        # type: IntArray
+        "valley_indices",       # type: IntArray
 
         "mean_spike_thickness",   # type: float
         "mean_valley_thickness",  # type: float
@@ -324,12 +325,12 @@ def extract_inside_features(
 def measure_spike_valley_thickness(main_ft: MainFeatures, inside_ft: InsideFeatures) -> ThicknessAnalysis:
     an = ThicknessAnalysis()
 
-    # TODO: try to make the window_length non-arbitrary
+    # TODO: try to make the window_length and the prominence non-arbitrary (dependant of the tool penetration)
     an.rough_thk = savgol_filter(inside_ft.thickness, window_length=45, polyorder=2)
     an.smoothed_thk = savgol_filter(inside_ft.thickness, window_length=15, polyorder=2)
 
-    rough_maximums, _ = find_peaks(an.rough_thk, prominence=5)
-    rough_period = np.mean(np.diff(rough_maximums))
+    an.rough_spike_indices, _ = find_peaks(an.rough_thk, prominence=5)
+    rough_period = np.mean(np.diff(an.rough_spike_indices))
 
     an.spike_indices, _ = find_peaks(an.smoothed_thk, distance=0.7*rough_period)
     an.valley_indices, _ = find_peaks(-an.smoothed_thk, distance=0.7*rough_period, width=0.2*rough_period)

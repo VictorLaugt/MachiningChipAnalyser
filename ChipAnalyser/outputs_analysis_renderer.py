@@ -11,17 +11,10 @@ import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
 
+from outputs_graph_animations import GraphAnimator
+
 from features_contact import render_contact_features
 from features_thickness import render_inside_features
-
-
-# TODO: GraphAnimator
-class GraphAnimator:
-    ...
-
-    def save(self, anim_file: Path, frame_dir: Path) -> None:
-        ...
-
 
 
 class AbstractAnalysisRenderer(abc.ABC):
@@ -31,7 +24,6 @@ class AbstractAnalysisRenderer(abc.ABC):
         input_img: ColorImage,
         preproc_img: GrayImage,
         geom_ft: GeometricalFeatures,
-        contact_len: float,
         thickness_analysis: ThicknessAnalysis
     ) -> None:
         pass
@@ -55,13 +47,6 @@ class NoRendering(AbstractAnalysisRenderer):
         return
 
 
-"""
-TODO: AnalysisRenderer
-[x] video which illustrates the contact length measurement
-[x] video which illustrates the detection of the chip inside contour
-[ ] graph animation which shows the chip thickness measured on each input frame
-[ ] directory which contains chip thickness graph for each input frame
-"""
 class AnalysisRenderer(AbstractAnalysisRenderer):
     def __init__(self, output_dir: Path, scale: float, image_height: int, image_width: int) -> None:
         self.scale = scale
@@ -71,13 +56,25 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         contact_length_vid = output_dir.joinpath("contact-length-extraction.avi")
         inside_contour_vid = output_dir.joinpath("inside-contour-extraction.avi")
         self.thickness_graph_anim = output_dir.joinpath("chip-thickness-evolution.avi")
-        self.thickness_graphs = output_dir.joinpath("ChipThicknessEvolution")
+        # self.thickness_graphs = output_dir.joinpath("ChipThicknessEvolution")
 
         codec = cv.VideoWriter_fourcc(*'mp4v')
         self.contact_vid_writer = cv.VideoWriter(str(contact_length_vid), codec, 30, (image_width, image_height))
         self.inside_vid_writer = cv.VideoWriter(str(inside_contour_vid), codec, 30, (image_width, image_height))
-        self.thickness_animator = GraphAnimator()
-        self.contact_lengths: list[float] = []
+        self.thickness_animator = GraphAnimator(
+            plot_configs=(
+                {'linestyle': '-', 'marker': None, 'label': 'thickness'},
+                {'linestyle': '-', 'marker': None, 'label': 'smoothed thickness'},
+                {'linestyle': '-', 'marker': None, 'label': 'rough thickness'}
+            ),
+            scatter_configs=(
+                {'s': 200, 'c': 'red', 'marker': 'o', 'label': 'rough peaks, used to compute the thickness quasiperiod'},
+                {'s': 200, 'c': 'black', 'marker': 'v', 'label': 'valleys'},
+                {'s': 200, 'c': 'black', 'marker': '^', 'label': 'peaks'}
+            ),
+            xlabel='inside contour point index',
+            ylabel='contact length (µm)',
+        )
 
     def render_frame(
         self,
@@ -85,8 +82,7 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         input_img: ColorImage,
         preproc_img: GrayImage,
         geom_ft: GeometricalFeatures,
-        contact_len: float,
-        thickness_analysis: ThicknessAnalysis
+        thk_an: ThicknessAnalysis
     ) -> None:
         contact_render = input_img.copy()
         render_contact_features(frame_num, contact_render, geom_ft.main_ft, geom_ft.contact_ft)
@@ -96,9 +92,15 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         render_inside_features(frame_num, inside_render, geom_ft.main_ft, geom_ft.inside_ft)
         self.inside_vid_writer.write(inside_render)
 
-        self.contact_lengths.append(self.scale * contact_len)
+        thickness = self.scale * geom_ft.inside_ft.thickness
+        smoothed = self.scale * thk_an.smoothed_thk
+        rough = self.scale * thk_an.rough_thk
+        rough_spikes = np.column_stack((thk_an.rough_spike_indices, rough[thk_an.rough_spike_indices]))
+        valleys = np.column_stack((thk_an.valley_indices, smoothed[thk_an.valley_indices]))
+        spikes = np.column_stack((thk_an.spike_indices, smoothed[thk_an.spike_indices]))
+        self.thickness_animator.add_frame((thickness, smoothed, rough), (rough_spikes, valleys, spikes))
 
     def release(self) -> None:
         self.contact_vid_writer.release()
         self.inside_vid_writer.release()
-        self.thickness_animator.save(self.thickness_graph_anim, self.thickness_graphs)
+        self.thickness_animator.save(self.thickness_graph_anim)
