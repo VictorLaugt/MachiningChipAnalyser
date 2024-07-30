@@ -293,7 +293,7 @@ def extract_inside_features(
         chip_binary_img,
         outside_segments,
         main_ft.indirect_rotation,
-        thickness_majorant=125
+        thickness_majorant=125  # MOCK: thickness_majorant
     )
     inside_ft.inside_contour_pts, inside_ft.thickness = clean_inside_contour(
         chip_binary_img,
