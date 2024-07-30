@@ -1,7 +1,13 @@
+SRC_DIR = ChipAnalyser
+IMG_DIR = imgs
 TEST_DIR = ChipAnalyser/tests
 TEST_SRC = $(wildcard $(TEST_DIR)/*.py)
 
 export PYTHONPATH += ChipAnalyser
+
+process_%:
+	@rm -rf outputs
+	@python3 $(SRC_DIR) -i $(IMG_DIR)/$* -o outputs -r
 
 test:
 	@$(foreach SCRIPT,$(TEST_SRC),\

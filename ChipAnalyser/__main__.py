@@ -157,6 +157,11 @@ def main():
     else:
         progress_bar_func = progress_bar
 
+    # TODO: remove this sandbox escape
+    from features_tool_penetration import extract_tool_penetration
+    extract_tool_penetration(args.input_images)
+    exit()
+
     # analyse the input images and produce the outputs
     with args.input_images, measurement_writer, analysis_renderer:
         analysis_loop(args.input_images, measurement_writer, analysis_renderer, progress_bar_func)
