@@ -8,7 +8,6 @@ if TYPE_CHECKING:
 import numpy as np
 import cv2 as cv
 from skimage.draw import line
-from scipy.signal import savgol_filter, find_peaks
 
 import colors
 
@@ -16,24 +15,8 @@ import colors
 class InsideFeatures:
     __slots__ = (
         "noised_inside_contour_pts",  # type: IntPtArray
-        "noised_thickness",           # type: FloatArray
-
-        "inside_contour_pts",  # type: IntPtArray
-        "thickness"            # type: FloatArray
-    )
-
-
-class ThicknessAnalysis:
-    __slots__ = (
-        "rough_thk",     # type: FloatArray
-        "smoothed_thk",  # type: FloatArray
-
-        "rough_spike_indices",  # type: IntArray
-        "spike_indices",        # type: IntArray
-        "valley_indices",       # type: IntArray
-
-        "mean_spike_thickness",   # type: float
-        "mean_valley_thickness",  # type: float
+        "inside_contour_pts",         # type: IntPtArray
+        "thickness"                   # type: FloatArray
     )
 
 
@@ -306,7 +289,7 @@ def extract_inside_features(
 ) -> InsideFeatures:
     inside_ft = InsideFeatures()
 
-    inside_ft.noised_inside_contour_pts, inside_ft.noised_thickness = find_inside_contour(
+    inside_ft.noised_inside_contour_pts, noised_thickness = find_inside_contour(
         chip_binary_img,
         outside_segments,
         main_ft.indirect_rotation,
@@ -315,30 +298,11 @@ def extract_inside_features(
     inside_ft.inside_contour_pts, inside_ft.thickness = clean_inside_contour(
         chip_binary_img,
         inside_ft.noised_inside_contour_pts,
-        inside_ft.noised_thickness,
+        noised_thickness,
         min_neighbors_count=2
     )
 
     return inside_ft
-
-
-def measure_spike_valley_thickness(main_ft: MainFeatures, inside_ft: InsideFeatures) -> ThicknessAnalysis:
-    an = ThicknessAnalysis()
-
-    # TODO: try to make the window_length and the prominence non-arbitrary (dependant of the tool penetration)
-    an.rough_thk = savgol_filter(inside_ft.thickness, window_length=45, polyorder=2)
-    an.smoothed_thk = savgol_filter(inside_ft.thickness, window_length=15, polyorder=2)
-
-    an.rough_spike_indices, _ = find_peaks(an.rough_thk, prominence=5)
-    rough_period = np.mean(np.diff(an.rough_spike_indices))
-
-    an.spike_indices, _ = find_peaks(an.smoothed_thk, distance=0.7*rough_period)
-    an.valley_indices, _ = find_peaks(-an.smoothed_thk, distance=0.7*rough_period, width=0.2*rough_period)
-
-    an.mean_spike_thickness = np.mean(an.smoothed_thk[an.spike_indices])
-    an.mean_valley_thickness = np.mean(an.smoothed_thk[an.valley_indices])
-
-    return an
 
 
 def render_inside_features(frame_num: int, render: ColorImage, main_ft: MainFeatures, inside_ft: InsideFeatures) -> None:

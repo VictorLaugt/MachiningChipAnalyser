@@ -65,7 +65,7 @@ def extract_main_features(binary_img: GrayImage) -> MainFeatures:
     h, w = binary_img.shape
 
     base_line, tool_line, _, ft.tool_angle = locate_base_and_tool(binary_img)
-    ft.tool_base_intersection = xi, yi = geometry.intersect_line(base_line, tool_line)
+    ft.tool_base_intersection = (xi, yi) = geometry.intersect_line(base_line, tool_line)
 
     _, xn_base, yn_base = base_line
     _, xn_tool, yn_tool = tool_line

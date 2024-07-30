@@ -1,22 +1,17 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from typing import Callable
     from img_loader import AbstractImageLoader
-    from outputs_measurement_writer import AbstractMeasurementWriter
-    from outputs_analysis_renderer import AbstractAnalysisRenderer
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter, ArgumentTypeError
 from pathlib import Path
 
 from img_loader import ImageDirectoryLoader, VideoFrameLoader
 from outputs_measurement_writer import MeasurementWriter
-from outputs_analysis_renderer import AnalysisRenderer, NoRendering
+from outputs_feature_renderer import FeatureRenderer, NoRendering
+from output_thickness_analysis_animator import ThicknessAnalysisAnimator, NoAnimation
 
-from preproc import preprocess
-from analysis import extract_geometrical_features
-from features_contact import measure_contact_length
-from features_thickness import measure_spike_valley_thickness
+from measure import analysis_loop
 
 
 def valid_path(value: str) -> Path:
@@ -116,30 +111,7 @@ def progress_bar(iteration: int, total: int, step: int) -> None:
         print(f"\r|{'#' * done}{' ' * (length-done)}| {100*progress:.2f}%", end='\r')
 
 
-def analysis_loop(
-    loader: AbstractImageLoader,
-    measurement_writer: AbstractMeasurementWriter,
-    analysis_renderer: AbstractAnalysisRenderer,
-    progress: Callable[[int, int, int], None]
-) -> None:
-    img_nb = len(loader)
-    for i, input_img in enumerate(loader, start=1):
-        # image processing
-        binary_img = preprocess(input_img)
-        features = extract_geometrical_features(binary_img)
-
-        # signal processing
-        contact_len = measure_contact_length(features.main_ft, features.contact_ft)
-        thickness_analysis = measure_spike_valley_thickness(features.main_ft, features.inside_ft)
-
-        # output result
-        measurement_writer.write(contact_len, thickness_analysis)
-        analysis_renderer.render_frame(i, input_img, binary_img, features, thickness_analysis)
-
-        progress(i, img_nb, 10)
-
-
-def main():
+def main() -> None:
     args = build_arg_parser().parse_args()
 
     # configure the outputs
@@ -147,9 +119,11 @@ def main():
     measurement_writer = MeasurementWriter(args.output_directory, args.scale)
     if args.produce_renderings:
         image_height, image_width = args.input_images.img_shape()[:2]
-        analysis_renderer = AnalysisRenderer(args.output_directory, args.scale, image_height, image_width)
+        feature_renderer = FeatureRenderer(args.output_directory, args.scale, image_height, image_width)
+        thickness_analysis_animator = ThicknessAnalysisAnimator(args.output_directory, args.scale)
     else:
-        analysis_renderer = NoRendering()
+        feature_renderer = NoRendering()
+        thickness_analysis_animator = NoAnimation()
 
     # configure the verbosity
     if args.no_progress_bar:
@@ -157,14 +131,15 @@ def main():
     else:
         progress_bar_func = progress_bar
 
-    # TODO: remove this sandbox escape
-    from features_tool_penetration import extract_tool_penetration
-    extract_tool_penetration(args.input_images)
-    exit()
-
     # analyse the input images and produce the outputs
-    with args.input_images, measurement_writer, analysis_renderer:
-        analysis_loop(args.input_images, measurement_writer, analysis_renderer, progress_bar_func)
+    with args.input_images, measurement_writer, feature_renderer, thickness_analysis_animator:
+        analysis_loop(
+            args.input_images,
+            measurement_writer,
+            feature_renderer,
+            thickness_analysis_animator,
+            progress_bar_func
+        )
 
 
 if __name__ == '__main__':

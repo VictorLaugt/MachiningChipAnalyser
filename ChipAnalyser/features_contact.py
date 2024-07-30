@@ -88,12 +88,6 @@ def extract_contact_features(main_ft: MainFeatures, outside_segments: OpenCVIntA
     return contact_ft
 
 
-def measure_contact_length(main_ft: MainFeatures, contact_ft: ContactFeatures) -> float:
-    xi, yi = main_ft.tool_base_intersection
-    xc, yc = contact_ft.contact_point
-    return np.linalg.norm((xc-xi, yc-yi))
-
-
 def render_contact_features(frame_num: int, render: ColorImage, main_ft: MainFeatures, contact_ft: ContactFeatures) -> None:
     cv.putText(render, f"frame: {frame_num}", (20, render.shape[0]-20), cv.FONT_HERSHEY_SIMPLEX, 0.5, colors.WHITE)
 

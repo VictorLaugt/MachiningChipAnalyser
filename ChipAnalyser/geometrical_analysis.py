@@ -3,16 +3,14 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from type_hints import GrayImage, OpenCVIntArray
     from features_main import MainFeatures
-    from features_contact import ContactFeatures
-    from features_thickness import InsideFeatures
 
 import numpy as np
 import cv2 as cv
 
 import geometry
 from features_main import extract_main_features
-from features_contact import extract_contact_features, measure_contact_length, render_contact_features
-from features_thickness import extract_inside_features, measure_spike_valley_thickness, render_inside_features
+from features_contact import extract_contact_features
+from features_thickness import extract_inside_features
 
 
 class GeometricalFeatures:
