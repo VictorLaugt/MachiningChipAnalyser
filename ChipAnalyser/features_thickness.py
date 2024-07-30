@@ -340,17 +340,6 @@ def measure_spike_valley_thickness(main_ft: MainFeatures, inside_ft: InsideFeatu
 
     return an
 
-    # fig, ax = plt.subplots(figsize=(16, 9))
-    # plt.scatter(rough_max, rough[rough_max], color='red', marker='o', s=300)
-    # plt.scatter(maximums, smoothed[maximums], color='black', marker='^', s=500)
-    # plt.scatter(minimums, smoothed[minimums], color='black', marker='v', s=500)
-    # ax.plot(signal, '-x', label='signal')
-    # ax.plot(rough, '-x', label='rough signal')
-    # ax.plot(smoothed, '-x', label='smoothed signal')
-    # ax.legend()
-    # ax.grid()
-    # plt.show()
-
 
 def render_inside_features(frame_num: int, render: ColorImage, main_ft: MainFeatures, inside_ft: InsideFeatures) -> None:
     """Draw a representation of features `main_ft` and `inside_ft` on image `render`."""
