@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from type_hints import ColorImage, OpenCVIntArray
+    from type_hints import ColorImage, IntPtArray
     from measure import ToolTipFeatures
     from features_main import MainFeatures
 
@@ -16,22 +16,15 @@ from numpy.polynomial import Polynomial
 import cv2 as cv
 
 
-# OPTIMIZE: in each case, use the best array type between OpenCVxxxArray or xxxPtArray
-# [ ] chip_analysis.py
-# [ ] features_contact.py
-# [ ] features_main.py
-# [ ] features_thickness.py
-# [ ] measure.py
-
 class ContactFeatures:
     __slots__ = (
         "contact_pt",  # type: FloatPt
-        "key_pts",     # type: OpenCVIntArray
+        "key_pts",     # type: IntPtArray
         "polynomial"   # type: Polynomial
     )
 
 
-def extract_key_points(main_ft: MainFeatures, curve_points: OpenCVIntArray, tool_chip_max_angle: float) -> OpenCVIntArray:
+def extract_key_points(main_ft: MainFeatures, curve_points: IntPtArray, tool_chip_max_angle: float) -> IntPtArray:
     """Return key points from the chip curve which can then be use to fit a polynomial."""
     if main_ft.tool_angle > np.pi:
         tool_angle = main_ft.tool_angle - 2*np.pi
@@ -39,9 +32,9 @@ def extract_key_points(main_ft: MainFeatures, curve_points: OpenCVIntArray, tool
         tool_angle = main_ft.tool_angle
 
     if main_ft.indirect_rotation:
-        curve_surface_vectors = curve_points[:-1, 0, :] - curve_points[1:, 0, :]
+        curve_surface_vectors = curve_points[:-1, :] - curve_points[1:, :]
     else:
-        curve_surface_vectors = curve_points[1:, 0, :] - curve_points[:-1, 0, :]
+        curve_surface_vectors = curve_points[1:, :] - curve_points[:-1, :]
 
     curve_segment_lengths = np.linalg.norm(curve_surface_vectors, axis=-1)
     curve_vector_angles = np.arccos(curve_surface_vectors[:, 0] / curve_segment_lengths)
@@ -52,9 +45,9 @@ def extract_key_points(main_ft: MainFeatures, curve_points: OpenCVIntArray, tool
     return curve_points[mask]
 
 
-def fit_polynomial(main_ft: MainFeatures, key_pts: OpenCVIntArray) -> Polynomial:
+def fit_polynomial(main_ft: MainFeatures, key_pts: IntPtArray) -> Polynomial:
     """Return a polynomial of degree 2 which fits the key points."""
-    rot_x, rot_y = geometry.rotate(key_pts[:, 0, 0], key_pts[:, 0, 1], -main_ft.tool_angle)
+    rot_x, rot_y = geometry.rotate(key_pts[:, 0], key_pts[:, 1], -main_ft.tool_angle)
 
     if len(key_pts) < 2:
         print("Warning !: Cannot fit the chip curve", file=sys.stderr)
@@ -81,7 +74,7 @@ def chip_tool_contact_point(main_ft: MainFeatures, polynomial: Polynomial) -> tu
     return geometry.rotate(rot_xc, rot_yc, main_ft.tool_angle)
 
 
-def extract_contact_features(main_ft: MainFeatures, outside_segments: OpenCVIntArray) -> ContactFeatures:
+def extract_contact_features(main_ft: MainFeatures, outside_segments: IntPtArray) -> ContactFeatures:
     contact_ft = ContactFeatures()
 
     contact_ft.key_pts = extract_key_points(main_ft, outside_segments[1:], np.pi/4)
@@ -113,7 +106,7 @@ def render_contact_features(
     geometry.draw_line(render, tip_ft.tool_tip_line, colors.RED, thickness=3)
 
     # draw the points used for the polynomial fitting
-    for kpt in contact_ft.key_pts.reshape(-1, 2):
+    for kpt in contact_ft.key_pts:
         cv.circle(render, kpt, 6, colors.GREEN, thickness=-1)
 
     # draw the contact length

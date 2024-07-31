@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Any, Iterable
-    from type_hints import OpenCVIntArray, IntPt, Line
+    from type_hints import IntPtArray, IntPt, Line
 
 import cv2 as cv
 import numpy as np
@@ -62,41 +62,30 @@ def parallel(line: Line, x: float, y: float) -> Line:
     return (x*xn + y*yn, xn, yn)
 
 
-def above_lines(points: OpenCVIntArray, lines: Iterable[Line], margins: Iterable[int]) -> OpenCVIntArray:
+def above_lines(points: IntPtArray, lines: Iterable[Line], margins: Iterable[int]) -> IntPtArray:
     """Keeps only the points above the lines with a margin."""
-    x, y = points[:, 0, 0], points[:, 0, 1]
+    x, y = points[:, 0], points[:, 1]
     mask = np.ones(len(points), dtype=bool)
     for (rho, xn, yn), min_distance in zip(lines, margins):
         mask &= (xn*x + yn*y - rho - min_distance >= 0).flatten()
     return points[mask]
 
 
-def under_lines(points: OpenCVIntArray, lines: Iterable[Line], margins: Iterable[int]) -> OpenCVIntArray:
+def under_lines(points: IntPtArray, lines: Iterable[Line], margins: Iterable[int]) -> IntPtArray:
     """Keeps only the points under the lines with a margin."""
-    x, y = points[:, 0, 0], points[:, 0, 1]
+    x, y = points[:, 0], points[:, 1]
     mask = np.ones(len(points), dtype=bool)
     for (rho, xn, yn), min_distance in zip(lines, margins):
         mask &= (xn*x + yn*y - rho + min_distance <= 0).flatten()
     return points[mask]
 
 
-def line_nearest_point(points: OpenCVIntArray, line: Line) -> tuple[int, float]:
-    """Return the index of the point nearest to the line and its distance to the
-    line.
-    """
-    rho, xn, yn = line
-    x, y = points[:, 0, 0], points[:, 0, 1]
-    distances = np.abs(xn*x + yn*y - rho)
-    i = np.argmin(distances)
-    return i, distances[i]
-
-
-def line_furthest_point(points: OpenCVIntArray, line: Line) -> tuple[int, float]:
+def line_furthest_point(points: IntPtArray, line: Line) -> tuple[int, float]:
     """Return the index of the point furthest to the line and its distance to
     the line.
     """
     rho, xn, yn = line
-    x, y = points[:, 0, 0], points[:, 0, 1]
+    x, y = points[:, 0], points[:, 1]
     distances = np.abs(xn*x + yn*y - rho)
     i = np.argmax(distances)
     return i, distances[i]

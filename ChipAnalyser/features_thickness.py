@@ -1,17 +1,14 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from typing import Sequence
-    from type_hints import GrayImage, ColorImage, OpenCVIntArray, IntPt, IntPtArray, IntArray, FloatPtArray, FloatArray
+    from type_hints import GrayImage, ColorImage, IntPt, IntPtArray, IntArray, FloatPtArray, FloatArray
     from measure import ToolTipFeatures
     from features_main import MainFeatures
 
 import numpy as np
 import cv2 as cv
 from skimage.draw import line
-from scipy.signal import savgol_filter, find_peaks
 
-import geometry
 import colors
 
 
@@ -62,7 +59,7 @@ def rasterized_line(p0: IntPt, p1: IntPt, img_height: int, img_width: int) -> tu
 
 
 def compute_bisectors(
-    chip_curve_pts: OpenCVIntArray,
+    chip_curve_pts: IntPtArray,
     indirect_chip_rotation: bool
 ) -> FloatPtArray:
     """Return the unit vectors bisecting the edges of the chip curve.
@@ -74,7 +71,7 @@ def compute_bisectors(
 
     Parameters
     ----------
-    chip_curve_pts: (n, 1, 2)-array of int
+    chip_curve_pts: (n, 2)-array of int
         Points of the chip convex hull that describes the chip curve.
     indirect_chip_rotation: bool
         True indicates the chip spins in the indirect direction of rotation.
@@ -84,11 +81,10 @@ def compute_bisectors(
     bisectors: (n, 2)-array of float
         bisector unit vectors
     """
-    pts = chip_curve_pts.reshape(-1, 2)
-    bisectors = np.zeros_like(pts, dtype=np.float32)
+    bisectors = np.zeros_like(chip_curve_pts, dtype=np.float32)
 
-    u = pts[:-2] - pts[1:-1]
-    v = pts[2:] - pts[1:-1]
+    u = chip_curve_pts[:-2] - chip_curve_pts[1:-1]
+    v = chip_curve_pts[2:] - chip_curve_pts[1:-1]
     w = v * ((np.linalg.norm(u, axis=1) / np.linalg.norm(v, axis=1))).reshape(-1, 1)
 
     # numerical instability correction if the angle between u and v is greater than pi/2
@@ -98,8 +94,8 @@ def compute_bisectors(
     bisectors[1:-1][stable] = u[stable] + w[stable]
     normal = u[unstable] - w[unstable]
 
-    normal_first = pts[0] - pts[1]
-    normal_last = pts[-2] - pts[-1]
+    normal_first = chip_curve_pts[0] - chip_curve_pts[1]
+    normal_last = chip_curve_pts[-2] - chip_curve_pts[-1]
     if indirect_chip_rotation:
         bisectors[1:-1][unstable] = np.column_stack((-normal[:, 1], normal[:, 0]))
         bisectors[0] = (-normal_first[1], normal_first[0])
@@ -148,7 +144,7 @@ def remove_crossed_quadrilaterals(
 
 def find_inside_contour(
     chip_bin_img: GrayImage,
-    chip_curve_pts: OpenCVIntArray,
+    out_curve: IntPtArray,
     indirect_rotation: bool,
     thickness_majorant: float
 ) -> tuple[IntPtArray, FloatArray]:
@@ -162,7 +158,7 @@ def find_inside_contour(
     ----------
     chip_bin_img: (h, w)-array of uint8
         Binary image containing only chip pixels.
-    chip_curve_pts: (n, 1, 2)-array of int
+    out_curve: (n, 2)-array of int
         Points of the chip convex hull that describes the chip outside curve.
     indirect_rotation: bool
         True indicates the chip spins in the indirect direction of rotation.
@@ -179,8 +175,7 @@ def find_inside_contour(
     h, w = chip_bin_img.shape
 
     # compute the inside curve using the bisectors of the outside curve
-    bisectors = compute_bisectors(chip_curve_pts, indirect_rotation)
-    out_curve = chip_curve_pts.reshape(-1, 2)
+    bisectors = compute_bisectors(out_curve, indirect_rotation)
     in_curve = (out_curve + thickness_majorant*bisectors).astype(np.int32)
 
     # remove blocks which are crossed quadrilaterals
@@ -303,7 +298,7 @@ def clean_inside_contour(
 
 def extract_inside_features(
     main_ft: MainFeatures,
-    outside_segments: OpenCVIntArray,
+    outside_segments: IntPtArray,
     chip_binary_img: GrayImage,
     tool_penetration: float
 ) -> InsideFeatures:

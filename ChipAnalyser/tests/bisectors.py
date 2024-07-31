@@ -50,7 +50,7 @@ def are_unitary(vectors):
 
 class TestBisectorAlgorithm(unittest.TestCase):
     def _test_on_points(self, pts, direct_rotation=True, interactive=False):
-        bisectors = compute_bisectors(pts.reshape(-1, 1, 2), not direct_rotation)
+        bisectors = compute_bisectors(pts, not direct_rotation)
 
         if interactive:
             _fig, ax = plt.subplots()

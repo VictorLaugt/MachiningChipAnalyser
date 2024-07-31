@@ -69,11 +69,11 @@ def locate_tool_tip(
     tip_ft.mean_tool_line = np.mean([main_ft.tool_line for main_ft in main_features], axis=0)
 
     y, x = np.nonzero(mean_bin_img)
-    pts = np.column_stack((x, y)).reshape(-1, 1, 2)
+    pts = np.column_stack((x, y))
     above_pts = geometry.above_lines(pts, (tip_ft.mean_base_line, tip_ft.mean_tool_line), (-5, -5))
 
     tip_bin_img = np.zeros_like(mean_bin_img)
-    tip_bin_img[above_pts[:, 0, 1], above_pts[:, 0, 0]] = 255
+    tip_bin_img[above_pts[:, 1], above_pts[:, 0]] = 255
 
     lines = cv.HoughLines(tip_bin_img, 1, np.pi/180, 1)
     if lines is None or len(lines) < 1:

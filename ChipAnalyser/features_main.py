@@ -3,8 +3,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from type_hints import GrayImage, OpenCVFloatArray, Line
 
-from dataclasses import dataclass
-
 import numpy as np
 import cv2 as cv
 
