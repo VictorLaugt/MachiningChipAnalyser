@@ -17,9 +17,11 @@ import cv2 as cv
 
 
 # OPTIMIZE: in each case, use the best array type between OpenCVxxxArray or xxxPtArray
-# [ ] features_main.py
+# [ ] chip_analysis.py
 # [ ] features_contact.py
+# [ ] features_main.py
 # [ ] features_thickness.py
+# [ ] measure.py
 
 class ContactFeatures:
     __slots__ = (

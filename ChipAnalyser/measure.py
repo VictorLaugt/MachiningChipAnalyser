@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Sequence
-    from type_hints import Image, GrayImage, Line, FloatPt, FloatArray, OpenCVFloatArray
+    from type_hints import Image, GrayImage, FloatPt, FloatArray, OpenCVFloatArray
     from features_main import MainFeatures
     from outputs_measurement_writer import AbstractMeasurementWriter
     from outputs_analysis_renderer import AbstractAnalysisRenderer
