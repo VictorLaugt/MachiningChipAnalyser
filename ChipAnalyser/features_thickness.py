@@ -332,11 +332,17 @@ def render_inside_features(
     tip_ft: ToolTipFeatures,
     inside_ft: InsideFeatures
 ) -> None:
-    """Draw a representation of features `main_ft` and `inside_ft` on image `render`."""
+    # draw the detected inside contour of the chip
+    for i in range(len(inside_ft.noised_inside_contour_pts)-1):
+        pt0 = inside_ft.noised_inside_contour_pts[i]
+        pt1 = inside_ft.noised_inside_contour_pts[i+1]
+        cv.line(render, pt0, pt1, colors.RED, thickness=2)
+
+    # draw the denoised inside contour of the chip
+    for i in range(len(inside_ft.inside_contour_pts)-1):
+        pt0 = inside_ft.inside_contour_pts[i]
+        pt1 = inside_ft.inside_contour_pts[i+1]
+        cv.line(render, pt0, pt1, colors.GREEN, thickness=2)
+
+    # write the frame number
     cv.putText(render, f"frame: {frame_num}", (20, render.shape[0]-20), cv.FONT_HERSHEY_SIMPLEX, 0.5, colors.WHITE)
-    for x, y in inside_ft.noised_inside_contour_pts:
-        render[y, x] = colors.RED
-    for x, y in inside_ft.inside_contour_pts:
-        render[y, x] = colors.GREEN
-    geometry.draw_line(render, main_ft.base_line, colors.RED, thickness=3)
-    geometry.draw_line(render, main_ft.tool_line, colors.RED, thickness=3)

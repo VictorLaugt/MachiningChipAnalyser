@@ -92,8 +92,8 @@ def measure_contact_length(tool_tip_pt: FloatPt, contact_pt: FloatPt) -> float:
 
 
 def measure_spike_valley_thickness(
-    tool_penetration: float,
-    thickness: FloatArray
+    thickness: FloatArray,
+    tool_penetration: float
 ) -> ThicknessAnalysis:
     an = ThicknessAnalysis()
 
@@ -133,7 +133,7 @@ def measure_characteristics(
         chip_ft = extract_chip_features(binary_img, main_ft, tool_penetration)
 
         contact_len = pt2pt_distance(tip_ft.tool_tip_pt, chip_ft.contact_ft.contact_pt)
-        thickness_analysis = measure_spike_valley_thickness(tool_penetration, chip_ft.inside_ft.thickness)
+        thickness_analysis = measure_spike_valley_thickness(chip_ft.inside_ft.thickness, tool_penetration)
 
         measurement_writer.write(contact_len, thickness_analysis)
         analysis_renderer.render_frame(input_img, binary_img, main_ft, tip_ft, chip_ft, thickness_analysis)

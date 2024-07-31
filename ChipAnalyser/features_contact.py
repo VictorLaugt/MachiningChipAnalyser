@@ -96,9 +96,7 @@ def render_contact_features(
     tip_ft: ToolTipFeatures,
     contact_ft: ContactFeatures
 ) -> None:
-    cv.putText(render, f"frame: {frame_num}", (20, render.shape[0]-20), cv.FONT_HERSHEY_SIMPLEX, 0.5, colors.WHITE)
-
-    contact_line = geometry.parallel(main_ft.base_line, *contact_ft.contact_pt)
+    # draw polynomial approximation of the chip outside curve
     if contact_ft.polynomial is not None:
         x = np.arange(0, render.shape[1], 1, dtype=np.int32)
         y = contact_ft.polynomial(x)
@@ -107,9 +105,22 @@ def render_contact_features(
         for i in range(len(x)-1):
             cv.line(render, (x[i], y[i]), (x[i+1], y[i+1]), colors.BLUE, thickness=2)
 
-    geometry.draw_line(render, main_ft.base_line, colors.RED, thickness=3)
+    # draw detected lines for the tool, the base, and the tool tip
     geometry.draw_line(render, main_ft.tool_line, colors.RED, thickness=3)
-    geometry.draw_line(render, contact_line, colors.YELLOW, thickness=1)
+    geometry.draw_line(render, main_ft.base_line, colors.RED, thickness=3)
+    geometry.draw_line(render, tip_ft.tool_tip_line, colors.RED, thickness=3)
 
+    # draw the points used for the polynomial fitting
     for kpt in contact_ft.key_pts.reshape(-1, 2):
         cv.circle(render, kpt, 6, colors.GREEN, thickness=-1)
+
+    # draw the contact length
+    xc, yc = contact_ft.contact_pt
+    xt, yt = tip_ft.tool_tip_pt
+    _, dx, dy = main_ft.tool_line
+    cv.line(render, (int(xt-50*dx), int(yt-50*dy)), (int(xt), int(yt)), colors.YELLOW, 1)
+    cv.line(render, (int(xc-50*dx), int(yc-50*dy)), (int(xc), int(yc)), colors.YELLOW, 1)
+    cv.arrowedLine(render, (int(xt-33*dx), int(yt-33*dy)), (int(xc-33*dx), int(yc-33*dy)), colors.YELLOW, 2)
+
+    # write the frame number
+    cv.putText(render, f"frame: {frame_num}", (20, render.shape[0]-20), cv.FONT_HERSHEY_SIMPLEX, 0.5, colors.WHITE)
