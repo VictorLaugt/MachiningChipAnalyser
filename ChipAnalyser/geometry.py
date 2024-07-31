@@ -110,4 +110,3 @@ def intersect_line(line0: Line, line1: Line) -> IntPt:
         int((rho1*yn0 - rho0*yn1) / det),
         int((rho0*xn1 - rho1*xn0) / det)
     )
-

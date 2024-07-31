@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Sequence
-    from type_hints import Image, GrayImage, FloatPt, FloatArray, Line, OpenCVFloatArray
+    from type_hints import Image, GrayImage, FloatPt, FloatArray, OpenCVFloatArray
     from features_main import MainFeatures
     from outputs_measurement_writer import AbstractMeasurementWriter
     from outputs_analysis_renderer import AbstractAnalysisRenderer
@@ -29,6 +29,11 @@ class ThicknessAnalysis:
         "mean_spike_thickness",   # type: float
         "mean_valley_thickness",  # type: float
     )
+
+
+def pt2pt_distance(pt0: FloatPt, pt1: FloatPt) -> float:
+    (x0, y0), (x1, y1) = pt0, pt1
+    return np.linalg.norm((x1-x0, y1-y0))
 
 
 def best_tip_line(lines: OpenCVFloatArray) -> tuple[float, float]:
@@ -73,17 +78,12 @@ def measure_contact_length(tool_tip_pt: FloatPt, contact_pt: FloatPt) -> float:
 
 
 def measure_spike_valley_thickness(
-    tool_tip_pt: FloatPt,
-    tool_base_inter_pt: FloatPt,
+    tool_penetration: float,
     thickness: FloatArray
 ) -> ThicknessAnalysis:
     an = ThicknessAnalysis()
 
-    xt, yt = tool_tip_pt
-    xi, yi = tool_base_inter_pt
-    tool_penetration = np.linalg.norm((xi-xt, yi-yt))
-
-    # TODO: use tool_penetration to compute window_length and prominence
+    # TODO: use tool_penetration to compute prominence and eventually window_length
     an.rough_thk = savgol_filter(thickness, window_length=45, polyorder=2)
     an.smoothed_thk = savgol_filter(thickness, window_length=15, polyorder=2)
 
@@ -116,16 +116,11 @@ def measure_characteristics(
     tool_tip_pt = locate_tool_tip_point(preprocessed_batch, main_features)
 
     for input_img, binary_img, main_ft in zip(input_batch, preprocessed_batch, main_features):
-        chip_ft = extract_chip_features(binary_img, main_ft)
-        contact_len = measure_contact_length(
-            tool_tip_pt,
-            chip_ft.contact_ft.contact_pt
-        )
-        thickness_analysis = measure_spike_valley_thickness(
-            tool_tip_pt,
-            main_ft.tool_base_inter_pt,
-            chip_ft.inside_ft.thickness
-        )
+        tool_penetration = pt2pt_distance(tool_tip_pt, main_ft.tool_base_inter_pt)
+        chip_ft = extract_chip_features(binary_img, main_ft, tool_penetration)
+
+        contact_len = pt2pt_distance(tool_tip_pt, chip_ft.contact_ft.contact_pt)
+        thickness_analysis = measure_spike_valley_thickness(tool_penetration, chip_ft.inside_ft.thickness)
 
         measurement_writer.write(contact_len, thickness_analysis)
         analysis_renderer.render_frame(input_img, binary_img, main_ft, chip_ft, thickness_analysis)

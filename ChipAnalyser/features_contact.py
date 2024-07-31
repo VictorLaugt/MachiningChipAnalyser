@@ -23,8 +23,8 @@ import cv2 as cv
 class ContactFeatures:
     __slots__ = (
         "contact_pt",  # type: FloatPt
-        "key_pts",        # type: OpenCVIntArray
-        "polynomial"      # type: Polynomial
+        "key_pts",     # type: OpenCVIntArray
+        "polynomial"   # type: Polynomial
     )
 
 
@@ -86,12 +86,6 @@ def extract_contact_features(main_ft: MainFeatures, outside_segments: OpenCVIntA
     contact_ft.contact_pt = chip_tool_contact_point(main_ft, contact_ft.polynomial)
 
     return contact_ft
-
-
-def measure_contact_length(main_ft: MainFeatures, contact_ft: ContactFeatures) -> float:
-    xi, yi = main_ft.tool_base_inter_pt
-    xc, yc = contact_ft.contact_pt
-    return np.linalg.norm((xc-xi, yc-yi))
 
 
 def render_contact_features(frame_num: int, render: ColorImage, main_ft: MainFeatures, contact_ft: ContactFeatures) -> None:

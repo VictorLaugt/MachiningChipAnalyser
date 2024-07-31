@@ -10,9 +10,8 @@ import numpy as np
 import cv2 as cv
 
 import geometry
-from features_main import extract_main_features
-from features_contact import extract_contact_features, measure_contact_length, render_contact_features
-from features_thickness import extract_inside_features, measure_spike_valley_thickness, render_inside_features
+from features_contact import extract_contact_features
+from features_thickness import extract_inside_features
 
 
 class ChipFeatures:
@@ -46,7 +45,7 @@ def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: OpenCVIntArray) ->
     return np.roll(chip_hull_pts, -first_pt_idx, axis=0)
 
 
-def extract_chip_features(binary_img: GrayImage, main_ft: MainFeatures) -> ChipFeatures:
+def extract_chip_features(binary_img: GrayImage, main_ft: MainFeatures, tool_penetration: float) -> ChipFeatures:
     chip_ft = ChipFeatures()
 
     contours, _ = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
@@ -64,6 +63,6 @@ def extract_chip_features(binary_img: GrayImage, main_ft: MainFeatures) -> ChipF
     )
 
     chip_ft.contact_ft = extract_contact_features(main_ft, outside_segments)
-    chip_ft.inside_ft = extract_inside_features(main_ft, outside_segments, chip_binary_img)
+    chip_ft.inside_ft = extract_inside_features(main_ft, outside_segments, chip_binary_img, tool_penetration)
 
     return chip_ft

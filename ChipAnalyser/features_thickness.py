@@ -303,10 +303,12 @@ def clean_inside_contour(
 def extract_inside_features(
     main_ft: MainFeatures,
     outside_segments: OpenCVIntArray,
-    chip_binary_img: GrayImage
+    chip_binary_img: GrayImage,
+    tool_penetration: float
 ) -> InsideFeatures:
     inside_ft = InsideFeatures()
 
+    # TODO: use tool_penetration to compute thickness_majorant
     inside_ft.noised_inside_contour_pts, inside_ft.noised_thickness = find_inside_contour(
         chip_binary_img,
         outside_segments,
@@ -321,25 +323,6 @@ def extract_inside_features(
     )
 
     return inside_ft
-
-
-def measure_spike_valley_thickness(main_ft: MainFeatures, inside_ft: InsideFeatures) -> ThicknessAnalysis:
-    an = ThicknessAnalysis()
-
-    # TODO: try to make the window_length and the prominence non-arbitrary (dependant of the tool penetration)
-    an.rough_thk = savgol_filter(inside_ft.thickness, window_length=45, polyorder=2)
-    an.smoothed_thk = savgol_filter(inside_ft.thickness, window_length=15, polyorder=2)
-
-    an.rough_spike_indices, _ = find_peaks(an.rough_thk, prominence=5)
-    rough_period = np.mean(np.diff(an.rough_spike_indices))
-
-    an.spike_indices, _ = find_peaks(an.smoothed_thk, distance=0.7*rough_period)
-    an.valley_indices, _ = find_peaks(-an.smoothed_thk, distance=0.7*rough_period, width=0.2*rough_period)
-
-    an.mean_spike_thickness = np.mean(an.smoothed_thk[an.spike_indices])
-    an.mean_valley_thickness = np.mean(an.smoothed_thk[an.valley_indices])
-
-    return an
 
 
 def render_inside_features(frame_num: int, render: ColorImage, main_ft: MainFeatures, inside_ft: InsideFeatures) -> None:

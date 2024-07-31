@@ -5,13 +5,11 @@ TEST_SRC = $(wildcard $(TEST_DIR)/*.py)
 
 export PYTHONPATH += ChipAnalyser
 
-process_%:
-	@rm -rf outputs
-	@python3 $(SRC_DIR) -i $(IMG_DIR)/$* -o outputs -r
+process_%: remove_outputs
+	python3 $(SRC_DIR) -i $(IMG_DIR)/$* -o outputs -r
 
-no_render_process_%:
-	@rm -rf outputs
-	@python3 $(SRC_DIR) -i $(IMG_DIR)/$* -o outputs
+no_render_process_%: remove_outputs
+	python3 $(SRC_DIR) -i $(IMG_DIR)/$* -o outputs
 
 test:
 	@$(foreach SCRIPT,$(TEST_SRC),\
@@ -22,7 +20,10 @@ test_%:
 	@printf "\n======= running $(TEST_DIR)/$*.py =======\n"
 	@python3 $(TEST_DIR)/$*.py
 
-clean:
+clean: remove_outputs
 	find . -name __pycache__ -type d | while read -r pycachepath; do rm -rf $$pycachepath; done
 
-.PHONY: test clean
+remove_outputs:
+	rm -rf outputs
+
+.PHONY: test clean remove_outputs
