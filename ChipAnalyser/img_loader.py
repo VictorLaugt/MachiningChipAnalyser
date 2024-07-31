@@ -1,8 +1,8 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterator
 
 if TYPE_CHECKING:
-    from typing import Iterator, Container
+    from typing import Iterator, Container, Sequence
     from type_hints import Image
 
 
@@ -12,17 +12,39 @@ from pathlib import Path
 
 
 class AbstractImageLoader(abc.ABC):
+    def __init__(self, batch_size: int) -> None:
+        img_nb = self.img_nb()
+        div, mod = divmod(img_nb, batch_size)
+        if mod == 0:
+            self.batch_sizes = [batch_size] * div
+        elif div == 0:
+            self.batch_sizes = [img_nb]
+        else:
+            self.batch_sizes = [batch_size] * (div-1)
+            self.batch_sizes.append(batch_size + mod)
+
+
     @abc.abstractmethod
     def img_shape(self) -> tuple[int, int] | tuple[int, int, int]:
         pass
 
     @abc.abstractmethod
-    def __len__(self) -> int:
+    def img_nb(self) -> int:
         pass
 
     @abc.abstractmethod
-    def __iter__(self) -> Iterator[Image]:
+    def img_iter(self) -> Iterator[Image]:
         pass
+
+
+    def batch_nb(self) -> int:
+        return len(self.batch_sizes)
+
+    def img_batch_iter(self) -> Iterator[Sequence[Image]]:
+        img_itr = self.img_iter()
+        for batch_size in self.batch_sizes:
+            yield [next(img_itr) for i in range(batch_size)]
+
 
     @abc.abstractmethod
     def release(self) -> None:
@@ -36,27 +58,28 @@ class AbstractImageLoader(abc.ABC):
 
 
 class ImageDirectoryLoader(AbstractImageLoader):
-    def __init__(self, image_dir: Path, image_suffixes: Container[str]) -> None:
+    def __init__(self, image_dir: Path, image_suffixes: Container[str], batch_size: int) -> None:
         img_paths = (file for file in image_dir.iterdir() if file.suffix in image_suffixes)
         self.img_paths: list[Path] = sorted(img_paths, key=(lambda file: file.name))
+        super().__init__(batch_size)
 
     def img_shape(self) -> tuple[int, int] | tuple[int, int, int]:
         return cv.imread(str(self.img_paths[0])).shape
 
-    def __len__(self) -> int:
+    def img_nb(self) -> int:
         return len(self.img_paths)
 
-    def __iter__(self) -> Iterator[Image]:
-        for path in self.img_paths:
-            yield cv.imread(str(path))
+    def img_iter(self) -> Iterator[Image]:
+        return (cv.imread(str(img_path)) for img_path in self.img_paths)
 
     def release(self) -> None:
         return
 
 
 class VideoFrameLoader(AbstractImageLoader):
-    def __init__(self, video_path: Path) -> None:
+    def __init__(self, video_path: Path, batch_size: int) -> None:
         self.reader = cv.VideoCapture(str(video_path))
+        super().__init__(batch_size)
 
     def img_shape(self) -> tuple[int, int, int]:
         return (
@@ -65,10 +88,10 @@ class VideoFrameLoader(AbstractImageLoader):
             3
         )
 
-    def __len__(self) -> int:
+    def img_nb(self) -> int:
         return int(self.reader.get(cv.CAP_PROP_FRAME_COUNT))
 
-    def __iter__(self) -> Iterator[Image]:
+    def img_iter(self) -> Iterator[Image]:
         while True:
             ret, frame = self.reader.read()
             if not ret:

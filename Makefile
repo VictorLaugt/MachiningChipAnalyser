@@ -9,6 +9,10 @@ process_%:
 	@rm -rf outputs
 	@python3 $(SRC_DIR) -i $(IMG_DIR)/$* -o outputs -r
 
+no_render_process_%:
+	@rm -rf outputs
+	@python3 $(SRC_DIR) -i $(IMG_DIR)/$* -o outputs
+
 test:
 	@$(foreach SCRIPT,$(TEST_SRC),\
 		printf "\n======= running $(SCRIPT) =======\n";\

@@ -22,7 +22,7 @@ import cv2 as cv
 
 class ContactFeatures:
     __slots__ = (
-        "contact_point",  # type: FloatPt
+        "contact_pt",  # type: FloatPt
         "key_pts",        # type: OpenCVIntArray
         "polynomial"      # type: Polynomial
     )
@@ -67,7 +67,7 @@ def fit_polynomial(main_ft: MainFeatures, key_pts: OpenCVIntArray) -> Polynomial
 def chip_tool_contact_point(main_ft: MainFeatures, polynomial: Polynomial) -> tuple[float, float]:
     """Return the contact point between the tool and the chip curve."""
     # abscissa of the contact point, rotated in the polynomial basis
-    xi, yi = main_ft.tool_base_intersection
+    xi, yi = main_ft.tool_base_inter_pt
     cos, sin = np.cos(main_ft.tool_angle), -np.sin(main_ft.tool_angle)
     rot_xc = xi*cos - yi*sin
 
@@ -83,21 +83,21 @@ def extract_contact_features(main_ft: MainFeatures, outside_segments: OpenCVIntA
 
     contact_ft.key_pts = extract_key_points(main_ft, outside_segments[1:], np.pi/4)
     contact_ft.polynomial = fit_polynomial(main_ft, contact_ft.key_pts)
-    contact_ft.contact_point = chip_tool_contact_point(main_ft, contact_ft.polynomial)
+    contact_ft.contact_pt = chip_tool_contact_point(main_ft, contact_ft.polynomial)
 
     return contact_ft
 
 
 def measure_contact_length(main_ft: MainFeatures, contact_ft: ContactFeatures) -> float:
-    xi, yi = main_ft.tool_base_intersection
-    xc, yc = contact_ft.contact_point
+    xi, yi = main_ft.tool_base_inter_pt
+    xc, yc = contact_ft.contact_pt
     return np.linalg.norm((xc-xi, yc-yi))
 
 
 def render_contact_features(frame_num: int, render: ColorImage, main_ft: MainFeatures, contact_ft: ContactFeatures) -> None:
     cv.putText(render, f"frame: {frame_num}", (20, render.shape[0]-20), cv.FONT_HERSHEY_SIMPLEX, 0.5, colors.WHITE)
 
-    contact_line = geometry.parallel(main_ft.base_line, *contact_ft.contact_point)
+    contact_line = geometry.parallel(main_ft.base_line, *contact_ft.contact_pt)
     if contact_ft.polynomial is not None:
         x = np.arange(0, render.shape[1], 1, dtype=np.int32)
         y = contact_ft.polynomial(x)

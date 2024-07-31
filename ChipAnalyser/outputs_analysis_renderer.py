@@ -3,13 +3,13 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from type_hints import ColorImage, GrayImage
     from pathlib import Path
-    from analysis import GeometricalFeatures
+    from features_main import MainFeatures
+    from chip_analysis import ChipFeatures
     from features_thickness import ThicknessAnalysis
 
 import abc
 import cv2 as cv
 import numpy as np
-import matplotlib.pyplot as plt
 
 from outputs_graph_animations import GraphAnimator
 
@@ -23,7 +23,8 @@ class AbstractAnalysisRenderer(abc.ABC):
         self,
         input_img: ColorImage,
         preproc_img: GrayImage,
-        geom_ft: GeometricalFeatures,
+        main_ft: MainFeatures,
+        chip_ft: ChipFeatures,
         thickness_analysis: ThicknessAnalysis
     ) -> None:
         pass
@@ -40,7 +41,14 @@ class AbstractAnalysisRenderer(abc.ABC):
 
 
 class NoRendering(AbstractAnalysisRenderer):
-    def render_frame(self, *_unused_args) -> None:
+    def render_frame(
+        self,
+        _input_img: ColorImage,
+        _preproc_img: GrayImage,
+        _main_ft: MainFeatures,
+        _chip_ft: ChipFeatures,
+        _thickness_analysis: ThicknessAnalysis
+    ) -> None:
         return
 
     def release(self) -> None:
@@ -53,10 +61,11 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         self.h = image_height
         self.w = image_width
 
+        self.frame_num = 1
+
         contact_length_vid = output_dir.joinpath("contact-length-extraction.avi")
         inside_contour_vid = output_dir.joinpath("inside-contour-extraction.avi")
         self.thickness_graph_anim = output_dir.joinpath("chip-thickness-evolution.avi")
-        # self.thickness_graphs = output_dir.joinpath("ChipThicknessEvolution")
 
         codec = cv.VideoWriter_fourcc(*'mp4v')
         self.contact_vid_writer = cv.VideoWriter(str(contact_length_vid), codec, 30, (image_width, image_height))
@@ -78,27 +87,29 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
 
     def render_frame(
         self,
-        frame_num: int,
         input_img: ColorImage,
-        preproc_img: GrayImage,
-        geom_ft: GeometricalFeatures,
+        _preproc_img: GrayImage,
+        main_ft: MainFeatures,
+        chip_ft: ChipFeatures,
         thk_an: ThicknessAnalysis
     ) -> None:
         contact_render = input_img.copy()
-        render_contact_features(frame_num, contact_render, geom_ft.main_ft, geom_ft.contact_ft)
+        render_contact_features(self.frame_num, contact_render, main_ft, chip_ft.contact_ft)
         self.contact_vid_writer.write(contact_render)
 
         inside_render = input_img.copy()
-        render_inside_features(frame_num, inside_render, geom_ft.main_ft, geom_ft.inside_ft)
+        render_inside_features(self.frame_num, inside_render, main_ft, chip_ft.inside_ft)
         self.inside_vid_writer.write(inside_render)
 
-        thickness = self.scale * geom_ft.inside_ft.thickness
+        thickness = self.scale * chip_ft.inside_ft.thickness
         smoothed = self.scale * thk_an.smoothed_thk
         rough = self.scale * thk_an.rough_thk
         rough_spikes = np.column_stack((thk_an.rough_spike_indices, rough[thk_an.rough_spike_indices]))
         valleys = np.column_stack((thk_an.valley_indices, smoothed[thk_an.valley_indices]))
         spikes = np.column_stack((thk_an.spike_indices, smoothed[thk_an.spike_indices]))
         self.thickness_animator.add_frame((thickness, smoothed, rough), (rough_spikes, valleys, spikes))
+
+        self.frame_num += 1
 
     def release(self) -> None:
         self.contact_vid_writer.release()

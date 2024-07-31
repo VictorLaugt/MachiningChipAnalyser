@@ -10,6 +10,7 @@ import cv2 as cv
 from skimage.draw import line
 from scipy.signal import savgol_filter, find_peaks
 
+import geometry
 import colors
 
 
@@ -348,5 +349,5 @@ def render_inside_features(frame_num: int, render: ColorImage, main_ft: MainFeat
         render[y, x] = colors.RED
     for x, y in inside_ft.inside_contour_pts:
         render[y, x] = colors.GREEN
-    # for x, y in inside_ft.chip_curve_pts.reshape(-1, 2):
-    #     cv.circle(render, (x, y), 3, colors.BLUE, -1)
+    geometry.draw_line(render, main_ft.base_line, colors.RED, thickness=3)
+    geometry.draw_line(render, main_ft.tool_line, colors.RED, thickness=3)

@@ -15,9 +15,8 @@ from features_contact import extract_contact_features, measure_contact_length, r
 from features_thickness import extract_inside_features, measure_spike_valley_thickness, render_inside_features
 
 
-class GeometricalFeatures:
+class ChipFeatures:
     __slots__ = (
-        'main_ft',     # type: MainFeatures
         'contact_ft',  # type: ContactFeatures
         'inside_ft'    # type: InsideFeatures
     )
@@ -34,7 +33,7 @@ def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: OpenCVIntArray) ->
 
     anchor_0 = geometry.orthogonal_projection(*chip_highest, main_ft.tool_opp_border)
     anchor_1 = geometry.orthogonal_projection(*anchor_0, main_ft.base_border)
-    anchor_2 = main_ft.tool_base_intersection
+    anchor_2 = main_ft.tool_base_inter_pt
     anchors = np.array([anchor_0, anchor_1, anchor_2], dtype=np.int32).reshape(-1, 1, 2)
 
     chip_hull_pts = cv.convexHull(np.vstack((chip_pts, anchors)), clockwise=main_ft.indirect_rotation)
@@ -47,10 +46,8 @@ def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: OpenCVIntArray) ->
     return np.roll(chip_hull_pts, -first_pt_idx, axis=0)
 
 
-def extract_geometrical_features(binary_img: GrayImage) -> GeometricalFeatures:
-    geometrical_ft = GeometricalFeatures()
-
-    main_ft = extract_main_features(binary_img)
+def extract_chip_features(binary_img: GrayImage, main_ft: MainFeatures) -> ChipFeatures:
+    chip_ft = ChipFeatures()
 
     contours, _ = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
     pts = np.vstack(contours)
@@ -66,8 +63,7 @@ def extract_geometrical_features(binary_img: GrayImage) -> GeometricalFeatures:
         (-5, 15, 15)
     )
 
-    geometrical_ft.main_ft = main_ft
-    geometrical_ft.contact_ft = extract_contact_features(main_ft, outside_segments)
-    geometrical_ft.inside_ft = extract_inside_features(main_ft, outside_segments, chip_binary_img)
+    chip_ft.contact_ft = extract_contact_features(main_ft, outside_segments)
+    chip_ft.inside_ft = extract_inside_features(main_ft, outside_segments, chip_binary_img)
 
-    return geometrical_ft
+    return chip_ft

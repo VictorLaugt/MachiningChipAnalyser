@@ -13,17 +13,17 @@ import geometry
 
 class MainFeatures:
     __slots__ = (
-        "indirect_rotation",       # type: bool
-        "base_line",               # type: Line
-        "tool_line",               # type: Line
+        "indirect_rotation",  # type: bool
+        "base_line",          # type: Line
+        "tool_line",          # type: Line
 
-        "tool_angle",              # type: float
+        "tool_angle",  # type: float
 
-        "base_border",             # type: Line
-        "base_opp_border",         # type: Line
-        "tool_opp_border",         # type: Line
+        "base_border",      # type: Line
+        "base_opp_border",  # type: Line
+        "tool_opp_border",  # type: Line
 
-        "tool_base_intersection",  # type: FloatPt
+        "tool_base_inter_pt",  # type: FloatPt
     )
 
 
@@ -65,7 +65,7 @@ def extract_main_features(binary_img: GrayImage) -> MainFeatures:
     h, w = binary_img.shape
 
     base_line, tool_line, _, ft.tool_angle = locate_base_and_tool(binary_img)
-    ft.tool_base_intersection = xi, yi = geometry.intersect_line(base_line, tool_line)
+    ft.tool_base_inter_pt = (xi, yi) = geometry.intersect_line(base_line, tool_line)
 
     _, xn_base, yn_base = base_line
     _, xn_tool, yn_tool = tool_line

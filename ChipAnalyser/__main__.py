@@ -1,22 +1,15 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from typing import Callable
     from img_loader import AbstractImageLoader
-    from outputs_measurement_writer import AbstractMeasurementWriter
-    from outputs_analysis_renderer import AbstractAnalysisRenderer
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter, ArgumentTypeError
 from pathlib import Path
 
 from img_loader import ImageDirectoryLoader, VideoFrameLoader
+from measure import measure_characteristics
 from outputs_measurement_writer import MeasurementWriter
 from outputs_analysis_renderer import AnalysisRenderer, NoRendering
-
-from preproc import preprocess
-from analysis import extract_geometrical_features
-from features_contact import measure_contact_length
-from features_thickness import measure_spike_valley_thickness
 
 
 def valid_path(value: str) -> Path:
@@ -30,12 +23,12 @@ def arg_checker_input_images(arg: str) -> AbstractImageLoader:
     input_images = valid_path(arg)
     if input_images.is_dir():
         try:
-            loader = ImageDirectoryLoader(input_images, ('.bmp',))
+            loader = ImageDirectoryLoader(input_images, ('.bmp',), 10)
         except FileNotFoundError:
             raise ArgumentTypeError(f"image files not found in the input directory: {input_images}")
     elif input_images.is_file():
         try:
-            loader = VideoFrameLoader(input_images)
+            loader = VideoFrameLoader(input_images, 10)
         except FileNotFoundError:
             raise ArgumentTypeError(f"wrong video file: {input_images}")
     else:
@@ -104,39 +97,15 @@ In addition to make the measurements, the program can also produce graphical ren
     return parser
 
 
-def no_progress_bar(_iteration: int, _total: int, _step: int) -> None:
+def no_progress_bar(_iteration: int, _total: int) -> None:
     return
 
 
-def progress_bar(iteration: int, total: int, step: int) -> None:
-    if iteration % step == 0:
-        progress = iteration / total
-        length = 25
-        done = int(length * progress)
-        print(f"\r|{'#' * done}{' ' * (length-done)}| {100*progress:.2f}%", end='\r')
-
-
-def analysis_loop(
-    loader: AbstractImageLoader,
-    measurement_writer: AbstractMeasurementWriter,
-    analysis_renderer: AbstractAnalysisRenderer,
-    progress: Callable[[int, int, int], None]
-) -> None:
-    img_nb = len(loader)
-    for i, input_img in enumerate(loader, start=1):
-        # image processing
-        binary_img = preprocess(input_img)
-        features = extract_geometrical_features(binary_img)
-
-        # signal processing
-        contact_len = measure_contact_length(features.main_ft, features.contact_ft)
-        thickness_analysis = measure_spike_valley_thickness(features.main_ft, features.inside_ft)
-
-        # output result
-        measurement_writer.write(contact_len, thickness_analysis)
-        analysis_renderer.render_frame(i, input_img, binary_img, features, thickness_analysis)
-
-        progress(i, img_nb, 10)
+def progress_bar(iteration: int, total: int) -> None:
+    progress = iteration / total
+    bar_length = 25
+    done = int(bar_length * progress)
+    print(f"\r|{'#' * done}{' ' * (bar_length-done)}| {100*progress:.2f}%", end='\r')
 
 
 def main():
@@ -157,14 +126,12 @@ def main():
     else:
         progress_bar_func = progress_bar
 
-    # TODO: remove this sandbox escape
-    from features_tool_penetration import extract_tool_penetration
-    extract_tool_penetration(args.input_images)
-    exit()
-
     # analyse the input images and produce the outputs
     with args.input_images, measurement_writer, analysis_renderer:
-        analysis_loop(args.input_images, measurement_writer, analysis_renderer, progress_bar_func)
+        batch_nb = args.input_images.batch_nb()
+        for batch_idx, input_batch in enumerate(args.input_images.img_batch_iter()):
+            progress_bar_func(batch_idx, batch_nb)
+            measure_characteristics(input_batch, measurement_writer, analysis_renderer)
 
 
 if __name__ == '__main__':
