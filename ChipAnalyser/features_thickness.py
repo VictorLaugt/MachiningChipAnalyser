@@ -149,7 +149,7 @@ def find_inside_contour(
     chip_bin_img: GrayImage,
     chip_curve_pts: OpenCVIntArray,
     indirect_rotation: bool,
-    thickness_majorant: int
+    thickness_majorant: float
 ) -> tuple[IntPtArray, FloatArray]:
     """Find the points of the chip inside contour and measure the chip thickness
     along its curve.
@@ -165,7 +165,7 @@ def find_inside_contour(
         Points of the chip convex hull that describes the chip outside curve.
     indirect_rotation: bool
         True indicates the chip spins in the indirect direction of rotation.
-    thickness_majorant: int
+    thickness_majorant: float
         Majorant of the chip thickness in pixels.
 
     Returns
@@ -308,12 +308,11 @@ def extract_inside_features(
 ) -> InsideFeatures:
     inside_ft = InsideFeatures()
 
-    # TODO: use tool_penetration to compute thickness_majorant
     inside_ft.noised_inside_contour_pts, inside_ft.noised_thickness = find_inside_contour(
         chip_binary_img,
         outside_segments,
         main_ft.indirect_rotation,
-        thickness_majorant=125
+        thickness_majorant=2*tool_penetration
     )
     inside_ft.inside_contour_pts, inside_ft.thickness = clean_inside_contour(
         chip_binary_img,

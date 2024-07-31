@@ -82,7 +82,7 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
                 {'s': 200, 'c': 'black', 'marker': '^', 'label': 'peaks'}
             ),
             xlabel='inside contour point index',
-            ylabel='contact length (µm)',
+            ylabel='chip thickness (µm)',
         )
 
     def render_frame(

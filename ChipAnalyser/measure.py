@@ -83,11 +83,10 @@ def measure_spike_valley_thickness(
 ) -> ThicknessAnalysis:
     an = ThicknessAnalysis()
 
-    # TODO: use tool_penetration to compute prominence and eventually window_length
     an.rough_thk = savgol_filter(thickness, window_length=45, polyorder=2)
     an.smoothed_thk = savgol_filter(thickness, window_length=15, polyorder=2)
 
-    an.rough_spike_indices, _ = find_peaks(an.rough_thk, prominence=5)
+    an.rough_spike_indices, _ = find_peaks(an.rough_thk, prominence=0.08*tool_penetration)
     rough_period = np.mean(np.diff(an.rough_spike_indices))
 
     an.spike_indices, _ = find_peaks(an.smoothed_thk, distance=0.7*rough_period)
