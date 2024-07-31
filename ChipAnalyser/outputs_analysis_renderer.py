@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from type_hints import ColorImage, GrayImage
     from pathlib import Path
+    from measure import ToolTipFeatures
     from features_main import MainFeatures
     from chip_analysis import ChipFeatures
     from features_thickness import ThicknessAnalysis
@@ -24,6 +25,7 @@ class AbstractAnalysisRenderer(abc.ABC):
         input_img: ColorImage,
         preproc_img: GrayImage,
         main_ft: MainFeatures,
+        tip_ft: ToolTipFeatures,
         chip_ft: ChipFeatures,
         thickness_analysis: ThicknessAnalysis
     ) -> None:
@@ -46,6 +48,7 @@ class NoRendering(AbstractAnalysisRenderer):
         _input_img: ColorImage,
         _preproc_img: GrayImage,
         _main_ft: MainFeatures,
+        _tip_ft: ToolTipFeatures,
         _chip_ft: ChipFeatures,
         _thickness_analysis: ThicknessAnalysis
     ) -> None:
@@ -90,15 +93,16 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         input_img: ColorImage,
         _preproc_img: GrayImage,
         main_ft: MainFeatures,
+        tip_ft: ToolTipFeatures,
         chip_ft: ChipFeatures,
         thk_an: ThicknessAnalysis
     ) -> None:
         contact_render = input_img.copy()
-        render_contact_features(self.frame_num, contact_render, main_ft, chip_ft.contact_ft)
+        render_contact_features(self.frame_num, contact_render, main_ft, tip_ft, chip_ft.contact_ft)
         self.contact_vid_writer.write(contact_render)
 
         inside_render = input_img.copy()
-        render_inside_features(self.frame_num, inside_render, main_ft, chip_ft.inside_ft)
+        render_inside_features(self.frame_num, inside_render, main_ft, tip_ft, chip_ft.inside_ft)
         self.inside_vid_writer.write(inside_render)
 
         thickness = self.scale * chip_ft.inside_ft.thickness

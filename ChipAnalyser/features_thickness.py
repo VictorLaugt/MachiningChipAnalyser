@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Sequence
     from type_hints import GrayImage, ColorImage, OpenCVIntArray, IntPt, IntPtArray, IntArray, FloatPtArray, FloatArray
+    from measure import ToolTipFeatures
     from features_main import MainFeatures
 
 import numpy as np
@@ -324,7 +325,13 @@ def extract_inside_features(
     return inside_ft
 
 
-def render_inside_features(frame_num: int, render: ColorImage, main_ft: MainFeatures, inside_ft: InsideFeatures) -> None:
+def render_inside_features(
+    frame_num: int,
+    render: ColorImage,
+    main_ft: MainFeatures,
+    tip_ft: ToolTipFeatures,
+    inside_ft: InsideFeatures
+) -> None:
     """Draw a representation of features `main_ft` and `inside_ft` on image `render`."""
     cv.putText(render, f"frame: {frame_num}", (20, render.shape[0]-20), cv.FONT_HERSHEY_SIMPLEX, 0.5, colors.WHITE)
     for x, y in inside_ft.noised_inside_contour_pts:

@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from type_hints import ColorImage, OpenCVIntArray
+    from measure import ToolTipFeatures
     from features_main import MainFeatures
 
 import sys
@@ -88,7 +89,13 @@ def extract_contact_features(main_ft: MainFeatures, outside_segments: OpenCVIntA
     return contact_ft
 
 
-def render_contact_features(frame_num: int, render: ColorImage, main_ft: MainFeatures, contact_ft: ContactFeatures) -> None:
+def render_contact_features(
+    frame_num: int,
+    render: ColorImage,
+    main_ft: MainFeatures,
+    tip_ft: ToolTipFeatures,
+    contact_ft: ContactFeatures
+) -> None:
     cv.putText(render, f"frame: {frame_num}", (20, render.shape[0]-20), cv.FONT_HERSHEY_SIMPLEX, 0.5, colors.WHITE)
 
     contact_line = geometry.parallel(main_ft.base_line, *contact_ft.contact_pt)
