@@ -32,7 +32,7 @@ def best_base_line(lines: OpenCVFloatArray) -> tuple[float, float]:
     for rho, theta in lines[:, 0, :]:
         if np.abs(theta - np.pi/2) < 0.2:
             return rho, theta
-    raise ValueError("base not found")
+    raise ValueError("base line not found")
 
 
 def best_tool_line(lines: OpenCVFloatArray) -> tuple[float, float]:
@@ -42,7 +42,7 @@ def best_tool_line(lines: OpenCVFloatArray) -> tuple[float, float]:
     for rho, theta in lines[:, 0, :]:
         if theta < high or theta > low:
             return rho, theta
-    raise ValueError("tool not found")
+    raise ValueError("tool line not found")
 
 
 def locate_base_and_tool(binary_img: GrayImage) -> tuple[Line, Line, float, float]:

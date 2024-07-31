@@ -47,9 +47,12 @@ def pt2pt_distance(pt0: FloatPt, pt1: FloatPt) -> float:
 
 
 def best_tip_line(lines: OpenCVFloatArray) -> tuple[float, float]:
-    # MOCK: best_tip_line function
-    from features_main import best_base_line
-    return best_base_line(lines)
+    high = 3*np.pi/4
+    low = np.pi/4
+    for rho, theta in lines[:, 0, :]:
+        if low < theta < high:
+            return rho, theta
+    raise ValueError("tip line not found")
 
 
 def locate_tool_tip(

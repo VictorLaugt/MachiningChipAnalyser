@@ -132,6 +132,8 @@ def main():
         for batch_idx, input_batch in enumerate(args.input_images.img_batch_iter()):
             progress_bar_func(batch_idx, batch_nb)
             measure_characteristics(input_batch, measurement_writer, analysis_renderer)
+    progress_bar_func(batch_nb, batch_nb)
+    print()
 
 
 if __name__ == '__main__':

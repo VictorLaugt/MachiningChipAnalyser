@@ -328,8 +328,8 @@ def extract_inside_features(
 def render_inside_features(
     frame_num: int,
     render: ColorImage,
-    main_ft: MainFeatures,
-    tip_ft: ToolTipFeatures,
+    _main_ft: MainFeatures,
+    _tip_ft: ToolTipFeatures,
     inside_ft: InsideFeatures
 ) -> None:
     # draw the detected inside contour of the chip
