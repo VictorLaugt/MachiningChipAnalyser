@@ -8,8 +8,6 @@ import cv2 as cv
 import numpy as np
 
 
-# REFACTOR: remove unused geometry functions and move those who are only used in one file
-
 def draw_line(img: np.ndarray, line: Line, color: int, thickness: int) -> None:
     """Draw a line on img."""
     rho, xn, yn = line
@@ -52,14 +50,6 @@ def neg_line(line: Line) -> Line:
     """
     rho, xn, yn = line
     return (-rho, -xn, -yn)
-
-
-def parallel(line: Line, x: float, y: float) -> Line:
-    """Return the line parallel to the input line and passing through the point
-    (x, y).
-    """
-    _rho, xn, yn = line
-    return (x*xn + y*yn, xn, yn)
 
 
 def above_lines(points: IntPtArray, lines: Iterable[Line], margins: Iterable[int]) -> IntPtArray:
