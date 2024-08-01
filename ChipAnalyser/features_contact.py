@@ -6,7 +6,6 @@ if TYPE_CHECKING:
     from features_main import MainFeatures
 
 import sys
-import matplotlib.pyplot as plt
 
 import geometry
 import colors

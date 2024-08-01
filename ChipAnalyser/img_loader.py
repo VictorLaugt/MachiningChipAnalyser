@@ -11,7 +11,14 @@ import cv2 as cv
 from pathlib import Path
 
 
+class ImageLoadingError(Exception):
+    """Exception raised for errors in the image loading process."""
+    pass
+
+
 class AbstractImageLoader(abc.ABC):
+    """Abstract base class for iterating in batches on images of the same shape."""
+
     def __init__(self, batch_size: int) -> None:
         img_nb = self.img_nb()
         div, mod = divmod(img_nb, batch_size)
@@ -26,21 +33,28 @@ class AbstractImageLoader(abc.ABC):
 
     @abc.abstractmethod
     def img_shape(self) -> tuple[int, int] | tuple[int, int, int]:
+        """Return the shape of the images. It can be (h, w) for gray images or
+        (h, w, 3) for color images.
+        """
         pass
 
     @abc.abstractmethod
     def img_nb(self) -> int:
+        """Return the number of images."""
         pass
 
     @abc.abstractmethod
     def img_iter(self) -> Iterator[Image]:
+        """Iterate over all the images, one by one."""
         pass
 
 
     def batch_nb(self) -> int:
+        """Return the number of batches."""
         return len(self.batch_sizes)
 
     def img_batch_iter(self) -> Iterator[Sequence[Image]]:
+        """Iterate in batches over the images."""
         img_itr = self.img_iter()
         for batch_size in self.batch_sizes:
             yield [next(img_itr) for i in range(batch_size)]
@@ -48,6 +62,7 @@ class AbstractImageLoader(abc.ABC):
 
     @abc.abstractmethod
     def release(self) -> None:
+        """Release any resources held by the image loader."""
         pass
 
     def __enter__(self) -> AbstractImageLoader:
@@ -58,9 +73,13 @@ class AbstractImageLoader(abc.ABC):
 
 
 class ImageDirectoryLoader(AbstractImageLoader):
+    """Image loader for loading images from a directory."""
+
     def __init__(self, image_dir: Path, image_suffixes: Container[str], batch_size: int) -> None:
         img_paths = (file for file in image_dir.iterdir() if file.suffix in image_suffixes)
         self.img_paths: list[Path] = sorted(img_paths, key=(lambda file: file.name))
+        if len(self.img_paths) == 0:
+            raise ImageLoadingError
         super().__init__(batch_size)
 
     def img_shape(self) -> tuple[int, int] | tuple[int, int, int]:
@@ -77,8 +96,12 @@ class ImageDirectoryLoader(AbstractImageLoader):
 
 
 class VideoFrameLoader(AbstractImageLoader):
+    """Image loader for loading frames from a video file."""
+
     def __init__(self, video_path: Path, batch_size: int) -> None:
-        self.reader = cv.VideoCapture(str(video_path))
+        self.reader = cv.VideoCapture()
+        if not self.reader.open(str(video_path)):
+            raise ImageLoadingError
         super().__init__(batch_size)
 
     def img_shape(self) -> tuple[int, int, int]:

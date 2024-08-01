@@ -22,8 +22,19 @@ class ChipFeatures:
 def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: IntPtArray) -> IntPtArray:
     """Compute the convex hull of the chip while constraining it to go through
     three anchor points.
-    Return the convex hull points in the chip rotation order. The first point of
-    the hull is the intersection between the tool and the base.
+
+    Parameters
+    ----------
+    main_ft: MainFeatures
+        Main features of the preprocessed machining image.
+    chip_pts: (n, 2)-array of int
+        Points which belong to the chip
+
+    Returns
+    -------
+    convex_hull_pts: (m, 2)-array of int
+        Convex hull points sorted in the chip rotation order. The first point is
+        the intersection between the tool line and the base line. m < n.
     """
     highest_idx, _ = geometry.line_furthest_point(chip_pts, main_ft.base_line)
     chip_highest = chip_pts[highest_idx, :]
@@ -47,6 +58,27 @@ def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: IntPtArray) -> Int
 
 
 def extract_chip_features(binary_img: GrayImage, main_ft: MainFeatures, tool_penetration: float) -> ChipFeatures:
+    """Extract the features of the chip on the preprocessed machining image.
+
+    These features are divided into two categories:
+    - those concerning the contact between the chip and the tool
+    - those concerning the inside contour of the chip (i.e. the non-convex
+    section of the chip contour)
+
+    Parameters
+    ----------
+    binary_img: (h, w)-array of uint8
+        Preprocessed machining image.
+    main_ft: MainFeatures
+        Main features of the preprocessed machining image.
+    tool_penetration: float
+        Tool penetration length into the part being machined.
+
+    Returns
+    -------
+    chip_ft: ChipFeatures
+        Structure containing features of the chip.
+    """
     chip_ft = ChipFeatures()
 
     contours, _ = cv.findContours(binary_img, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)

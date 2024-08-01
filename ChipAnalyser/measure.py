@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Sequence
-    from type_hints import Image, GrayImage, FloatPt, FloatArray, OpenCVFloatArray
+    from type_hints import Image, GrayImage, FloatPt, FloatArray
     from features_main import MainFeatures
     from outputs_measurement_writer import AbstractMeasurementWriter
     from outputs_analysis_renderer import AbstractAnalysisRenderer
@@ -31,6 +31,17 @@ class ThicknessAnalysis:
 
 
 def pt2pt_distance(pt0: FloatPt, pt1: FloatPt) -> float:
+    """Compute the euclidean distance between the two points pt1 and pt2.
+
+    Parameters
+    ----------
+    p0: float couple
+    p1: float couple
+
+    Returns
+    -------
+    distance: float
+    """
     (x0, y0), (x1, y1) = pt0, pt1
     return np.linalg.norm((x1-x0, y1-y0))
 
@@ -39,6 +50,29 @@ def measure_spike_valley_thickness(
     thickness: FloatArray,
     tool_penetration: float
 ) -> ThicknessAnalysis:
+    """Measure the mean chip thickness at peaks and valleys.
+
+    The signal is denoised with two different intensities to produce a rough
+    signal and a smoothed signal. The rough signal only conserve the allure of
+    the original signal and is used to measure the thickness quasi-period.
+    The quasi-period is used to detect minimums and maximums in the smoothed
+    signal, which approximate the thickness of the chip at peaks and valleys.
+
+    Parameters
+    ----------
+    thickness: (l,)-array of float
+        Signal corresponding to chip thickness along its curve. It can contain
+        some noise due to the imperfection of the feature extraction process.
+    tool_penetration: float
+        Tool penetration length into the part being machined. It is used as a
+        reference value to denoise the thickness signal.
+
+    Returns
+    -------
+    an: ThicknessAnalysis
+        Structure containing chip thickness analysis, including the mean peaks
+        and the mean valley thickness
+    """
     an = ThicknessAnalysis()
 
     an.rough_thk = savgol_filter(thickness, window_length=45, polyorder=2)
@@ -61,6 +95,22 @@ def measure_characteristics(
     measurement_writer: AbstractMeasurementWriter,
     analysis_renderer: AbstractAnalysisRenderer,
 ) -> None:
+    """Measure chip characteristics in all the machining images of a batch.
+    The measured characteristics are:
+    - the contact length between the chip and the tool
+    - the mean chip thickness at peaks
+    - the mean chip thickness at valleys
+
+    Parameters
+    ----------
+    input_batch: sequence of (h, w)-arrays of uint8
+        Batch of input machining images.
+    measurement_writer: AbstractMeasurementWriter
+        Object which writes the measured characteristics to the output.
+    analysis_renderer: AbstractAnalysisRenderer
+        Object which produces graphical renderings illustrating how measurements
+        are made.
+    """
     preprocessed_batch: list[GrayImage] = []
     main_features: list[MainFeatures] = []
     for input_img in input_batch:

@@ -3,10 +3,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from img_loader import AbstractImageLoader
 
+import sys
 from argparse import ArgumentParser, RawDescriptionHelpFormatter, ArgumentTypeError
 from pathlib import Path
 
-from img_loader import ImageDirectoryLoader, VideoFrameLoader
+from img_loader import ImageDirectoryLoader, VideoFrameLoader, ImageLoadingError
 from measure import measure_characteristics
 from outputs_measurement_writer import MeasurementWriter
 from outputs_analysis_renderer import AnalysisRenderer, NoRendering
@@ -14,19 +15,19 @@ from outputs_analysis_renderer import AnalysisRenderer, NoRendering
 
 """Code documentation in progress:
 Progression de la documentation:
-[ ] __main__.py
-[ ] img_loader.py
-[ ] measure.py
-[ ] preproc.py
-[ ] features_main.py
-[ ] features_tip.py
-[ ] chip_analysis.py
+[x] __main__.py
+[x] img_loader.py
+[x] measure.py
+[x] preproc.py
+[x] features_main.py
+[x] features_tip.py
+[x] chip_analysis.py
 [ ] features_contact.py
 [ ] features_thickness.py
 
+[ ] outputs_measurement_writer.py
 [ ] outputs_analysis_renderer.py
 [ ] outputs_graph_animations.py
-[ ] outputs_measurement_writer.py
 
 [ ] geometry.py
 [ ] colors.py
@@ -34,37 +35,26 @@ Progression de la documentation:
 """
 
 
-def valid_path(value: str) -> Path:
-    try:
-        return Path(value)
-    except ValueError:
-        raise ArgumentTypeError(f"invalid path {value}")
-
-
-def arg_checker_input_images(arg: str) -> AbstractImageLoader:
-    input_images = valid_path(arg)
-    if input_images.is_dir():
-        try:
-            loader = ImageDirectoryLoader(input_images, ('.bmp',), 10)
-        except FileNotFoundError:
-            raise ArgumentTypeError(f"image files not found in the input directory: {input_images}")
-    elif input_images.is_file():
-        try:
-            loader = VideoFrameLoader(input_images, 10)
-        except FileNotFoundError:
-            raise ArgumentTypeError(f"wrong video file: {input_images}")
-    else:
-        raise ArgumentTypeError("should be a video file or a directory containing image files")
-    return loader
-
-
 def arg_checker_output_directory(arg: str) -> Path:
-    output_directory = valid_path(arg)
+    try:
+        output_directory = Path(arg)
+    except ValueError:
+        raise ArgumentTypeError(f"invalid path: {arg}")
     if not output_directory.parent.is_dir():
         raise ArgumentTypeError(f"invalid path: {output_directory}")
     elif output_directory.exists():
         raise ArgumentTypeError(f"file already exists: {output_directory}")
     return output_directory
+
+
+def arg_checker_batch_size(arg: str) -> int:
+    try:
+        batch_size = int(arg)
+    except ValueError:
+        raise ArgumentTypeError(f"invalid size: {arg}")
+    if batch_size <= 0:
+        raise ArgumentTypeError(f"should be strictly positive")
+    return batch_size
 
 
 def build_arg_parser() -> ArgumentParser:
@@ -88,7 +78,7 @@ In addition to make the measurements, the program can also produce graphical ren
     )
     parser.add_argument('-i',
         dest='input_images',
-        type=arg_checker_input_images,
+        type=Path,
         required=True,
         help=(
             "path to the directory containing the images to be analyzed, or "
@@ -107,6 +97,12 @@ In addition to make the measurements, the program can also produce graphical ren
         default=1.0,
         help="length of a pixel in µm (1 by default)."
     )
+    parser.add_argument('-b',
+        dest='batch_size',
+        type=arg_checker_batch_size,
+        default=10,
+        help="size of the input image batches (10 by default)."
+    )
     parser.add_argument('-r',
         dest='produce_renderings',
         action='store_true',
@@ -119,11 +115,25 @@ In addition to make the measurements, the program can also produce graphical ren
     return parser
 
 
+def build_image_loader(input_images: Path, batch_size: int) -> AbstractImageLoader:
+    try:
+        if input_images.is_dir():
+            return ImageDirectoryLoader(input_images, ('.bmp',), batch_size)
+        elif input_images.is_file():
+            return VideoFrameLoader(input_images, batch_size)
+        else:
+            raise ValueError(f"{input_images} should be a video file or a directory containing image files")
+    except ImageLoadingError:
+        raise ValueError(f"unable to load input images from {input_images}")
+
+
 def no_progress_bar(_iteration: int, _total: int) -> None:
+    """Do not print a progress bar in the standard output"""
     return
 
 
 def progress_bar(iteration: int, total: int) -> None:
+    """Print a progress bar in the standard output"""
     progress = iteration / total
     bar_length = 25
     done = int(bar_length * progress)
@@ -133,11 +143,17 @@ def progress_bar(iteration: int, total: int) -> None:
 def main():
     args = build_arg_parser().parse_args()
 
+    # build the image loader
+    try:
+        loader = build_image_loader(args.input_images, args.batch_size)
+    except ValueError as err:
+        sys.exit(err.args[0])
+
     # configure the outputs
     args.output_directory.mkdir(parents=True)
     measurement_writer = MeasurementWriter(args.output_directory, args.scale)
     if args.produce_renderings:
-        image_height, image_width = args.input_images.img_shape()[:2]
+        image_height, image_width = loader.img_shape()[:2]
         analysis_renderer = AnalysisRenderer(args.output_directory, args.scale, image_height, image_width)
     else:
         analysis_renderer = NoRendering()
@@ -145,17 +161,19 @@ def main():
     # configure the verbosity
     if args.no_progress_bar:
         progress_bar_func = no_progress_bar
+        end_progress_bar_func = lambda: None
     else:
         progress_bar_func = progress_bar
+        end_progress_bar_func = print
 
     # analyse the input images and produce the outputs
-    with args.input_images, measurement_writer, analysis_renderer:
-        batch_nb = args.input_images.batch_nb()
-        for batch_idx, input_batch in enumerate(args.input_images.img_batch_iter()):
+    with loader, measurement_writer, analysis_renderer:
+        batch_nb = loader.batch_nb()
+        for batch_idx, input_batch in enumerate(loader.img_batch_iter()):
             progress_bar_func(batch_idx, batch_nb)
             measure_characteristics(input_batch, measurement_writer, analysis_renderer)
     progress_bar_func(batch_nb, batch_nb)
-    print()
+    end_progress_bar_func()
 
 
 if __name__ == '__main__':

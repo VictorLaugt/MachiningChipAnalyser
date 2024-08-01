@@ -26,7 +26,20 @@ class MainFeatures:
 
 
 def best_base_line(lines: OpenCVFloatArray) -> tuple[float, float]:
-    """Return the best horizontal line."""
+    """Among the lines detected by the Hough transform, return the one that best
+    fits the base of the part being machined.
+
+    Parameter
+    ---------
+    line: (n, 1, 2)-array of float
+        Array containing (rho, theta) polar parameters of the lines detected by
+        the Hough transform, sorted in descending order of received votes.
+
+    Returns
+    -------
+    best_line: float couple
+        (rho, theta) polar parameters of the best line to fit the base.
+    """
     for rho, theta in lines[:, 0, :]:
         if np.abs(theta - np.pi/2) < 0.2:
             return rho, theta
@@ -34,7 +47,20 @@ def best_base_line(lines: OpenCVFloatArray) -> tuple[float, float]:
 
 
 def best_tool_line(lines: OpenCVFloatArray) -> tuple[float, float]:
-    """Return the best tool line."""
+    """Among the lines detected by the Hough transform, return the one that best
+    fits the blade of the tool.
+
+    Parameter
+    ---------
+    line: (n, 1, 2)-array of float
+        Array containing (rho, theta) polar parameters of the lines detected by
+        the Hough transform, sorted in descending order of received votes.
+
+    Returns
+    -------
+    best_line: float couple
+        (rho, theta) polar parameters of the best line to fit the tool.
+    """
     high = np.pi/8
     low = 7*np.pi/8
     for rho, theta in lines[:, 0, :]:
@@ -44,7 +70,29 @@ def best_tool_line(lines: OpenCVFloatArray) -> tuple[float, float]:
 
 
 def locate_base_and_tool(binary_img: GrayImage) -> tuple[Line, Line, float, float]:
-    """Compute line parameters for base and tool."""
+    """Compute two lines that fit the base of the part being machined and the
+    blade of the tool.
+
+    The lines are returned as (rho, xn, yn) triplets.
+    (rho, theta) are the polar parameters of the line and (xn, yn) is the unit
+    normal vector of the line, which means xn = cos(theta) and yn = sin(theta).
+
+    Parameter
+    ---------
+    binary_img: (h, w)-array of uint8
+        Preprocessed machining image.
+
+    Returns
+    -------
+    base_line: float triplet
+        Line fitting the base.
+    tool_line: float triplet
+        Line fitting the tool.
+    theta_base: float
+        Angle between base_line and the y-axis.
+    theta_tool: float
+        Angle between tool_line and the y-axis.
+    """
     lines = cv.HoughLines(binary_img, 1, np.pi/180, 100)
     if lines is None or len(lines) < 2:
         raise ValueError("line not found")
@@ -59,6 +107,25 @@ def locate_base_and_tool(binary_img: GrayImage) -> tuple[Line, Line, float, floa
 
 
 def extract_main_features(binary_img: GrayImage) -> MainFeatures:
+    """Extract the main features of a preprocessed machining image.
+
+    The parameterization of base_line and tool_line is such that the chip pixels
+    are those located below these two lines, i.e. on the opposite side of their
+    normal vector (xn, yn).
+
+    Parameter
+    ---------
+    binary_img: (h, w)-array of uint8
+        Preprocessed machining image.
+
+    Returns
+    -------
+    main_ft: MainFeatures
+        Structure containing main features of the image, including:
+        - base_line: a line that fits the base of the part being machined
+        - tool_line: a line that fits the blade of the tool
+        - borders of the image relative base_line and tool_line
+    """
     ft = MainFeatures()
     h, w = binary_img.shape
 
