@@ -12,6 +12,28 @@ from outputs_measurement_writer import MeasurementWriter
 from outputs_analysis_renderer import AnalysisRenderer, NoRendering
 
 
+"""Code documentation in progress:
+Progression de la documentation:
+[ ] __main__.py
+[ ] img_loader.py
+[ ] measure.py
+[ ] preproc.py
+[ ] features_main.py
+[ ] features_tip.py
+[ ] chip_analysis.py
+[ ] features_contact.py
+[ ] features_thickness.py
+
+[ ] outputs_analysis_renderer.py
+[ ] outputs_graph_animations.py
+[ ] outputs_measurement_writer.py
+
+[ ] geometry.py
+[ ] colors.py
+[ ] type_hints.py
+"""
+
+
 def valid_path(value: str) -> Path:
     try:
         return Path(value)

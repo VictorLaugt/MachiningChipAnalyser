@@ -8,23 +8,12 @@ if TYPE_CHECKING:
     from outputs_analysis_renderer import AbstractAnalysisRenderer
 
 import numpy as np
-import cv2 as cv
 from scipy.signal import savgol_filter, find_peaks
 
-import geometry
 from preproc import preprocess
 from features_main import extract_main_features
+from features_tip import locate_tool_tip
 from chip_analysis import extract_chip_features
-
-
-class ToolTipFeatures:
-    __slots__ = (
-        "tool_tip_pt",  # type: FloatPt
-
-        "tool_tip_line",   # type: Line
-        "mean_tool_line",  # type: Line
-        "mean_base_line"   # type: Line
-    )
 
 
 class ThicknessAnalysis:
@@ -44,54 +33,6 @@ class ThicknessAnalysis:
 def pt2pt_distance(pt0: FloatPt, pt1: FloatPt) -> float:
     (x0, y0), (x1, y1) = pt0, pt1
     return np.linalg.norm((x1-x0, y1-y0))
-
-
-def best_tip_line(lines: OpenCVFloatArray) -> tuple[float, float]:
-    high = 3*np.pi/4
-    low = np.pi/4
-    for rho, theta in lines[:, 0, :]:
-        if low < theta < high:
-            return rho, theta
-    raise ValueError("tip line not found")
-
-
-def locate_tool_tip(
-    preprocessed_batch: Sequence[GrayImage],
-    main_features: Sequence[MainFeatures]
-) -> ToolTipFeatures:
-    tip_ft = ToolTipFeatures()
-
-    mean_bin_img = np.mean(preprocessed_batch, axis=0).astype(np.uint8)
-    thresh = np.median(mean_bin_img[mean_bin_img > 100])
-    cv.threshold(mean_bin_img, thresh, 255, cv.THRESH_BINARY, dst=mean_bin_img)
-
-    tip_ft.mean_base_line = np.mean([main_ft.base_line for main_ft in main_features], axis=0)
-    tip_ft.mean_tool_line = np.mean([main_ft.tool_line for main_ft in main_features], axis=0)
-
-    y, x = np.nonzero(mean_bin_img)
-    pts = np.column_stack((x, y))
-    above_pts = geometry.above_lines(pts, (tip_ft.mean_base_line, tip_ft.mean_tool_line), (-5, -5))
-
-    tip_bin_img = np.zeros_like(mean_bin_img)
-    tip_bin_img[above_pts[:, 1], above_pts[:, 0]] = 255
-
-    lines = cv.HoughLines(tip_bin_img, 1, np.pi/180, 1)
-    if lines is None or len(lines) < 1:
-        raise ValueError("tip line not found")
-
-    rho_tip, theta_tip = geometry.standard_polar_param(*best_tip_line(lines))
-    xn_tip, yn_tip = np.cos(theta_tip), np.sin(theta_tip)
-    tip_ft.tool_tip_line = (rho_tip, xn_tip, yn_tip)
-
-    tip_ft.tool_tip_pt = geometry.intersect_line(tip_ft.mean_tool_line, tip_ft.tool_tip_line)
-
-    return tip_ft
-
-
-def measure_contact_length(tool_tip_pt: FloatPt, contact_pt: FloatPt) -> float:
-    xi, yi = tool_tip_pt
-    xc, yc = contact_pt
-    return np.linalg.norm((xc-xi, yc-yi))
 
 
 def measure_spike_valley_thickness(
