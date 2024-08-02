@@ -1,7 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from typing import Optional
     from type_hints import ColorImage, IntPtArray, FloatPt
     from measure import ToolTipFeatures
     from features_main import MainFeatures
@@ -63,7 +62,7 @@ def select_key_points(main_ft: MainFeatures, out_curve: IntPtArray, tool_chip_ma
     return out_curve[mask]
 
 
-def fit_polynomial(main_ft: MainFeatures, key_pts: IntPtArray) -> Optional[Polynomial]:
+def fit_polynomial(main_ft: MainFeatures, key_pts: IntPtArray) -> Polynomial:
     """Fit the key points with a polynomial of degree 2 or 1.
 
     The key points are rotated by the opposite of the tool angle before the
@@ -82,13 +81,13 @@ def fit_polynomial(main_ft: MainFeatures, key_pts: IntPtArray) -> Optional[Polyn
     polynomial: Polynomial or None
         Polynomial of degree 2 which fits the m key points, if m >= 3.
         Polynomial of degree 1 which fits the m key points, if m == 2;
-        None, otherwise.
+        Polynomial which always return nan (not a number), otherwise
     """
     rot_x, rot_y = geometry.rotate(key_pts[:, 0], key_pts[:, 1], -main_ft.tool_angle)
 
     if len(key_pts) < 2:
         print("Warning !: Cannot fit the chip curve", file=sys.stderr)
-        polynomial = None
+        polynomial = Polynomial(np.nan)
     elif len(key_pts) == 2:
         polynomial = Polynomial.fit(rot_x, rot_y, 1)
     else:
@@ -164,8 +163,10 @@ def render_contact_features(
     tip_ft: ToolTipFeatures,
     contact_ft: ContactFeatures
 ) -> None:
+    xc, yc = contact_ft.contact_pt
+
     # draw the polynomial approximation of the chip outside curve
-    if contact_ft.polynomial is not None:
+    if not np.isnan(yc):
         x = np.arange(0, render.shape[1], 1, dtype=np.int32)
         y = contact_ft.polynomial(x)
         x, y = geometry.rotate(x, y, main_ft.tool_angle)
@@ -183,12 +184,12 @@ def render_contact_features(
         cv.circle(render, kpt, 6, colors.GREEN, thickness=-1)
 
     # draw the contact length
-    xc, yc = contact_ft.contact_pt
-    xt, yt = tip_ft.tool_tip_pt
-    _, dx, dy = main_ft.tool_line
-    cv.line(render, (int(xt-50*dx), int(yt-50*dy)), (int(xt), int(yt)), colors.YELLOW, 1)
-    cv.line(render, (int(xc-50*dx), int(yc-50*dy)), (int(xc), int(yc)), colors.YELLOW, 1)
-    cv.arrowedLine(render, (int(xt-33*dx), int(yt-33*dy)), (int(xc-33*dx), int(yc-33*dy)), colors.YELLOW, 2)
+    if not np.isnan(yc):
+        xt, yt = tip_ft.tool_tip_pt
+        _, dx, dy = main_ft.tool_line
+        cv.line(render, (int(xt-50*dx), int(yt-50*dy)), (int(xt), int(yt)), colors.YELLOW, 1)
+        cv.line(render, (int(xc-50*dx), int(yc-50*dy)), (int(xc), int(yc)), colors.YELLOW, 1)
+        cv.arrowedLine(render, (int(xt-33*dx), int(yt-33*dy)), (int(xc-33*dx), int(yc-33*dy)), colors.YELLOW, 2)
 
     # write the frame number
     cv.putText(render, f"frame: {frame_num}", (20, render.shape[0]-20), cv.FONT_HERSHEY_SIMPLEX, 0.5, colors.WHITE)
