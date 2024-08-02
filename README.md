@@ -8,7 +8,7 @@ ChipAnalyser is an image-processing program designed to analyze machining chips 
 - Average valley thickness
 Measurement results are saved in a CSV file. Additionally, the program can generate graphical renderings to illustrate the measurement process.
 
-[![Watch the demo video](https://raw.githubusercontent.com/VictorLaugt/machining-chip-characteristics-measurement/master/demo_video/thumbnail.jpg)](https://raw.githubusercontent.com/VictorLaugt/machining-chip-characteristics-measurement/master/demo_video/demo.mp4)
+[![Watch the demo video](https://raw.githubusercontent.com/VictorLaugt/MachiningChipAnalyser/master/demo_video/thumbnail.jpg)](https://raw.githubusercontent.com/VictorLaugt/MachiningChipAnalyser/master/demo_video/demo.mp4)
 
 
 # Usage
