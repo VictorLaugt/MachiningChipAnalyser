@@ -18,7 +18,7 @@ test:
 
 test_%:
 	@printf "\n======= running $(TEST_DIR)/$*.py =======\n"
-	@python3 $(TEST_DIR)/$*.py
+	@python3 $(TEST_DIR)/test_$*.py
 
 clean: remove_outputs
 	find . -name __pycache__ -type d | while read -r pycachepath; do rm -rf $$pycachepath; done
