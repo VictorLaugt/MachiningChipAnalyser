@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
+    from typing import Optional
     from type_hints import GrayImage, OpenCVFloatArray, Line
 
 import warnings
@@ -23,17 +24,8 @@ class MainFeatures:
         "base_opp_border",  # type: Line
         "tool_opp_border",  # type: Line
 
-        "tool_base_inter_pt",  # type: FloatPt
+        "tool_base_inter_pt",  # type: IntPt
     )
-
-
-NAN_LINE: Line = (np.nan, np.nan, np.nan)
-FAILURE = MainFeatures()
-FAILURE.indirect_rotation = False
-FAILURE.base_line = FAILURE.tool_line = NAN_LINE
-FAILURE.tool_angle = np.nan
-FAILURE.base_border = FAILURE.base_opp_border = FAILURE.tool_opp_border = NAN_LINE
-FAILURE.tool_base_inter_pt = (np.nan, np.nan)
 
 
 def best_base_line(lines: OpenCVFloatArray) -> tuple[float, float]:
@@ -106,12 +98,10 @@ def locate_base_and_tool(binary_img: GrayImage) -> tuple[Line, Line, float, floa
     theta_tool: float
         Angle between tool_line and the y-axis.
     """
-    # lines = cv.HoughLines(binary_img, 1, np.pi/180, 100)  # TODO: restore
-    lines = cv.HoughLines(binary_img, 1, np.pi/180, 1)
-
+    lines = cv.HoughLines(binary_img, 1, np.pi/180, 100)
     if lines is None:
         warnings.warn("no line found")
-        return NAN_LINE, NAN_LINE, np.nan, np.nan
+        return geometry.NAN_LINE, geometry.NAN_LINE, np.nan, np.nan
 
     rho_base, theta_base = geometry.standard_polar_param(*best_base_line(lines))
     rho_tool, theta_tool = geometry.standard_polar_param(*best_tool_line(lines))
@@ -122,7 +112,7 @@ def locate_base_and_tool(binary_img: GrayImage) -> tuple[Line, Line, float, floa
     return (rho_base, xn_base, yn_base), (rho_tool, xn_tool, yn_tool), theta_base, theta_tool
 
 
-def extract_main_features(binary_img: GrayImage) -> MainFeatures:
+def extract_main_features(binary_img: GrayImage) -> Optional[MainFeatures]:
     """Extract the main features of a preprocessed machining image.
 
     The parameterization of base_line and tool_line is such that the chip pixels
@@ -136,7 +126,7 @@ def extract_main_features(binary_img: GrayImage) -> MainFeatures:
 
     Returns
     -------
-    main_ft: MainFeatures
+    main_ft: MainFeatures or None if the extraction fails
         Structure containing main features of the image, including:
         - base_line: a line that fits the base of the part being machined
         - tool_line: a line that fits the blade of the tool
@@ -147,7 +137,7 @@ def extract_main_features(binary_img: GrayImage) -> MainFeatures:
 
     base_line, tool_line, theta_base, theta_tool = locate_base_and_tool(binary_img)
     if np.isnan(theta_base) or np.isnan(theta_tool):
-        return FAILURE
+        return
 
     ft.tool_angle = theta_tool
     ft.tool_base_inter_pt = (xi, yi) = geometry.intersect_line(base_line, tool_line)

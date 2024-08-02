@@ -5,6 +5,7 @@ if TYPE_CHECKING:
     from features_thickness import ThicknessAnalysis
 
 import csv
+import numpy as np
 
 import matplotlib.pyplot as plt
 
@@ -35,6 +36,9 @@ class MeasurementWriter:
             self.scale * thickness_analysis.mean_spike_thickness,
             self.scale * thickness_analysis.mean_valley_thickness
         ))
+
+    def write_nan(self) -> None:
+        self.csv_writer.writerow((np.nan, np.nan, np.nan))
 
     def save_graphs(self, display: bool=False) -> None:
         """Save a plot showing the evolution of the three measurements."""

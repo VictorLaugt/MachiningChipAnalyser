@@ -122,6 +122,11 @@ def measure_characteristics(
     tip_ft = locate_tool_tip(preprocessed_batch, main_features)
 
     for input_img, binary_img, main_ft in zip(input_batch, preprocessed_batch, main_features):
+        if main_ft is None or tip_ft is None:
+            measurement_writer.write_nan()
+            analysis_renderer.no_render(input_img, binary_img)
+            continue
+
         tool_penetration = pt2pt_distance(tip_ft.tool_tip_pt, main_ft.tool_base_inter_pt)
         chip_ft = extract_chip_features(binary_img, main_ft, tool_penetration)
 

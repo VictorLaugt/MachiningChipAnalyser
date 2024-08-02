@@ -1,11 +1,14 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from typing import Any, Iterable
+    from typing import Any, Iterable, Optional
     from type_hints import Image, IntPtArray, IntPt, Line
 
 import cv2 as cv
 import numpy as np
+
+
+NAN_LINE: Line = (np.nan, np.nan, np.nan)
 
 
 def draw_line(img: Image, line: Line, color: int, thickness: int) -> None:
@@ -96,3 +99,13 @@ def intersect_line(line0: Line, line1: Line) -> IntPt:
         int((rho1*yn0 - rho0*yn1) / det),
         int((rho0*xn1 - rho1*xn0) / det)
     )
+
+def intersect_line_safe(line0: Line, line1: Line) -> Optional[IntPt]:
+    """Compute the intersection point of two lines and return None if it doesn't exist."""
+    (rho0, xn0, yn0), (rho1, xn1, yn1) = line0, line1
+    det = yn0*xn1 - xn0*yn1
+    if det != 0:
+        return (
+            int((rho1*yn0 - rho0*yn1) / det),
+            int((rho0*xn1 - rho1*xn0) / det)
+        )

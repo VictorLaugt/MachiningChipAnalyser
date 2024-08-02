@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from type_hints import ColorImage, GrayImage
+    from type_hints import ColorImage, GrayImage, FloatArray, FloatPtArray
     from pathlib import Path
     from measure import ToolTipFeatures
     from features_main import MainFeatures
@@ -18,6 +18,10 @@ from features_contact import render_contact_features
 from features_thickness import render_inside_features
 
 
+EMPTY_FLOAT_ARRAY: FloatArray = np.empty((0,), dtype=float)
+EMPTY_FLOAT_PT_ARRAY: FloatPtArray = np.empty((0, 2), dtype=float)
+
+
 class AbstractAnalysisRenderer(abc.ABC):
     @abc.abstractmethod
     def render_frame(
@@ -29,6 +33,10 @@ class AbstractAnalysisRenderer(abc.ABC):
         chip_ft: ChipFeatures,
         thickness_analysis: ThicknessAnalysis
     ) -> None:
+        pass
+
+    @abc.abstractmethod
+    def no_render(self, input_img: ColorImage, preproc_img: GrayImage) -> None:
         pass
 
     @abc.abstractmethod
@@ -52,6 +60,9 @@ class NoRendering(AbstractAnalysisRenderer):
         _chip_ft: ChipFeatures,
         _thickness_analysis: ThicknessAnalysis
     ) -> None:
+        return
+
+    def no_render(self, _input_img: ColorImage, _preproc_img: GrayImage) -> None:
         return
 
     def release(self) -> None:
@@ -117,6 +128,16 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         spikes = np.column_stack((thk_an.spike_indices, smoothed[thk_an.spike_indices]))
         self.thickness_animator.add_frame((thickness, smoothed, rough), (rough_spikes, valleys, spikes))
 
+        self.frame_num += 1
+
+    def no_render(self, input_img: ColorImage, preproc_img: GrayImage) -> None:
+        self.preprocessing_vid_writer.write(cv.cvtColor(preproc_img, cv.COLOR_GRAY2BGR))
+        self.contact_vid_writer.write(input_img)
+        self.inside_vid_writer.write(input_img)
+        self.thickness_animator.add_frame(
+            (EMPTY_FLOAT_ARRAY, EMPTY_FLOAT_ARRAY, EMPTY_FLOAT_ARRAY),
+            (EMPTY_FLOAT_PT_ARRAY, EMPTY_FLOAT_PT_ARRAY, EMPTY_FLOAT_PT_ARRAY)
+        )
         self.frame_num += 1
 
     def release(self) -> None:

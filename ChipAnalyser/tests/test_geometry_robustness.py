@@ -4,19 +4,16 @@ import numpy as np
 import geometry
 
 
-NAN_LINE = (np.nan, np.nan, np.nan)
-
-
 class TestUnderAboveNan(unittest.TestCase):
     def test_above_nan(self):
         pts = np.random.randint(0, 1000, (500, 2))
-        filtered_pts = geometry.above_lines(pts, (NAN_LINE,), (0,))
-        self.assertEqual(len(filtered_pts), 0)
+        filtered_pts = geometry.above_lines(pts, (geometry.NAN_LINE,), (0,))
+        self.assertEqual(filtered_pts.shape, (0, 2))
 
     def test_under_nan(self):
         pts = np.random.randint(0, 1000, (500, 2))
-        filtered_pts = geometry.under_lines(pts, (NAN_LINE,), (0,))
-        self.assertEqual(len(filtered_pts), 0)
+        filtered_pts = geometry.under_lines(pts, (geometry.NAN_LINE,), (0,))
+        self.assertEqual(filtered_pts.shape, (0, 2))
 
 
 class TestRotateNan(unittest.TestCase):
@@ -86,7 +83,7 @@ class TestRotateNan(unittest.TestCase):
         self.assertTrue(np.all(~np.isnan(rot_y[~nan_mask])))
 
 
-class IntersectNanLine(unittest.TestCase):
+class IntersectLine(unittest.TestCase):
     @staticmethod
     def random_line():
         rho = 500 * np.random.random()
@@ -95,15 +92,25 @@ class IntersectNanLine(unittest.TestCase):
 
     def test_nan_intersect_line(self):
         with self.assertRaises(ValueError):
-            geometry.intersect_line(NAN_LINE, self.random_line())
+            geometry.intersect_line(geometry.NAN_LINE, self.random_line())
 
     def test_line_intersect_nan(self):
         with self.assertRaises(ValueError):
-            geometry.intersect_line(self.random_line(), NAN_LINE)
+            geometry.intersect_line(self.random_line(), geometry.NAN_LINE)
 
     def test_nan_intersect_nan(self):
         with self.assertRaises(ValueError):
-            geometry.intersect_line(NAN_LINE, NAN_LINE)
+            geometry.intersect_line(geometry.NAN_LINE, geometry.NAN_LINE)
+
+    def test_intersect_parallels(self):
+        with self.assertRaises(ZeroDivisionError):
+            geometry.intersect_line((10., 1., 0.), (100., -1., 0.))
+
+    def test_intersect_parallels_safe(self):
+        self.assertIsNone(
+            geometry.intersect_line_safe((10., 1., 0.), (100., -1., 0.))
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
