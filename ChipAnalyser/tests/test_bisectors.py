@@ -18,15 +18,6 @@ def check_middle_angles_bisection(pts, bisectors):
     ub_angles = angle_between_vectors(u, bisectors[1:-1])
     vb_angles = angle_between_vectors(v, bisectors[1:-1])
 
-    success = np.isclose(ub_angles, vb_angles, atol=1e-5)
-    if success.all():
-        return True
-    else:
-        fail = ~success
-        print(f"ub fails = {ub_angles[fail]}")
-        print(f"vb fails = {vb_angles[fail]}")
-        print(f"errors = {ub_angles[fail] - vb_angles[fail]}")
-
     return np.isclose(ub_angles, vb_angles, atol=1e-5).all()
 
 

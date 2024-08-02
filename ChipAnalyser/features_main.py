@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from type_hints import GrayImage, OpenCVFloatArray, Line
 
+import warnings
+
 import numpy as np
 import cv2 as cv
 
@@ -25,6 +27,15 @@ class MainFeatures:
     )
 
 
+NAN_LINE: Line = (np.nan, np.nan, np.nan)
+FAILURE = MainFeatures()
+FAILURE.indirect_rotation = False
+FAILURE.base_line = FAILURE.tool_line = NAN_LINE
+FAILURE.tool_angle = np.nan
+FAILURE.base_border = FAILURE.base_opp_border = FAILURE.tool_opp_border = NAN_LINE
+FAILURE.tool_base_inter_pt = (np.nan, np.nan)
+
+
 def best_base_line(lines: OpenCVFloatArray) -> tuple[float, float]:
     """Among the lines detected by the Hough transform, return the one that best
     fits the base of the part being machined.
@@ -43,7 +54,8 @@ def best_base_line(lines: OpenCVFloatArray) -> tuple[float, float]:
     for rho, theta in lines[:, 0, :]:
         if np.abs(theta - np.pi/2) < 0.2:
             return rho, theta
-    raise ValueError("base line not found")
+    warnings.warn("base line not found")
+    return np.nan, np.nan
 
 
 def best_tool_line(lines: OpenCVFloatArray) -> tuple[float, float]:
@@ -66,7 +78,8 @@ def best_tool_line(lines: OpenCVFloatArray) -> tuple[float, float]:
     for rho, theta in lines[:, 0, :]:
         if theta < high or theta > low:
             return rho, theta
-    raise ValueError("tool line not found")
+    warnings.warn("tool line not found")
+    return np.nan, np.nan
 
 
 def locate_base_and_tool(binary_img: GrayImage) -> tuple[Line, Line, float, float]:
@@ -93,9 +106,12 @@ def locate_base_and_tool(binary_img: GrayImage) -> tuple[Line, Line, float, floa
     theta_tool: float
         Angle between tool_line and the y-axis.
     """
-    lines = cv.HoughLines(binary_img, 1, np.pi/180, 100)
-    if lines is None or len(lines) < 2:
-        raise ValueError("line not found")
+    # lines = cv.HoughLines(binary_img, 1, np.pi/180, 100)  # TODO: restore
+    lines = cv.HoughLines(binary_img, 1, np.pi/180, 1)
+
+    if lines is None:
+        warnings.warn("no line found")
+        return NAN_LINE, NAN_LINE, np.nan, np.nan
 
     rho_base, theta_base = geometry.standard_polar_param(*best_base_line(lines))
     rho_tool, theta_tool = geometry.standard_polar_param(*best_tool_line(lines))
@@ -129,7 +145,11 @@ def extract_main_features(binary_img: GrayImage) -> MainFeatures:
     ft = MainFeatures()
     h, w = binary_img.shape
 
-    base_line, tool_line, _, ft.tool_angle = locate_base_and_tool(binary_img)
+    base_line, tool_line, theta_base, theta_tool = locate_base_and_tool(binary_img)
+    if np.isnan(theta_base) or np.isnan(theta_tool):
+        return FAILURE
+
+    ft.tool_angle = theta_tool
     ft.tool_base_inter_pt = (xi, yi) = geometry.intersect_line(base_line, tool_line)
 
     _, xn_base, yn_base = base_line

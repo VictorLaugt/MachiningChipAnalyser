@@ -69,8 +69,8 @@ def locate_tool_tip(
     thresh = np.median(mean_bin_img[mean_bin_img > 100])
     cv.threshold(mean_bin_img, thresh, 255, cv.THRESH_BINARY, dst=mean_bin_img)
 
-    tip_ft.mean_base_line = np.mean([main_ft.base_line for main_ft in main_features], axis=0)
-    tip_ft.mean_tool_line = np.mean([main_ft.tool_line for main_ft in main_features], axis=0)
+    tip_ft.mean_base_line = np.nanmean([main_ft.base_line for main_ft in main_features], axis=0)
+    tip_ft.mean_tool_line = np.nanmean([main_ft.tool_line for main_ft in main_features], axis=0)
 
     y, x = np.nonzero(mean_bin_img)
     pts = np.column_stack((x, y))

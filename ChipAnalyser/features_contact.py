@@ -5,7 +5,7 @@ if TYPE_CHECKING:
     from measure import ToolTipFeatures
     from features_main import MainFeatures
 
-import sys
+import warnings
 
 import geometry
 import colors
@@ -86,7 +86,7 @@ def fit_polynomial(main_ft: MainFeatures, key_pts: IntPtArray) -> Polynomial:
     rot_x, rot_y = geometry.rotate(key_pts[:, 0], key_pts[:, 1], -main_ft.tool_angle)
 
     if len(key_pts) < 2:
-        print("Warning !: Cannot fit the chip curve", file=sys.stderr)
+        warnings.warn("cannot fit the chip curve with a polynomial")
         polynomial = Polynomial(np.nan)
     elif len(key_pts) == 2:
         polynomial = Polynomial.fit(rot_x, rot_y, 1)
