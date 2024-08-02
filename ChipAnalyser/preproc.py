@@ -61,7 +61,7 @@ def preprocess(input_img: Image) -> GrayImage:
         Preprocessed machining image.
     """
     # conversion in grayscale (out-of-place)
-    x = cv.cvtColor(input_img, cv.COLOR_RGB2GRAY)
+    x = cv.cvtColor(input_img, cv.COLOR_BGR2GRAY)
 
     # Laplacian of Gaussian and treshold binarization (in-place)
     cv.filter2D(x, -1, log_kernel, dst=x)

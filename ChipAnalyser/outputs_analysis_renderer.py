@@ -66,11 +66,13 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
 
         self.frame_num = 1
 
+        preprocessing_vid = output_dir.joinpath("preprocessing.avi")
         contact_length_vid = output_dir.joinpath("contact-length-extraction.avi")
         inside_contour_vid = output_dir.joinpath("inside-contour-extraction.avi")
         self.thickness_graph_anim = output_dir.joinpath("chip-thickness-evolution.avi")
 
         codec = cv.VideoWriter_fourcc(*'mp4v')
+        self.preprocessing_vid_writer = cv.VideoWriter(str(preprocessing_vid), codec, 30, (image_width, image_height))
         self.contact_vid_writer = cv.VideoWriter(str(contact_length_vid), codec, 30, (image_width, image_height))
         self.inside_vid_writer = cv.VideoWriter(str(inside_contour_vid), codec, 30, (image_width, image_height))
         self.thickness_animator = GraphAnimator(
@@ -91,12 +93,14 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
     def render_frame(
         self,
         input_img: ColorImage,
-        _preproc_img: GrayImage,
+        preproc_img: GrayImage,
         main_ft: MainFeatures,
         tip_ft: ToolTipFeatures,
         chip_ft: ChipFeatures,
         thk_an: ThicknessAnalysis
     ) -> None:
+        self.preprocessing_vid_writer.write(cv.cvtColor(preproc_img, cv.COLOR_GRAY2BGR))
+
         contact_render = input_img.copy()
         render_contact_features(self.frame_num, contact_render, main_ft, tip_ft, chip_ft.contact_ft)
         self.contact_vid_writer.write(contact_render)
@@ -116,6 +120,7 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         self.frame_num += 1
 
     def release(self) -> None:
+        self.preprocessing_vid_writer.release()
         self.contact_vid_writer.release()
         self.inside_vid_writer.release()
         self.thickness_animator.save(self.thickness_graph_anim)
