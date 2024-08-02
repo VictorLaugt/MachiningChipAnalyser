@@ -41,14 +41,14 @@ def rasterized_line(p0: IntPt, p1: IntPt, img_height: int, img_width: int) -> tu
 
     Parameters
     ----------
-    p0, p1: IntPt
+    p0, p1: int couples
         Points defining the segment.
     img_height, img_width: int
         Height and width of the image.
 
     Returns
     -------
-    raster_x, raster_y: (n,)-array of int
+    raster_x, raster_y: (n,)-arrays of int
         Respectively the x and y coordinates of the image pixels crossed by the
         line segment (p0, p1). 0 <= x < img_width and 0 <= y < img_height.
     """
@@ -120,14 +120,14 @@ def remove_crossed_quadrilaterals(
 
     Parameters
     ----------
-    out_curve, in_curve: (n, 2)-array of int
+    out_curve, in_curve: (n, 2)-arrays of int
         Respectively the outside and inside curves of the chip. n >= 2.
 
     Returns
     -------
-    filt_out_curve, filt_in_curve: (m, 2)-array of int
+    filtered_out_curve, filtered_in_curve: (m, 2)-arrays of int
         Respectively the outside and inside curves of the chip without crossed
-        quadrilaterals. 2 <= m < n.
+        quadrilaterals. 2 <= m <= n.
     """
     while True:
         o1, i1 = out_curve[:-1], in_curve[:-1]
@@ -298,15 +298,36 @@ def clean_inside_contour(
 
 def extract_inside_features(
     main_ft: MainFeatures,
-    outside_segments: IntPtArray,
+    out_curve: IntPtArray,
     chip_binary_img: GrayImage,
     tool_penetration: float
 ) -> InsideFeatures:
+    """Extract the features concerning the inside contour of the chip.
+
+    Parameters
+    ----------
+    main_ft: MainFeatures
+        Main features of the preprocessed machining image.
+    out_curve: (n, 2)-array of int
+        Points of the chip convex hull that describes the chip outside curve.
+    chip_binary_img: (h, w)-array of uint8
+        Machining binary image containing only the chip pixels.
+    tool_penetration: float
+        Tool penetration length into the part being machined.
+
+    Returns
+    -------
+    inside_ft: InsideFeatures
+        Structure containing the extracted features:
+        - the points of the chip inside contour. It is a non-convex contour made
+        of spikes and valleys.
+        - the thickness of the chip along its curve.
+    """
     inside_ft = InsideFeatures()
 
     inside_ft.noised_inside_contour_pts, inside_ft.noised_thickness = find_inside_contour(
         chip_binary_img,
-        outside_segments,
+        out_curve,
         main_ft.indirect_rotation,
         thickness_majorant=2*tool_penetration
     )

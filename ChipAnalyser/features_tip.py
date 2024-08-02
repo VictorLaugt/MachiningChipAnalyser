@@ -48,7 +48,7 @@ def locate_tool_tip(
     preprocessed_batch: Sequence[GrayImage],
     main_features: Sequence[MainFeatures]
 ) -> ToolTipFeatures:
-    """Calculate the position of the tool tip point in the average of all the
+    """Compute the position of the tool tip point in the average of all the
     batch's preprocessed machining images.
 
     Parameters

@@ -4,44 +4,17 @@ if TYPE_CHECKING:
     from pathlib import Path
     from features_thickness import ThicknessAnalysis
 
-import abc
 import csv
 
 import matplotlib.pyplot as plt
 
 
-class AbstractMeasurementWriter(abc.ABC):
-    @abc.abstractmethod
-    def write(self, contact_length: float, thickness_analysis: ThicknessAnalysis) -> None:
-        pass
-
-    @abc.abstractmethod
-    def release(self) -> None:
-        pass
-
-    def __enter__(self) -> AbstractMeasurementWriter:
-        return self
-
-    def __exit__(self, _exc_type, _exc_value, _exc_backtrace) -> None:
-        self.release()
-
-
-class MeasurementPrinter(AbstractMeasurementWriter):
-    def __init__(self, scale: float) -> None:
-        self.scale = scale
-
-    def write(self, contact_length: float, thickness_analysis: ThicknessAnalysis) -> None:
-        print(
-            f"contact length = {self.scale * contact_length}, "
-            f"mean spike thickness = {self.scale * thickness_analysis.mean_spike_thickness}, "
-            f"mean valley thickness = {self.scale * thickness_analysis.mean_valley_thickness}"
-        )
-
-    def release(self) -> None:
-        return
-
-
-class MeasurementWriter(AbstractMeasurementWriter):
+class MeasurementWriter:
+    """Class for writing measurements into a three column csv file:
+    - contact length
+    - mean spike thickness
+    - mean valley thickness
+    """
     header = ("contact length", "mean spike thickness", "mean valley thickness")
 
     def __init__(self, output_dir: Path, scale: float) -> None:
@@ -56,6 +29,7 @@ class MeasurementWriter(AbstractMeasurementWriter):
         self.csv_writer.writerow(self.header)
 
     def write(self, contact_length: float, thickness_analysis: ThicknessAnalysis) -> None:
+        """Write the three measurements as a new line into the csv file."""
         self.csv_writer.writerow((
             self.scale * contact_length,
             self.scale * thickness_analysis.mean_spike_thickness,
@@ -63,6 +37,7 @@ class MeasurementWriter(AbstractMeasurementWriter):
         ))
 
     def save_graphs(self, display: bool=False) -> None:
+        """Save a plot showing the evolution of the three measurements."""
         self.save_file.seek(0)
         csv_reader_itr = iter(csv.reader(self.save_file))
         next(csv_reader_itr)  # skip the header
@@ -89,14 +64,14 @@ class MeasurementWriter(AbstractMeasurementWriter):
         fig.savefig(self.contact_length_graph)
 
         fig, ax = new_plot()
-        ax.set_title("Spike mean thickness evolution")
-        ax.set_ylabel("spike mean thickness (µm)")
+        ax.set_title("Mean spike thickness evolution")
+        ax.set_ylabel("mean spike thickness (µm)")
         ax.plot(frames, spike_mean_thk_values, '-x')
         fig.savefig(self.spike_mean_thk_graph)
 
         fig, ax = new_plot()
-        ax.set_title("Valley mean thickness evolution")
-        ax.set_ylabel("spike mean thickness (µm)")
+        ax.set_title("Mean valley thickness evolution")
+        ax.set_ylabel("mean valley thickness (µm)")
         ax.plot(frames, valley_mean_thk_values, '-x')
         fig.savefig(self.valley_mean_thk_graph)
 
@@ -104,5 +79,12 @@ class MeasurementWriter(AbstractMeasurementWriter):
             plt.show()
 
     def release(self) -> None:
+        """Close the output csv file."""
         self.save_graphs()
         self.save_file.close()
+
+    def __enter__(self) -> MeasurementWriter:
+        return self
+
+    def __exit__(self, _exc_type, _exc_value, _exc_backtrace) -> None:
+        self.release()

@@ -9,10 +9,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as anim
 
+
 def padded_array(array: np.ndarray, padded_length: int) -> np.ndarray:
     padded_array = np.full(padded_length, np.nan, array.dtype)
     padded_array[:len(array)] = array
     return padded_array
+
 
 class SaveAnimation:
     def __init__(self, graph_animator: GraphAnimator, file_path: Path, display: bool=False) -> None:

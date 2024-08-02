@@ -4,7 +4,7 @@ if TYPE_CHECKING:
     from typing import Sequence
     from type_hints import Image, GrayImage, FloatPt, FloatArray
     from features_main import MainFeatures
-    from outputs_measurement_writer import AbstractMeasurementWriter
+    from outputs_measurement_writer import MeasurementWriter
     from outputs_analysis_renderer import AbstractAnalysisRenderer
 
 import numpy as np
@@ -35,8 +35,7 @@ def pt2pt_distance(pt0: FloatPt, pt1: FloatPt) -> float:
 
     Parameters
     ----------
-    p0: float couple
-    p1: float couple
+    p0, p1: float couples
 
     Returns
     -------
@@ -52,9 +51,9 @@ def measure_spike_valley_thickness(
 ) -> ThicknessAnalysis:
     """Measure the mean chip thickness at peaks and valleys.
 
-    The signal is denoised with two different intensities to produce a rough
-    signal and a smoothed signal. The rough signal only conserve the allure of
-    the original signal and is used to measure the thickness quasi-period.
+    The thickness signal is denoised with two different intensities to produce a
+    rough signal and a smoothed signal. The rough signal only conserve the allure
+    of the original thickness signal and is used to measure its quasi-period.
     The quasi-period is used to detect minimums and maximums in the smoothed
     signal, which approximate the thickness of the chip at peaks and valleys.
 
@@ -92,7 +91,7 @@ def measure_spike_valley_thickness(
 
 def measure_characteristics(
     input_batch: Sequence[Image],
-    measurement_writer: AbstractMeasurementWriter,
+    measurement_writer: MeasurementWriter,
     analysis_renderer: AbstractAnalysisRenderer,
 ) -> None:
     """Measure chip characteristics in all the machining images of a batch.
@@ -105,7 +104,7 @@ def measure_characteristics(
     ----------
     input_batch: sequence of (h, w)-arrays of uint8
         Batch of input machining images.
-    measurement_writer: AbstractMeasurementWriter
+    measurement_writer: MeasurementWriter
         Object which writes the measured characteristics to the output.
     analysis_renderer: AbstractAnalysisRenderer
         Object which produces graphical renderings illustrating how measurements

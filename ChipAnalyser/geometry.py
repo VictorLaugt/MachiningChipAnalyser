@@ -2,14 +2,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Any, Iterable
-    from type_hints import IntPtArray, IntPt, Line
+    from type_hints import Image, IntPtArray, IntPt, Line
 
 import cv2 as cv
 import numpy as np
 
 
-def draw_line(img: np.ndarray, line: Line, color: int, thickness: int) -> None:
-    """Draw a line on img."""
+def draw_line(img: Image, line: Line, color: int, thickness: int) -> None:
+    """Draw a line on an image, with a given color and a given thickness."""
     rho, xn, yn = line
     x0, y0 = rho * xn, rho * yn
     x1, y1 = int(x0 - 2000 * yn), int(y0 + 2000 * xn)
@@ -17,17 +17,26 @@ def draw_line(img: np.ndarray, line: Line, color: int, thickness: int) -> None:
     cv.line(img, (x1, y1), (x2, y2), color, thickness)
 
 
-# (int|float, int|float) -> tuple[float, float]
-# (IntArray|FloatArray, IntArray|FloatArray, float) -> tuple[FloatArray, FloatArray]
 def rotate(x: Any, y: Any, angle: float) -> tuple[Any, Any]:
+    """Rotate a point or a point array by a given angle in radians.
+
+    Possible signatures
+    -------------------
+    (int|float, int|float) -> tuple[float, float]
+    (IntArray|FloatArray, IntArray|FloatArray, float) -> tuple[FloatArray, FloatArray]
+    """
     cos, sin = np.cos(angle), np.sin(angle)
     return (x*cos - y*sin, x*sin + y*cos)
 
 
-# (int|float, int|float, Line) -> tuple[float, float]
-# (IntArray|FloatArray, IntArray|FloatArray, Line) -> tuple[FloatArray, FloatArray]
 def orthogonal_projection(x: Any, y: Any, line: Line) -> tuple[Any, Any]:
-    """Compute the orthogonal projection of a point on a line."""
+    """Compute the orthogonal projection of a point or a point array on a line.
+
+    Possible signatures
+    -------------------
+    (int|float, int|float, Line) -> tuple[float, float]
+    (IntArray|FloatArray, IntArray|FloatArray, Line) -> tuple[FloatArray, FloatArray]
+    """
     rho, xn, yn = line
     signed_dist = xn*x + yn*y - rho
     return (x - signed_dist*xn, y - signed_dist*yn)
@@ -45,15 +54,13 @@ def standard_polar_param(rho: float, theta: float) -> tuple[float, float]:
 
 
 def neg_line(line: Line) -> Line:
-    """Return the opposite line, i.e the line with flipped above and under
-    sides.
-    """
+    """Return the opposite line, i.e the line with flipped above and under sides."""
     rho, xn, yn = line
     return (-rho, -xn, -yn)
 
 
 def above_lines(points: IntPtArray, lines: Iterable[Line], margins: Iterable[int]) -> IntPtArray:
-    """Keeps only the points above the lines with a margin."""
+    """Keep only the points above the given lines with given margins."""
     x, y = points[:, 0], points[:, 1]
     mask = np.ones(len(points), dtype=bool)
     for (rho, xn, yn), min_distance in zip(lines, margins):
@@ -62,7 +69,7 @@ def above_lines(points: IntPtArray, lines: Iterable[Line], margins: Iterable[int
 
 
 def under_lines(points: IntPtArray, lines: Iterable[Line], margins: Iterable[int]) -> IntPtArray:
-    """Keeps only the points under the lines with a margin."""
+    """Keep only the points under the given lines with given margins."""
     x, y = points[:, 0], points[:, 1]
     mask = np.ones(len(points), dtype=bool)
     for (rho, xn, yn), min_distance in zip(lines, margins):
@@ -71,7 +78,7 @@ def under_lines(points: IntPtArray, lines: Iterable[Line], margins: Iterable[int
 
 
 def line_furthest_point(points: IntPtArray, line: Line) -> tuple[int, float]:
-    """Return the index of the point furthest to the line and its distance to
+    """Return the index of the furthest point to the line and its distance to
     the line.
     """
     rho, xn, yn = line
@@ -82,7 +89,7 @@ def line_furthest_point(points: IntPtArray, line: Line) -> tuple[int, float]:
 
 
 def intersect_line(line0: Line, line1: Line) -> IntPt:
-    """Compute the intersection points of two lines."""
+    """Compute the intersection point of two lines."""
     (rho0, xn0, yn0), (rho1, xn1, yn1) = line0, line1
     det = yn0*xn1 - xn0*yn1
     return (

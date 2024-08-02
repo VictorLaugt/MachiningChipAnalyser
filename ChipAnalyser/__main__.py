@@ -13,27 +13,6 @@ from outputs_measurement_writer import MeasurementWriter
 from outputs_analysis_renderer import AnalysisRenderer, NoRendering
 
 
-"""Code documentation in progress:
-Progression de la documentation:
-[x] __main__.py
-[x] img_loader.py
-[x] measure.py
-[x] preproc.py
-[x] features_main.py
-[x] features_tip.py
-[x] chip_analysis.py
-[ ] features_contact.py
-[ ] features_thickness.py
-
-[ ] outputs_measurement_writer.py
-[ ] outputs_analysis_renderer.py
-[ ] outputs_graph_animations.py
-
-[ ] geometry.py
-[ ] colors.py
-[ ] type_hints.py
-"""
-
 
 def arg_checker_output_directory(arg: str) -> Path:
     try:

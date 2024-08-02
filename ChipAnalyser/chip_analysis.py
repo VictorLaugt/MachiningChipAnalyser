@@ -20,7 +20,7 @@ class ChipFeatures:
 
 
 def compute_chip_convex_hull(main_ft: MainFeatures, chip_pts: IntPtArray) -> IntPtArray:
-    """Compute the convex hull of the chip while constraining it to go through
+    """Compute the convex hull of the chip while constraining it to pass through
     three anchor points.
 
     Parameters
@@ -89,13 +89,13 @@ def extract_chip_features(binary_img: GrayImage, main_ft: MainFeatures, tool_pen
     chip_binary_img[chip_pts[:, 1], chip_pts[:, 0]] = 255
 
     chip_convex_hull_pts = compute_chip_convex_hull(main_ft, chip_pts)
-    outside_segments = geometry.under_lines(
+    out_curve = geometry.under_lines(
         chip_convex_hull_pts,
         (main_ft.base_line, main_ft.base_opp_border, main_ft.tool_opp_border),
         (-5, 15, 15)
     )
 
-    chip_ft.contact_ft = extract_contact_features(main_ft, outside_segments)
-    chip_ft.inside_ft = extract_inside_features(main_ft, outside_segments, chip_binary_img, tool_penetration)
+    chip_ft.contact_ft = extract_contact_features(main_ft, out_curve)
+    chip_ft.inside_ft = extract_inside_features(main_ft, out_curve, chip_binary_img, tool_penetration)
 
     return chip_ft
