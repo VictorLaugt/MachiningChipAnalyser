@@ -68,7 +68,7 @@ class NoRendering(AbstractAnalysisRenderer):
     def release(self) -> None:
         return
 
-
+# FIXME: make AnalysisRenderer more portable by using better packages than OpenCV in order to write videos
 class AnalysisRenderer(AbstractAnalysisRenderer):
     def __init__(self, output_dir: Path, scale: float, image_height: int, image_width: int) -> None:
         self.scale = scale

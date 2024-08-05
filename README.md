@@ -29,6 +29,7 @@ python3 ChipAnalyser [-S] -i INPUT_IMAGES -o OUTPUT_DIRECTORY [-s SCALE] [-b BAT
 
 
 # Dependencies installation
+TODO: update the dependency installation section to handle imageio and its pyav plugin
 ## With Anaconda, in a virtual environment
 ```shell
 conda create -n machining-chip-analysis
