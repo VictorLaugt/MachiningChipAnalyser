@@ -13,7 +13,7 @@ Measurement results are saved in a CSV file. Additionally, the program can gener
 
 # Usage
 ```shell
-python3 ChipAnalyser/ [-S] -i INPUT_IMAGES -o OUTPUT_DIRECTORY [-s SCALE] [-b BATCH_SIZE] [-r]
+python3 ChipAnalyser [-S] -i INPUT_IMAGES -o OUTPUT_DIRECTORY [-s SCALE] [-b BATCH_SIZE] [-r]
 ```
 `-S, --silent`: if this option is enabled, the program does not display progress bar
 

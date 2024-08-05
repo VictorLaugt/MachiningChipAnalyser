@@ -46,7 +46,7 @@ def remove_small_components(bin_src_img: GrayImage, min_area: int, bin_dst_img: 
     bin_dst_img[keep_mask] = 255
 
 
-def preprocess(input_img: Image) -> GrayImage:
+def preprocess(input_img: GrayImage) -> GrayImage:
     """Preprocess an input machining image to produce a binary image which can
     then be used to extract features of the chip.
 
@@ -60,11 +60,10 @@ def preprocess(input_img: Image) -> GrayImage:
     binary_img: (h, w)-array of uint8
         Preprocessed machining image.
     """
-    # conversion in grayscale (out-of-place)
-    x = cv.cvtColor(input_img, cv.COLOR_BGR2GRAY)
+    x = np.empty_like(input_img)
 
     # Laplacian of Gaussian and treshold binarization (in-place)
-    cv.filter2D(x, -1, log_kernel, dst=x)
+    cv.filter2D(input_img, -1, log_kernel, dst=x)
     cv.threshold(x, 240, 255, cv.THRESH_BINARY, dst=x)
 
     # blob filtering (out-of-place)
@@ -73,4 +72,5 @@ def preprocess(input_img: Image) -> GrayImage:
 
     # morphological erosion (in-place)
     cv.erode(y, structuring_element, iterations=2, dst=y)
+
     return y

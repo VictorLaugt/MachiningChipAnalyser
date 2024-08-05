@@ -3,12 +3,14 @@ from typing import TYPE_CHECKING, Iterator
 
 if TYPE_CHECKING:
     from typing import Iterator, Container, Sequence
-    from type_hints import Image
+    from type_hints import GrayImage
 
 
 import abc
-import cv2 as cv
 from pathlib import Path
+
+from skimage import io
+import imageio.v3 as iio
 
 
 class ImageLoadingError(Exception):
@@ -44,7 +46,7 @@ class AbstractImageLoader(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def img_iter(self) -> Iterator[Image]:
+    def img_iter(self) -> Iterator[GrayImage]:
         """Iterate over all the images, one by one."""
         pass
 
@@ -53,7 +55,7 @@ class AbstractImageLoader(abc.ABC):
         """Return the number of batches."""
         return len(self.batch_sizes)
 
-    def img_batch_iter(self) -> Iterator[Sequence[Image]]:
+    def img_batch_iter(self) -> Iterator[Sequence[GrayImage]]:
         """Iterate in batches over the images."""
         img_itr = self.img_iter()
         for batch_size in self.batch_sizes:
@@ -82,14 +84,14 @@ class ImageDirectoryLoader(AbstractImageLoader):
             raise ImageLoadingError
         super().__init__(batch_size)
 
-    def img_shape(self) -> tuple[int, int] | tuple[int, int, int]:
-        return cv.imread(str(self.img_paths[0])).shape
+    def img_shape(self) -> tuple[int, int]:
+        return io.imread(self.img_paths[0], as_gray=True).shape
 
     def img_nb(self) -> int:
         return len(self.img_paths)
 
-    def img_iter(self) -> Iterator[Image]:
-        return (cv.imread(str(img_path)) for img_path in self.img_paths)
+    def img_iter(self) -> Iterator[GrayImage]:
+        return (io.imread(img_path, as_gray=True) for img_path in self.img_paths)
 
     def release(self) -> None:
         return
@@ -99,27 +101,21 @@ class VideoFrameLoader(AbstractImageLoader):
     """Image loader for loading frames from a video file."""
 
     def __init__(self, video_path: Path, batch_size: int) -> None:
-        self.reader = cv.VideoCapture()
-        if not self.reader.open(str(video_path)):
+        try:
+            self.props = iio.improps(video_path, plugin='pyav')
+        except FileNotFoundError:
             raise ImageLoadingError
+        self.video_path = video_path
         super().__init__(batch_size)
 
-    def img_shape(self) -> tuple[int, int, int]:
-        return (
-            int(self.reader.get(cv.CAP_PROP_FRAME_HEIGHT)),
-            int(self.reader.get(cv.CAP_PROP_FRAME_WIDTH)),
-            3
-        )
+    def img_shape(self) -> tuple[int, int] | tuple[int, int, int]:
+        return self.props.shape[1:]
 
     def img_nb(self) -> int:
-        return int(self.reader.get(cv.CAP_PROP_FRAME_COUNT))
+        return self.props.n_images
 
-    def img_iter(self) -> Iterator[Image]:
-        while True:
-            ret, frame = self.reader.read()
-            if not ret:
-                break
-            yield frame
+    def img_iter(self) -> Iterator[GrayImage]:
+        return iio.imiter(self.video_path, plugin='pyav')
 
     def release(self) -> None:
-        self.reader.release()
+        return
