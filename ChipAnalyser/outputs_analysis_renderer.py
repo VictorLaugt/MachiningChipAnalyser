@@ -103,7 +103,7 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
 
     def render_frame(
         self,
-        input_img: ColorImage,
+        input_img: ColorImage,  # BUG: not ColorImage anymore: should be a GrayImage that is then converted to a ColorImage
         preproc_img: GrayImage,
         main_ft: MainFeatures,
         tip_ft: ToolTipFeatures,

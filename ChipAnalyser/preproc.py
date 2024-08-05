@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from type_hints import GrayImage, Image
+    from type_hints import GrayImage
 
 import numpy as np
 import cv2 as cv

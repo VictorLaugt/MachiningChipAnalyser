@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Sequence
-    from type_hints import Image, GrayImage, FloatPt, FloatArray
+    from type_hints import GrayImage, FloatPt, FloatArray
     from features_main import MainFeatures
     from outputs_measurement_writer import MeasurementWriter
     from outputs_analysis_renderer import AbstractAnalysisRenderer
@@ -90,7 +90,7 @@ def measure_spike_valley_thickness(
 
 
 def measure_characteristics(
-    input_batch: Sequence[Image],
+    input_batch: Sequence[GrayImage],
     measurement_writer: MeasurementWriter,
     analysis_renderer: AbstractAnalysisRenderer,
 ) -> None:

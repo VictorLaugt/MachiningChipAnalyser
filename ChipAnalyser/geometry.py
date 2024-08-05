@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Any, Iterable, Optional
-    from type_hints import Image, IntPtArray, IntPt, Line
+    from type_hints import ColorImage, GrayImage, IntPtArray, IntPt, Line
 
 import cv2 as cv
 import numpy as np
@@ -11,7 +11,7 @@ import numpy as np
 NAN_LINE: Line = (np.nan, np.nan, np.nan)
 
 
-def draw_line(img: Image, line: Line, color: int, thickness: int) -> None:
+def draw_line(img: ColorImage|GrayImage, line: Line, color: int, thickness: int) -> None:
     """Draw a line on an image, with a given color and a given thickness."""
     rho, xn, yn = line
     x0, y0 = rho * xn, rho * yn

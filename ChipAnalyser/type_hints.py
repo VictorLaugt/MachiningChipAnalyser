@@ -3,7 +3,6 @@ import numpy as np
 
 ColorImage = np.ndarray[tuple[int, int, Literal[3]], np.uint8]
 GrayImage = np.ndarray[tuple[int, int], np.uint8]
-Image = ColorImage | GrayImage
 
 OpenCVFloatArray = np.ndarray[tuple[int, Literal[1], Literal[2]], np.float32]
 
