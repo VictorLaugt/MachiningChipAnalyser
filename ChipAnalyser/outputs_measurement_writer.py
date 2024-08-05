@@ -25,7 +25,7 @@ class MeasurementWriter:
         self.spike_mean_thk_graph = output_dir.joinpath("spike-mean-thickness-evolution.png")
         self.valley_mean_thk_graph = output_dir.joinpath("valley-mean-thickness-evolution.png")
 
-        self.save_file = output_dir.joinpath("measurements.csv").open(mode='w+')
+        self.save_file = output_dir.joinpath("measurements.csv").open(mode='w+', newline='')
         self.csv_writer = csv.writer(self.save_file)
         self.csv_writer.writerow(self.header)
 
