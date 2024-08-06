@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from type_hints import ColorImage, GrayImage, FloatArray, FloatPtArray
+    from type_hints import GrayImage, FloatArray, FloatPtArray
     from pathlib import Path
     from measure import ToolTipFeatures
     from features_main import MainFeatures
@@ -69,7 +69,7 @@ class NoRendering(AbstractAnalysisRenderer):
     def release(self) -> None:
         return
 
-# FIXME: make AnalysisRenderer more portable by using the imageio package to write output videos
+
 class AnalysisRenderer(AbstractAnalysisRenderer):
     def __init__(self, output_dir: Path, scale: float, image_height: int, image_width: int) -> None:
         self.scale = scale

@@ -44,15 +44,21 @@ conda create -n machining-chip-analysis
 conda activate machining-chip-analysis
 
 # install dependencies inside the virtual environment
+TODO: make a definitive list of dependencies
+
+# read image files: imageio
+# read video files: imageio
+# write video files: scikit-video
 conda install opencv matplotlib imageio av -c conda-forge
 conda install numpy scipy scikit-image -c anaconda
 
-# autre tentative
+# read image files: scikit-image
+# read video files: scikit-video
+# write video files: scikit-video
 conda install opencv matplotlib imageio-ffmpeg -c conda-forge
 conda install numpy scipy scikit-image -c anaconda
 ```
 
-TODO: tester l'installation avec pip
 ## Install dependencies with pip
 ```shell
 pip install numpy scipy scikit-image matplotlib opencv-python

@@ -121,10 +121,8 @@ class VideoFrameLoader(AbstractImageLoader):
         return self.props.n_images
 
     def img_iter(self) -> Iterator[GrayImage]:
-        return (
-            cv.cvtColor(img, cv.COLOR_RGB2GRAY)
-            for img in iio.imiter(self.video_path, plugin='pyav')
-        )
+        for img in iio.imiter(self.video_path, plugin='pyav'):
+            yield cv.cvtColor(img, cv.COLOR_RGB2GRAY)
 
     def release(self) -> None:
         return
