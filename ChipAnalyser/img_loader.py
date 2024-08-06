@@ -95,7 +95,7 @@ class ImageDirectoryLoader(AbstractImageLoader):
             if img.ndim == 2:
                 yield img
             elif img.ndim == 3:
-                yield cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+                yield cv.cvtColor(img, cv.COLOR_RGB2GRAY)
             else:
                 raise ImageLoadingError(f"image shape not supported: {img.shape}")
 
@@ -122,7 +122,7 @@ class VideoFrameLoader(AbstractImageLoader):
 
     def img_iter(self) -> Iterator[GrayImage]:
         return (
-            cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+            cv.cvtColor(img, cv.COLOR_RGB2GRAY)
             for img in iio.imiter(self.video_path, plugin='pyav')
         )
 

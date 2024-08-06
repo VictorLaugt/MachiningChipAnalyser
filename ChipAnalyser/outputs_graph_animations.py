@@ -90,7 +90,7 @@ class GraphAnimator:
         self.plot_ydata = []
         self.scatter_data = []
 
-    def add_frame(self, plot_ydata: Sequence[FloatArray], scatter_data: Sequence[FloatPtArray]) -> None:
+    def append_frame(self, plot_ydata: Sequence[FloatArray], scatter_data: Sequence[FloatPtArray]) -> None:
         assert len(plot_ydata) == len(self.plot_configs) and len(scatter_data) == len(self.scatter_configs)
         for i, ydata in enumerate(plot_ydata):
             self.plot_ydata_length[i] = max(self.plot_ydata_length[i], len(ydata))

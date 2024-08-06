@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 import abc
 import cv2 as cv
 import numpy as np
+import imageio.v3 as iio
 
 from outputs_graph_animations import GraphAnimator
 
@@ -68,7 +69,7 @@ class NoRendering(AbstractAnalysisRenderer):
     def release(self) -> None:
         return
 
-# FIXME: make AnalysisRenderer more portable by using better packages than OpenCV in order to write videos
+# FIXME: make AnalysisRenderer more portable by using the imageio package to write output videos
 class AnalysisRenderer(AbstractAnalysisRenderer):
     def __init__(self, output_dir: Path, scale: float, image_height: int, image_width: int) -> None:
         self.scale = scale
@@ -82,10 +83,15 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         inside_contour_vid = output_dir.joinpath("inside-contour-extraction.avi")
         self.thickness_graph_anim = output_dir.joinpath("chip-thickness-evolution.avi")
 
-        codec = cv.VideoWriter_fourcc(*'mp4v')
-        self.preprocessing_vid_writer = cv.VideoWriter(str(preprocessing_vid), codec, 30, (image_width, image_height))
-        self.contact_vid_writer = cv.VideoWriter(str(contact_length_vid), codec, 30, (image_width, image_height))
-        self.inside_vid_writer = cv.VideoWriter(str(inside_contour_vid), codec, 30, (image_width, image_height))
+        self.preprocessing_vid_writer = iio.imopen(preprocessing_vid, io_mode='w', plugin='pyav')
+        self.contact_vid_writer = iio.imopen(contact_length_vid, io_mode='w', plugin='pyav')
+        self.inside_vid_writer = iio.imopen(inside_contour_vid, io_mode='w', plugin='pyav')
+
+        codec = 'h264_mf'
+        self.preprocessing_vid_writer.init_video_stream(codec, fps=30)
+        self.contact_vid_writer.init_video_stream(codec, fps=30)
+        self.inside_vid_writer.init_video_stream(codec, fps=30)
+
         self.thickness_animator = GraphAnimator(
             plot_configs=(
                 {'linestyle': '-', 'marker': None, 'label': 'thickness'},
@@ -110,15 +116,15 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         chip_ft: ChipFeatures,
         thk_an: ThicknessAnalysis
     ) -> None:
-        self.preprocessing_vid_writer.write(cv.cvtColor(preproc_img, cv.COLOR_GRAY2BGR))
+        self.preprocessing_vid_writer.write_frame(cv.cvtColor(preproc_img, cv.COLOR_GRAY2RGB))
 
-        contact_render = cv.cvtColor(input_img, cv.COLOR_GRAY2BGR)
+        contact_render = cv.cvtColor(input_img, cv.COLOR_GRAY2RGB)
         render_contact_features(self.frame_num, contact_render, main_ft, tip_ft, chip_ft.contact_ft)
-        self.contact_vid_writer.write(contact_render)
+        self.contact_vid_writer.write_frame(contact_render)
 
-        inside_render = cv.cvtColor(input_img, cv.COLOR_GRAY2BGR)
+        inside_render = cv.cvtColor(input_img, cv.COLOR_GRAY2RGB)
         render_inside_features(self.frame_num, inside_render, main_ft, tip_ft, chip_ft.inside_ft)
-        self.inside_vid_writer.write(inside_render)
+        self.inside_vid_writer.write_frame(inside_render)
 
         thickness = self.scale * chip_ft.inside_ft.thickness
         smoothed = self.scale * thk_an.smoothed_thk
@@ -126,22 +132,22 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         rough_peaks = np.column_stack((thk_an.rough_peak_indices, rough[thk_an.rough_peak_indices]))
         valleys = np.column_stack((thk_an.valley_indices, smoothed[thk_an.valley_indices]))
         peaks = np.column_stack((thk_an.peak_indices, smoothed[thk_an.peak_indices]))
-        self.thickness_animator.add_frame((thickness, smoothed, rough), (rough_peaks, valleys, peaks))
+        self.thickness_animator.append_frame((thickness, smoothed, rough), (rough_peaks, valleys, peaks))
 
         self.frame_num += 1
 
     def no_render(self, input_img: GrayImage, preproc_img: GrayImage) -> None:
-        self.preprocessing_vid_writer.write(cv.cvtColor(preproc_img, cv.COLOR_GRAY2BGR))
-        self.contact_vid_writer.write(input_img)
-        self.inside_vid_writer.write(input_img)
-        self.thickness_animator.add_frame(
+        self.preprocessing_vid_writer.write_frame(cv.cvtColor(preproc_img, cv.COLOR_GRAY2RGB))
+        self.contact_vid_writer.write_frame(cv.cvtColor(input_img, cv.COLOR_GRAY2RGB))
+        self.inside_vid_writer.write_frame(cv.cvtColor(input_img, cv.COLOR_GRAY2RGB))
+        self.thickness_animator.append_frame(
             (EMPTY_FLOAT_ARRAY, EMPTY_FLOAT_ARRAY, EMPTY_FLOAT_ARRAY),
             (EMPTY_FLOAT_PT_ARRAY, EMPTY_FLOAT_PT_ARRAY, EMPTY_FLOAT_PT_ARRAY)
         )
         self.frame_num += 1
 
     def release(self) -> None:
-        self.preprocessing_vid_writer.release()
-        self.contact_vid_writer.release()
-        self.inside_vid_writer.release()
+        self.preprocessing_vid_writer.close()
+        self.contact_vid_writer.close()
+        self.inside_vid_writer.close()
         self.thickness_animator.save(self.thickness_graph_anim)

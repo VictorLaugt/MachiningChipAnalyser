@@ -28,15 +28,28 @@ python3 ChipAnalyser [-S] -i INPUT_IMAGES -o OUTPUT_DIRECTORY [-s SCALE] [-b BAT
 `-r`: if this option is enabled, the program produces graphical renderings of the feature extractions, else, no rendering is done and the program simply extracts the features from the inputs.
 
 
-# Dependencies installation
-TODO: update the dependency installation section to handle imageio and its pyav plugin
-## With Anaconda, in a virtual environment
+# Dependencies
+- NumPy: Perform vectorized operation on large arrays
+- OpenCV: Implementation of famous image processing algorithms
+- SciPy: Signal processing to extract peaks and valleys after chip thickness measurement
+- Scikit-image: Line rasterization algorithm used for ray tracing to detect the inside contour of the chip
+- Matplotlib: Generate output plots
+- Imageio: Read/write video and image files
+- PyAv: Python binding to the FFmpeg library
+
+## Install dependencies in a virtual environment with conda
 ```shell
+# create and activate the virtual environment
 conda create -n machining-chip-analysis
 conda activate machining-chip-analysis
-conda install numpy scipy scikit-image matplotlib opencv
+
+# install dependencies inside the virtual environment
+conda install numpy scipy scikit-image -c anaconda
+conda install opencv matplotlib imageio av -c conda-forge
 ```
-## With pip
+
+TODO: tester l'installation avec pip
+## Install dependencies with pip
 ```shell
 pip install numpy scipy scikit-image matplotlib opencv-python
 ```
