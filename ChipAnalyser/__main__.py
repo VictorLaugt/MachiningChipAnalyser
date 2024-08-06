@@ -7,8 +7,8 @@ import sys
 from argparse import ArgumentParser, RawDescriptionHelpFormatter, ArgumentTypeError
 from pathlib import Path
 
-# from img_loader import ImageDirectoryLoader, VideoFrameLoader, ImageLoadingError
-from ChipAnalyser.img_loader_alternative import ImageDirectoryLoader, VideoFrameLoader, ImageLoadingError
+from img_loader import ImageDirectoryLoader, VideoFrameLoader, ImageLoadingError
+# from img_loader_alternative import ImageDirectoryLoader, VideoFrameLoader, ImageLoadingError
 from measure import measure_characteristics
 from outputs_measurement_writer import MeasurementWriter
 from outputs_analysis_renderer import AnalysisRenderer, NoRendering

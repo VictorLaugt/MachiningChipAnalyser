@@ -61,7 +61,7 @@ class VideoFrameLoader(AbstractImageLoader):
     def img_iter(self) -> Iterator[GrayImage]:
         # NOTE: requires numpy<1.24 where np.float is still an authorized alias to float
         for img in skvideo.io.vreader(str(self.video_path), as_grey=True):
-            yield img
+            yield img.squeeze()
 
     def release(self) -> None:
         return

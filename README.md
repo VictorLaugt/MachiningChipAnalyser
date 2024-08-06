@@ -49,17 +49,43 @@ TODO: make a definitive list of dependencies
 # read image files: imageio
 # read video files: imageio
 # write video files: scikit-video
-conda install opencv matplotlib imageio av -c conda-forge
-conda install numpy scipy scikit-image -c anaconda
+conda install numpy opencv -c conda-forge
+conda install matplotlib scikit-video imageio av -c conda-forge
+conda install scipy scikit-image -c anaconda
 
 # read image files: scikit-image
 # read video files: scikit-video
 # write video files: scikit-video
-conda install opencv matplotlib imageio-ffmpeg -c conda-forge
-conda install numpy scipy scikit-image -c anaconda
+conda install "numpy<1.24" opencv -c conda-forge
+conda install matplotlib scikit-video -c conda-forge
+conda install scipy scikit-image -c anaconda
 ```
 
 ## Install dependencies with pip
 ```shell
 pip install numpy scipy scikit-image matplotlib opencv-python
 ```
+
+
+# tests de portabilité
+LINUX:
+- main version:
+  - build: OK
+  - no rendering:
+  - image inputs: OK
+  - video inputs: OK
+- alternative version:
+  - build: OK
+  - no rendering: OK
+  - image inputs: OK
+  - video inputs: OK
+
+WINDOWS:
+- main version:
+  - build:
+  - image inputs:
+  - video inputs:
+- alternative version:
+  - build:
+  - image inputs:
+  - video inputs:
