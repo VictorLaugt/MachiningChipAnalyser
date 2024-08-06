@@ -5,11 +5,10 @@ if TYPE_CHECKING:
     from typing import Iterator, Container, Sequence
     from type_hints import GrayImage
 
-
 import abc
 from pathlib import Path
 
-from skimage import io
+import cv2 as cv
 import imageio.v3 as iio
 
 
@@ -34,7 +33,7 @@ class AbstractImageLoader(abc.ABC):
 
 
     @abc.abstractmethod
-    def img_shape(self) -> tuple[int, int] | tuple[int, int, int]:
+    def img_shape(self) -> tuple[int, int]:
         """Return the shape of the images. It can be (h, w) for gray images or
         (h, w, 3) for color images.
         """
@@ -85,13 +84,20 @@ class ImageDirectoryLoader(AbstractImageLoader):
         super().__init__(batch_size)
 
     def img_shape(self) -> tuple[int, int]:
-        return io.imread(self.img_paths[0], as_gray=True).shape
+        return iio.improps(self.img_paths[0]).shape[:2]
 
     def img_nb(self) -> int:
         return len(self.img_paths)
 
     def img_iter(self) -> Iterator[GrayImage]:
-        return (io.imread(img_path, as_gray=True) for img_path in self.img_paths)
+        for img_path in self.img_paths:
+            img = iio.imread(img_path)
+            if img.ndim == 2:
+                yield img
+            elif img.ndim == 3:
+                yield cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+            else:
+                raise ImageLoadingError(f"image shape not supported: {img.shape}")
 
     def release(self) -> None:
         return
@@ -108,14 +114,17 @@ class VideoFrameLoader(AbstractImageLoader):
         self.video_path = video_path
         super().__init__(batch_size)
 
-    def img_shape(self) -> tuple[int, int] | tuple[int, int, int]:
-        return self.props.shape[1:]
+    def img_shape(self) -> tuple[int, int]:
+        return self.props.shape[1:3]
 
     def img_nb(self) -> int:
         return self.props.n_images
 
     def img_iter(self) -> Iterator[GrayImage]:
-        return iio.imiter(self.video_path, plugin='pyav')
+        return (
+            cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+            for img in iio.imiter(self.video_path, plugin='pyav')
+        )
 
     def release(self) -> None:
         return
