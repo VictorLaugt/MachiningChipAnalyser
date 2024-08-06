@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 import abc
 import cv2 as cv
 import numpy as np
-import imageio.v3 as iio
+import skvideo.io
 
 from outputs_graph_animations import GraphAnimator
 
@@ -78,19 +78,14 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
 
         self.frame_num = 1
 
-        preprocessing_vid = output_dir.joinpath("preprocessing.avi")
-        contact_length_vid = output_dir.joinpath("contact-length-extraction.avi")
-        inside_contour_vid = output_dir.joinpath("inside-contour-extraction.avi")
-        self.thickness_graph_anim = output_dir.joinpath("chip-thickness-evolution.avi")
+        preprocessing_vid = output_dir.joinpath("preprocessing.mp4")
+        contact_length_vid = output_dir.joinpath("contact-length-extraction.mp4")
+        inside_contour_vid = output_dir.joinpath("inside-contour-extraction.mp4")
+        self.thickness_graph_anim = output_dir.joinpath("chip-thickness-evolution.mp4")
 
-        self.preprocessing_vid_writer = iio.imopen(preprocessing_vid, io_mode='w', plugin='pyav')
-        self.contact_vid_writer = iio.imopen(contact_length_vid, io_mode='w', plugin='pyav')
-        self.inside_vid_writer = iio.imopen(inside_contour_vid, io_mode='w', plugin='pyav')
-
-        codec = 'h264_mf'
-        self.preprocessing_vid_writer.init_video_stream(codec, fps=30)
-        self.contact_vid_writer.init_video_stream(codec, fps=30)
-        self.inside_vid_writer.init_video_stream(codec, fps=30)
+        self.preprocessing_vid_writer = skvideo.io.FFmpegWriter(preprocessing_vid)
+        self.contact_vid_writer = skvideo.io.FFmpegWriter(contact_length_vid)
+        self.inside_vid_writer = skvideo.io.FFmpegWriter(inside_contour_vid)
 
         self.thickness_animator = GraphAnimator(
             plot_configs=(
@@ -116,15 +111,15 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         chip_ft: ChipFeatures,
         thk_an: ThicknessAnalysis
     ) -> None:
-        self.preprocessing_vid_writer.write_frame(cv.cvtColor(preproc_img, cv.COLOR_GRAY2RGB))
+        self.preprocessing_vid_writer.writeFrame(cv.cvtColor(preproc_img, cv.COLOR_GRAY2RGB))
 
         contact_render = cv.cvtColor(input_img, cv.COLOR_GRAY2RGB)
         render_contact_features(self.frame_num, contact_render, main_ft, tip_ft, chip_ft.contact_ft)
-        self.contact_vid_writer.write_frame(contact_render)
+        self.contact_vid_writer.writeFrame(contact_render)
 
         inside_render = cv.cvtColor(input_img, cv.COLOR_GRAY2RGB)
         render_inside_features(self.frame_num, inside_render, main_ft, tip_ft, chip_ft.inside_ft)
-        self.inside_vid_writer.write_frame(inside_render)
+        self.inside_vid_writer.writeFrame(inside_render)
 
         thickness = self.scale * chip_ft.inside_ft.thickness
         smoothed = self.scale * thk_an.smoothed_thk
