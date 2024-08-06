@@ -36,13 +36,13 @@ python3 ChipAnalyser [-S] -i INPUT_IMAGES -o OUTPUT_DIRECTORY [-s SCALE] [-b BAT
 - Scikit-video: Read input video file. Write output video files.
 - Matplotlib: Generate output plots.
 
-## Install dependencies in a virtual environment with conda
+## Install dependencies in a virtual environment with conda (recommended)
 ```shell
 # create and activate the virtual environment
 conda create -n machining-chip-analysis
 conda activate machining-chip-analysis
 
-# installing dependencies inside the virtual environment
+# install dependencies inside the virtual environment
 conda install "numpy<1.24" opencv -c conda-forge
 conda install matplotlib scikit-video -c conda-forge
 conda install scipy scikit-image -c anaconda
@@ -50,6 +50,5 @@ conda install scipy scikit-image -c anaconda
 
 ## Install dependencies with pip
 ```shell
-TODO: installation guide with pip
-pip install numpy scipy scikit-image matplotlib opencv-python
+pip install numpy<1.24 opencv-python scipy matplotlib scikit-image scikit-video
 ```
