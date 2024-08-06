@@ -112,11 +112,11 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
     ) -> None:
         self.preprocessing_vid_writer.write(cv.cvtColor(preproc_img, cv.COLOR_GRAY2BGR))
 
-        contact_render = input_img.copy()
+        contact_render = cv.cvtColor(input_img, cv.COLOR_GRAY2BGR)
         render_contact_features(self.frame_num, contact_render, main_ft, tip_ft, chip_ft.contact_ft)
         self.contact_vid_writer.write(contact_render)
 
-        inside_render = input_img.copy()
+        inside_render = cv.cvtColor(input_img, cv.COLOR_GRAY2BGR)
         render_inside_features(self.frame_num, inside_render, main_ft, tip_ft, chip_ft.inside_ft)
         self.inside_vid_writer.write(inside_render)
 
