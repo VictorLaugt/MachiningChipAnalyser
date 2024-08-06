@@ -132,9 +132,9 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         self.frame_num += 1
 
     def no_render(self, input_img: GrayImage, preproc_img: GrayImage) -> None:
-        self.preprocessing_vid_writer.write_frame(cv.cvtColor(preproc_img, cv.COLOR_GRAY2RGB))
-        self.contact_vid_writer.write_frame(cv.cvtColor(input_img, cv.COLOR_GRAY2RGB))
-        self.inside_vid_writer.write_frame(cv.cvtColor(input_img, cv.COLOR_GRAY2RGB))
+        self.preprocessing_vid_writer.writeFrame(cv.cvtColor(preproc_img, cv.COLOR_GRAY2RGB))
+        self.contact_vid_writer.writeFrame(cv.cvtColor(input_img, cv.COLOR_GRAY2RGB))
+        self.inside_vid_writer.writeFrame(cv.cvtColor(input_img, cv.COLOR_GRAY2RGB))
         self.thickness_animator.append_frame(
             (EMPTY_FLOAT_ARRAY, EMPTY_FLOAT_ARRAY, EMPTY_FLOAT_ARRAY),
             (EMPTY_FLOAT_PT_ARRAY, EMPTY_FLOAT_PT_ARRAY, EMPTY_FLOAT_PT_ARRAY)
@@ -142,7 +142,8 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         self.frame_num += 1
 
     def release(self) -> None:
-        self.preprocessing_vid_writer.close()
-        self.contact_vid_writer.close()
-        self.inside_vid_writer.close()
-        self.thickness_animator.save(self.thickness_graph_anim)
+        if self.frame_num > 1:
+            self.preprocessing_vid_writer.close()
+            self.contact_vid_writer.close()
+            self.inside_vid_writer.close()
+            self.thickness_animator.save(self.thickness_graph_anim)

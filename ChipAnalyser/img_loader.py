@@ -8,6 +8,7 @@ if TYPE_CHECKING:
 import abc
 from pathlib import Path
 
+from skimage.util import img_as_ubyte
 import skimage.io
 import skvideo.io
 
@@ -91,7 +92,7 @@ class ImageDirectoryLoader(AbstractImageLoader):
 
     def img_iter(self) -> Iterator[GrayImage]:
         for img_path in self.img_paths:
-            yield skimage.io.imread(str(img_path), as_gray=True)
+            yield img_as_ubyte(skimage.io.imread(str(img_path), as_gray=True))
 
     def release(self) -> None:
         return
@@ -120,7 +121,7 @@ class VideoFrameLoader(AbstractImageLoader):
     def img_iter(self) -> Iterator[GrayImage]:
         # NOTE: requires numpy<1.24 so that np.float is still an authorized alias to float
         for img in skvideo.io.vreader(str(self.video_path), as_grey=True):
-            yield img.squeeze()
+            yield img_as_ubyte(img.squeeze())
 
     def release(self) -> None:
         return
