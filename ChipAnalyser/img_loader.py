@@ -108,7 +108,6 @@ class VideoFrameLoader(AbstractImageLoader):
         self.w = int(video_metadata['@width'])
         self.frame_nb = int(video_metadata['@nb_frames'])
 
-        self.reader = skvideo.io.vreader(video_path)
         self.video_path = video_path
         super().__init__(batch_size)
 
