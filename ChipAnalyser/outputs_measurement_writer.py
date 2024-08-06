@@ -13,17 +13,17 @@ import matplotlib.pyplot as plt
 class MeasurementWriter:
     """Class for writing measurements into a three column csv file:
     - contact length
-    - mean spike thickness
+    - mean peak thickness
     - mean valley thickness
     """
-    header = ("contact length", "mean spike thickness", "mean valley thickness")
+    header = ("contact length", "mean peak thickness", "mean valley thickness")
 
     def __init__(self, output_dir: Path, scale: float) -> None:
         self.scale = scale
 
         self.contact_length_graph = output_dir.joinpath("contact-length-evolution.png")
-        self.spike_mean_thk_graph = output_dir.joinpath("spike-mean-thickness-evolution.png")
-        self.valley_mean_thk_graph = output_dir.joinpath("valley-mean-thickness-evolution.png")
+        self.mean_peak_thk_graph = output_dir.joinpath("mean-peak-thickness-evolution.png")
+        self.mean_valley_thk_graph = output_dir.joinpath("mean-valley-thickness-evolution.png")
 
         self.save_file = output_dir.joinpath("measurements.csv").open(mode='w+', newline='')
         self.csv_writer = csv.writer(self.save_file)
@@ -33,7 +33,7 @@ class MeasurementWriter:
         """Write the three measurements as a new line into the csv file."""
         self.csv_writer.writerow((
             self.scale * contact_length,
-            self.scale * thickness_analysis.mean_spike_thickness,
+            self.scale * thickness_analysis.mean_peak_thickness,
             self.scale * thickness_analysis.mean_valley_thickness
         ))
 
@@ -47,12 +47,12 @@ class MeasurementWriter:
         next(csv_reader_itr)  # skip the header
 
         contact_length_values = []
-        spike_mean_thk_values = []
-        valley_mean_thk_values = []
-        for contact_length, spike_mean_thk, valley_mean_thk in csv_reader_itr:
+        mean_peak_thk_values = []
+        mean_valley_thk_values = []
+        for contact_length, mean_peak_thk, mean_valley_thk in csv_reader_itr:
             contact_length_values.append(float(contact_length))
-            spike_mean_thk_values.append(float(spike_mean_thk))
-            valley_mean_thk_values.append(float(valley_mean_thk))
+            mean_peak_thk_values.append(float(mean_peak_thk))
+            mean_valley_thk_values.append(float(mean_valley_thk))
         frames = range(1, len(contact_length_values)+1)
 
         def new_plot():
@@ -68,16 +68,16 @@ class MeasurementWriter:
         fig.savefig(self.contact_length_graph)
 
         fig, ax = new_plot()
-        ax.set_title("Mean spike thickness evolution")
-        ax.set_ylabel("mean spike thickness (µm)")
-        ax.plot(frames, spike_mean_thk_values, '-x')
-        fig.savefig(self.spike_mean_thk_graph)
+        ax.set_title("Mean peak thickness evolution")
+        ax.set_ylabel("mean peak thickness (µm)")
+        ax.plot(frames, mean_peak_thk_values, '-x')
+        fig.savefig(self.mean_peak_thk_graph)
 
         fig, ax = new_plot()
         ax.set_title("Mean valley thickness evolution")
         ax.set_ylabel("mean valley thickness (µm)")
-        ax.plot(frames, valley_mean_thk_values, '-x')
-        fig.savefig(self.valley_mean_thk_graph)
+        ax.plot(frames, mean_valley_thk_values, '-x')
+        fig.savefig(self.mean_valley_thk_graph)
 
         if display:
             plt.show()

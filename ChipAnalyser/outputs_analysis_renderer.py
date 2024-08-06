@@ -26,7 +26,7 @@ class AbstractAnalysisRenderer(abc.ABC):
     @abc.abstractmethod
     def render_frame(
         self,
-        input_img: ColorImage,
+        input_img: GrayImage,
         preproc_img: GrayImage,
         main_ft: MainFeatures,
         tip_ft: ToolTipFeatures,
@@ -36,7 +36,7 @@ class AbstractAnalysisRenderer(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def no_render(self, input_img: ColorImage, preproc_img: GrayImage) -> None:
+    def no_render(self, input_img: GrayImage, preproc_img: GrayImage) -> None:
         pass
 
     @abc.abstractmethod
@@ -53,7 +53,7 @@ class AbstractAnalysisRenderer(abc.ABC):
 class NoRendering(AbstractAnalysisRenderer):
     def render_frame(
         self,
-        _input_img: ColorImage,
+        _input_img: GrayImage,
         _preproc_img: GrayImage,
         _main_ft: MainFeatures,
         _tip_ft: ToolTipFeatures,
@@ -62,7 +62,7 @@ class NoRendering(AbstractAnalysisRenderer):
     ) -> None:
         return
 
-    def no_render(self, _input_img: ColorImage, _preproc_img: GrayImage) -> None:
+    def no_render(self, _input_img: GrayImage, _preproc_img: GrayImage) -> None:
         return
 
     def release(self) -> None:
@@ -103,7 +103,7 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
 
     def render_frame(
         self,
-        input_img: ColorImage,  # BUG: not ColorImage anymore: should be a GrayImage that is then converted to a ColorImage
+        input_img: GrayImage,
         preproc_img: GrayImage,
         main_ft: MainFeatures,
         tip_ft: ToolTipFeatures,
@@ -123,14 +123,14 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         thickness = self.scale * chip_ft.inside_ft.thickness
         smoothed = self.scale * thk_an.smoothed_thk
         rough = self.scale * thk_an.rough_thk
-        rough_spikes = np.column_stack((thk_an.rough_spike_indices, rough[thk_an.rough_spike_indices]))
+        rough_peaks = np.column_stack((thk_an.rough_peak_indices, rough[thk_an.rough_peak_indices]))
         valleys = np.column_stack((thk_an.valley_indices, smoothed[thk_an.valley_indices]))
-        spikes = np.column_stack((thk_an.spike_indices, smoothed[thk_an.spike_indices]))
-        self.thickness_animator.add_frame((thickness, smoothed, rough), (rough_spikes, valleys, spikes))
+        peaks = np.column_stack((thk_an.peak_indices, smoothed[thk_an.peak_indices]))
+        self.thickness_animator.add_frame((thickness, smoothed, rough), (rough_peaks, valleys, peaks))
 
         self.frame_num += 1
 
-    def no_render(self, input_img: ColorImage, preproc_img: GrayImage) -> None:
+    def no_render(self, input_img: GrayImage, preproc_img: GrayImage) -> None:
         self.preprocessing_vid_writer.write(cv.cvtColor(preproc_img, cv.COLOR_GRAY2BGR))
         self.contact_vid_writer.write(input_img)
         self.inside_vid_writer.write(input_img)

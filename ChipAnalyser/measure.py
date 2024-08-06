@@ -21,11 +21,11 @@ class ThicknessAnalysis:
         "rough_thk",     # type: FloatArray
         "smoothed_thk",  # type: FloatArray
 
-        "rough_spike_indices",  # type: IntArray
-        "spike_indices",        # type: IntArray
-        "valley_indices",       # type: IntArray
+        "rough_peak_indices",  # type: IntArray
+        "peak_indices",        # type: IntArray
+        "valley_indices",      # type: IntArray
 
-        "mean_spike_thickness",   # type: float
+        "mean_peak_thickness",    # type: float
         "mean_valley_thickness",  # type: float
     )
 
@@ -45,7 +45,7 @@ def pt2pt_distance(pt0: FloatPt, pt1: FloatPt) -> float:
     return np.linalg.norm((x1-x0, y1-y0))
 
 
-def measure_spike_valley_thickness(
+def measure_peak_valley_thickness(
     thickness: FloatArray,
     tool_penetration: float
 ) -> ThicknessAnalysis:
@@ -77,13 +77,13 @@ def measure_spike_valley_thickness(
     an.rough_thk = savgol_filter(thickness, window_length=45, polyorder=2)
     an.smoothed_thk = savgol_filter(thickness, window_length=15, polyorder=2)
 
-    an.rough_spike_indices, _ = find_peaks(an.rough_thk, prominence=0.08*tool_penetration)
-    rough_period = np.mean(np.diff(an.rough_spike_indices))
+    an.rough_peak_indices, _ = find_peaks(an.rough_thk, prominence=0.08*tool_penetration)
+    rough_period = np.mean(np.diff(an.rough_peak_indices))
 
-    an.spike_indices, _ = find_peaks(an.smoothed_thk, distance=0.7*rough_period)
+    an.peak_indices, _ = find_peaks(an.smoothed_thk, distance=0.7*rough_period)
     an.valley_indices, _ = find_peaks(-an.smoothed_thk, distance=0.7*rough_period, width=0.2*rough_period)
 
-    an.mean_spike_thickness = np.mean(an.smoothed_thk[an.spike_indices])
+    an.mean_peak_thickness = np.mean(an.smoothed_thk[an.peak_indices])
     an.mean_valley_thickness = np.mean(an.smoothed_thk[an.valley_indices])
 
     return an
@@ -131,7 +131,7 @@ def measure_characteristics(
         chip_ft = extract_chip_features(binary_img, main_ft, tool_penetration)
 
         contact_len = pt2pt_distance(tip_ft.tool_tip_pt, chip_ft.contact_ft.contact_pt)
-        thickness_analysis = measure_spike_valley_thickness(chip_ft.inside_ft.thickness, tool_penetration)
+        thickness_analysis = measure_peak_valley_thickness(chip_ft.inside_ft.thickness, tool_penetration)
 
         measurement_writer.write(contact_len, thickness_analysis)
         analysis_renderer.render_frame(input_img, binary_img, main_ft, tip_ft, chip_ft, thickness_analysis)

@@ -27,11 +27,11 @@ class ThicknessAnalysis:
         "rough_thk",     # type: FloatArray
         "smoothed_thk",  # type: FloatArray
 
-        "rough_spike_indices",  # type: IntArray
-        "spike_indices",        # type: IntArray
-        "valley_indices",       # type: IntArray
+        "rough_peak_indices",  # type: IntArray
+        "peak_indices",        # type: IntArray
+        "valley_indices",      # type: IntArray
 
-        "mean_spike_thickness",   # type: float
+        "mean_peak_thickness",    # type: float
         "mean_valley_thickness",  # type: float
     )
 
@@ -320,7 +320,7 @@ def extract_inside_features(
     inside_ft: InsideFeatures
         Structure containing the extracted features:
         - the points of the chip inside contour. It is a non-convex contour made
-        of spikes and valleys.
+        of peaks and valleys.
         - the thickness of the chip along its curve.
     """
     inside_ft = InsideFeatures()
@@ -348,6 +348,7 @@ def render_inside_features(
     _tip_ft: ToolTipFeatures,
     inside_ft: InsideFeatures
 ) -> None:
+    assert render.ndim == 3 and render.shape[2] == 3
     # draw the detected inside contour of the chip
     for i in range(len(inside_ft.noised_inside_contour_pts)-1):
         pt0 = inside_ft.noised_inside_contour_pts[i]

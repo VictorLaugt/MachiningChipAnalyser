@@ -163,6 +163,7 @@ def render_contact_features(
     tip_ft: ToolTipFeatures,
     contact_ft: ContactFeatures
 ) -> None:
+    assert render.ndim == 3 and render.shape[2] == 3
     xc, yc = contact_ft.contact_pt
 
     # draw the polynomial approximation of the chip outside curve
