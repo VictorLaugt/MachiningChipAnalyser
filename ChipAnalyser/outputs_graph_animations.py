@@ -99,4 +99,5 @@ class GraphAnimator:
 
 
     def save(self, file_path: Path) -> None:
-        _ = SaveAnimation(self, file_path)
+        if len(self.plot_ydata) > 0:
+            _ = SaveAnimation(self, file_path)
