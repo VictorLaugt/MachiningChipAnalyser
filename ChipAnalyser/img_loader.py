@@ -8,8 +8,8 @@ if TYPE_CHECKING:
 import abc
 from pathlib import Path
 
-import cv2 as cv
-import imageio.v3 as iio
+import skimage.io
+import skvideo.io
 
 
 class ImageLoadingError(Exception):
@@ -84,20 +84,14 @@ class ImageDirectoryLoader(AbstractImageLoader):
         super().__init__(batch_size)
 
     def img_shape(self) -> tuple[int, int]:
-        return iio.improps(self.img_paths[0]).shape[:2]
+        return skimage.io.imread(str(self.img_paths[0])).shape[:2]
 
     def img_nb(self) -> int:
         return len(self.img_paths)
 
     def img_iter(self) -> Iterator[GrayImage]:
         for img_path in self.img_paths:
-            img = iio.imread(img_path)
-            if img.ndim == 2:
-                yield img
-            elif img.ndim == 3:
-                yield cv.cvtColor(img, cv.COLOR_RGB2GRAY)
-            else:
-                raise ImageLoadingError(f"image shape not supported: {img.shape}")
+            yield skimage.io.imread(str(img_path), as_gray=True)
 
     def release(self) -> None:
         return
@@ -107,22 +101,27 @@ class VideoFrameLoader(AbstractImageLoader):
     """Image loader for loading frames from a video file."""
 
     def __init__(self, video_path: Path, batch_size: int) -> None:
-        try:
-            self.props = iio.improps(video_path, plugin='pyav')
-        except FileNotFoundError:
+        video_metadata = skvideo.io.ffprobe(video_path).get('video')
+        if video_metadata is None:
             raise ImageLoadingError
+        self.h = int(video_metadata['@height'])
+        self.w = int(video_metadata['@width'])
+        self.frame_nb = int(video_metadata['@nb_frames'])
+
+        self.reader = skvideo.io.vreader(video_path)
         self.video_path = video_path
         super().__init__(batch_size)
 
     def img_shape(self) -> tuple[int, int]:
-        return self.props.shape[1:3]
+        return self.h, self.w
 
     def img_nb(self) -> int:
-        return self.props.n_images
+        return self.frame_nb
 
     def img_iter(self) -> Iterator[GrayImage]:
-        for img in iio.imiter(self.video_path, plugin='pyav'):
-            yield cv.cvtColor(img, cv.COLOR_RGB2GRAY)
+        # NOTE: requires numpy<1.24 so that np.float is still an authorized alias to float
+        for img in skvideo.io.vreader(str(self.video_path), as_grey=True):
+            yield img.squeeze()
 
     def release(self) -> None:
         return

@@ -29,13 +29,12 @@ python3 ChipAnalyser [-S] -i INPUT_IMAGES -o OUTPUT_DIRECTORY [-s SCALE] [-b BAT
 
 
 # Dependencies
-- NumPy: Perform vectorized operation on large arrays
-- OpenCV: Implementation of famous image processing algorithms
-- SciPy: Signal processing to extract peaks and valleys after chip thickness measurement
-- Scikit-image: Line rasterization algorithm used for ray tracing to detect the inside contour of the chip
-- Matplotlib: Generate output plots
-- Imageio: Read/write video and image files
-- PyAv: Python binding to the FFmpeg library
+- NumPy: Perform vectorized operation on large arrays.
+- OpenCV: Implementation of famous image processing algorithms.
+- SciPy: Signal processing to find peaks and valleys after chip thickness measurement.
+- Scikit-image: Read input image files. Provides a line rasterization algorithm used to detect the inner contour of the chip by ray casting.
+- Scikit-video: Read input video file. Write output video files.
+- Matplotlib: Generate output plots.
 
 ## Install dependencies in a virtual environment with conda
 ```shell
@@ -43,19 +42,7 @@ python3 ChipAnalyser [-S] -i INPUT_IMAGES -o OUTPUT_DIRECTORY [-s SCALE] [-b BAT
 conda create -n machining-chip-analysis
 conda activate machining-chip-analysis
 
-# install dependencies inside the virtual environment
-TODO: make a definitive list of dependencies
-
-# read image files: imageio
-# read video files: imageio
-# write video files: scikit-video
-conda install numpy opencv -c conda-forge
-conda install matplotlib scikit-video imageio av -c conda-forge
-conda install scipy scikit-image -c anaconda
-
-# read image files: scikit-image
-# read video files: scikit-video
-# write video files: scikit-video
+# installing dependencies inside the virtual environment
 conda install "numpy<1.24" opencv -c conda-forge
 conda install matplotlib scikit-video -c conda-forge
 conda install scipy scikit-image -c anaconda
@@ -63,29 +50,6 @@ conda install scipy scikit-image -c anaconda
 
 ## Install dependencies with pip
 ```shell
+TODO: installation guide with pip
 pip install numpy scipy scikit-image matplotlib opencv-python
 ```
-
-
-# tests de portabilité
-LINUX:
-- main version:
-  - build: OK
-  - no rendering:
-  - image inputs: OK
-  - video inputs: OK
-- alternative version:
-  - build: OK
-  - no rendering: OK
-  - image inputs: OK
-  - video inputs: OK
-
-WINDOWS:
-- main version:
-  - build:
-  - image inputs:
-  - video inputs:
-- alternative version:
-  - build:
-  - image inputs:
-  - video inputs:

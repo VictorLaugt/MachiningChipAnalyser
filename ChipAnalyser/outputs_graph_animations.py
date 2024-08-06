@@ -50,7 +50,7 @@ class SaveAnimation:
             interval=1000/30,
             blit=True
         )
-        animation.save(file_path)  # TODO: try different .save() parameters to get rid of the strange artefacts on windows
+        animation.save(file_path)
         if display:
             plt.show()
 
