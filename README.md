@@ -50,5 +50,5 @@ conda install scipy scikit-image -c anaconda
 
 ## Install dependencies with pip
 ```shell
-pip install numpy<1.24 opencv-python scipy matplotlib scikit-image scikit-video
+pip install "numpy<1.24" opencv-python scipy matplotlib scikit-image scikit-video
 ```
