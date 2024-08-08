@@ -190,7 +190,7 @@ def find_inside_contour(
         out_curve_length += len(out_edge_x)
         block_edges.append((out_edge_x, out_edge_y, in_edge_x, in_edge_y))
 
-    # measure chip thickness at each point of the outside curve edges
+    # measure chip thickness at each point of the outside curve's edges, using ray castings
     measure_idx = 0
     missing_mask = np.zeros(out_curve_length, dtype=bool)
     thickness = np.empty(out_curve_length, dtype=np.float64)
