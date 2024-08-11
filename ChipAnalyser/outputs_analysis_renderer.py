@@ -37,7 +37,7 @@ class AbstractAnalysisRenderer(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def no_render(self, input_img: GrayImage, preproc_img: GrayImage) -> None:
+    def skip_render(self, input_img: GrayImage, preproc_img: GrayImage) -> None:
         pass
 
     @abc.abstractmethod
@@ -63,7 +63,7 @@ class NoRendering(AbstractAnalysisRenderer):
     ) -> None:
         return
 
-    def no_render(self, _input_img: GrayImage, _preproc_img: GrayImage) -> None:
+    def skip_render(self, _input_img: GrayImage, _preproc_img: GrayImage) -> None:
         return
 
     def release(self) -> None:
@@ -131,7 +131,7 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
 
         self.frame_num += 1
 
-    def no_render(self, input_img: GrayImage, preproc_img: GrayImage) -> None:
+    def skip_render(self, input_img: GrayImage, preproc_img: GrayImage) -> None:
         self.preprocessing_vid_writer.writeFrame(cv.cvtColor(preproc_img, cv.COLOR_GRAY2RGB))
         self.contact_vid_writer.writeFrame(cv.cvtColor(input_img, cv.COLOR_GRAY2RGB))
         self.inside_vid_writer.writeFrame(cv.cvtColor(input_img, cv.COLOR_GRAY2RGB))
