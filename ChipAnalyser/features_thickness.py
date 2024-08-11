@@ -85,7 +85,7 @@ def compute_bisectors(
 
     u = chip_curve_pts[:-2] - chip_curve_pts[1:-1]
     v = chip_curve_pts[2:] - chip_curve_pts[1:-1]
-    w = v * ((np.linalg.norm(u, axis=1) / np.linalg.norm(v, axis=1))).reshape(-1, 1)
+    w = v * (np.linalg.norm(u, axis=1) / np.linalg.norm(v, axis=1)).reshape(-1, 1)
 
     # numerical instability correction if the angle between u and v is greater than pi/2
     stable = (np.sum(u*v, axis=1) > 0)
