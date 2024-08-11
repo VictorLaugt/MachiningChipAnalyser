@@ -11,8 +11,14 @@ import numpy as np
 NAN_LINE: Line = (np.nan, np.nan, np.nan)
 
 
-def draw_line(img: ColorImage|GrayImage, line: Line, color: int, thickness: int) -> None:
-    """Draw a line on an image, with a given color and a given thickness."""
+def draw_line(img: GrayImage|ColorImage, line: Line, color: int|tuple[int, int], thickness: int) -> None:
+    """Draw a line on an image, with a given color and a given thickness.
+
+    Possible signatures
+    -------------------
+    (GrayImage, Line, int, int) -> None
+    (ColorImage, Line, tuple[int, int, int], int) -> None
+    """
     rho, xn, yn = line
     x0, y0 = rho * xn, rho * yn
     x1, y1 = int(x0 - 2000 * yn), int(y0 + 2000 * xn)
