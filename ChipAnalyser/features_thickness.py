@@ -92,16 +92,16 @@ def compute_bisectors(
     unstable = ~stable
 
     bisectors[1:-1][stable] = u[stable] + w[stable]
-    normal = u[unstable] - w[unstable]
+    normals = u[unstable] - w[unstable]
 
     normal_first = chip_curve_pts[0] - chip_curve_pts[1]
     normal_last = chip_curve_pts[-2] - chip_curve_pts[-1]
     if indirect_chip_rotation:
-        bisectors[1:-1][unstable] = np.column_stack((-normal[:, 1], normal[:, 0]))
+        bisectors[1:-1][unstable] = np.column_stack((-normals[:, 1], normals[:, 0]))
         bisectors[0] = (-normal_first[1], normal_first[0])
         bisectors[-1] = (-normal_last[1], normal_last[0])
     else:
-        bisectors[1:-1][unstable] = np.column_stack((normal[:, 1], -normal[:, 0]))
+        bisectors[1:-1][unstable] = np.column_stack((normals[:, 1], -normals[:, 0]))
         bisectors[0] = (normal_first[1], -normal_first[0])
         bisectors[-1] = (normal_last[1], -normal_last[0])
 
@@ -115,7 +115,7 @@ def remove_crossed_quadrilaterals(
     """Return the inside and outside curves of the chip without crossed
     quadrilaterals.
 
-    (filt_out_curve[i], filt_in_curve[i], fil_in_curve[i+1], filt_out_curve[i+1])
+    (filt_out_curve[i], filt_in_curve[i], filt_in_curve[i+1], filt_out_curve[i+1])
     is not a crossed quadrilateral.
 
     Parameters
