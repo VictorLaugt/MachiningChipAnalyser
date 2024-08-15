@@ -191,7 +191,7 @@ def find_inside_contour(
         block_edges.append((out_edge_x, out_edge_y, in_edge_x, in_edge_y))
 
     # measure chip thickness at each point of the outside curve's edges, using ray castings
-    measure_idx = 0
+    pt_idx = 0
     missing_mask = np.zeros(out_curve_length, dtype=bool)
     thickness = np.empty(out_curve_length, dtype=np.float64)
     inside_contour_pts = np.empty((out_curve_length, 2), dtype=np.int64)
@@ -210,12 +210,12 @@ def find_inside_contour(
                 selected_x, selected_y = ray_x[selected_indices], ray_y[selected_indices]
                 distances = np.linalg.norm((selected_x - out_x, selected_y - out_y), axis=0)
                 innermost_idx = np.argmax(distances)
-                thickness[measure_idx] = distances[innermost_idx]
-                inside_contour_pts[measure_idx] = (selected_x[innermost_idx], selected_y[innermost_idx])
+                thickness[pt_idx] = distances[innermost_idx]
+                inside_contour_pts[pt_idx] = (selected_x[innermost_idx], selected_y[innermost_idx])
             else:
-                missing_mask[measure_idx] = True
+                missing_mask[pt_idx] = True
 
-            measure_idx += 1
+            pt_idx += 1
 
     # recreate the missing measurement by linear interpolation
     missing_idx = np.nonzero(missing_mask)[0]
