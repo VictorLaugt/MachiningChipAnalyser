@@ -39,7 +39,7 @@ python3 ChipAnalyser [-S] -i INPUT_IMAGES -o OUTPUT_DIRECTORY [-s SCALE] [-b BAT
 ## Install dependencies in a virtual environment with conda (recommended)
 ```shell
 # create and activate the virtual environment
-conda create -n machining-chip-analysis
+conda create -n machining-chip-analysis python=3.11
 conda activate machining-chip-analysis
 
 # install dependencies inside the virtual environment
@@ -48,7 +48,7 @@ conda install matplotlib scikit-video -c conda-forge
 conda install scipy scikit-image -c anaconda
 ```
 
-## Install dependencies with pip
+## Install dependencies with pip from python 3.10 or 3.11
 ```shell
 pip install "numpy<1.24" opencv-python scipy matplotlib scikit-image scikit-video
 ```
