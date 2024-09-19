@@ -55,7 +55,7 @@ class AbstractImageLoader(abc.ABC):
         """Return the number of batches."""
         return len(self.batch_sizes)
 
-    def img_batch_iter(self) -> Iterator[Sequence[GrayImage]]:
+    def batch_iter(self) -> Iterator[Sequence[GrayImage]]:
         """Iterate in batches over the images."""
         img_itr = self.img_iter()
         for batch_size in self.batch_sizes:

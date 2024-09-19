@@ -148,7 +148,7 @@ def main():
     # analyse the input images and produce the outputs
     with loader, measurement_writer, analysis_renderer:
         batch_nb = loader.batch_nb()
-        for batch_idx, input_batch in enumerate(loader.img_batch_iter()):
+        for batch_idx, input_batch in enumerate(loader.batch_iter()):
             progress_bar_func(batch_idx, batch_nb)
             measure_characteristics(input_batch, measurement_writer, analysis_renderer)
     progress_bar_func(batch_nb, batch_nb)

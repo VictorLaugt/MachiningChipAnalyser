@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from type_hints import GrayImage, FloatArray, FloatPtArray
     from pathlib import Path
-    from measure import ToolTipFeatures
+    from features_tip import ToolTipFeatures
     from features_main import MainFeatures
     from chip_analysis import ChipFeatures
     from features_thickness import ThicknessAnalysis
