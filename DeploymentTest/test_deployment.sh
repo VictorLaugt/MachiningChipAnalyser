@@ -46,16 +46,16 @@ function install_dependencies {
 function test_command { local cmd=$1; local msg=$2
     eval "$cmd" > /dev/null 2>&1
     if [ $? -eq 0 ]; then
-        out "$msg: success"
+        out "$msg: SUCCESS"
     else
-        out "$msg: fail"
+        out "$msg: FAIL"
     fi
 }
 
 function test_without_graphical_rendering {
     log "TESTING WITHOUT GRAPHICAL RENDERING"
     out "\twith rendering disabled:"
-    find "$INPUT_DIR" -mindepth 1 -maxdepth 1 | while read -r input_path; do
+    find "$INPUT_DIR" -mindepth 1 -maxdepth 1 ! -name .gitkeep | while read -r input_path; do
         rm -rf "$OUTPUT_DIR"
         cmd="python \"$PROGRAM_DIR\" -i \"$input_path\" -o \"$OUTPUT_DIR\""
         test_command "$cmd" "\t\tusing input $(basename $input_path)"
@@ -65,7 +65,7 @@ function test_without_graphical_rendering {
 function test_with_graphical_rendering {
     log "TESTING WITH GRAPHICAL RENDERING"
     out "\twith rendering enabled:"
-    find "$INPUT_DIR" -mindepth 1 -maxdepth 1 | while read -r input_path; do
+    find "$INPUT_DIR" -mindepth 1 -maxdepth 1 ! -name .gitkeep | while read -r input_path; do
         rm -rf "$OUTPUT_DIR"
         cmd="python \"$PROGRAM_DIR\" -i \"$input_path\" -o \"$OUTPUT_DIR\" -r"
         test_command "$cmd" "\t\tusing input $(basename $input_path)"
@@ -82,11 +82,11 @@ for version in "${PYTHON_VERSIONS[@]}"; do
 
     install_dependencies
     if [ $? -eq 0 ]; then
-        out "\tinstall: success"
+        out "\tinstall: SUCCESS"
         test_without_graphical_rendering
         test_with_graphical_rendering
     else
-        out "\tinstall: fail"
+        out "\tinstall: FAIL"
     fi
 
     exit_environment $version
