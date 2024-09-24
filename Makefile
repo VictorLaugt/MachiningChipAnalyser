@@ -24,6 +24,6 @@ clean: remove_outputs
 	find . -name __pycache__ -type d | while read -r pycachepath; do rm -rf $$pycachepath; done
 
 remove_outputs:
-	rm -rf outputs outputs_*
+	rm -rf outputs outputs_* DeploymentTest/outputs DeploymentTest/results.txt
 
 .PHONY: test clean remove_outputs
