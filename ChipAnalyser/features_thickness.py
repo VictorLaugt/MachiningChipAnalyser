@@ -72,7 +72,7 @@ def compute_bisectors(
     Parameters
     ----------
     chip_curve_pts: (n, 2)-array of int
-        Points of the chip convex hull that describes the chip curve.
+        Points of the chip convex hull that describes the chip curve. n >= 2.
     indirect_chip_rotation: bool
         True indicates the chip spins in the indirect direction of rotation.
 
@@ -175,6 +175,8 @@ def find_inside_contour(
     h, w = chip_bin_img.shape
 
     # compute the inside curve using the bisectors of the outside curve
+    if len(out_curve) < 2:
+        return np.empty(0, dtype=np.int64), np.empty(0, dtype=np.float64)
     bisectors = compute_bisectors(out_curve, indirect_rotation)
     in_curve = (out_curve + thickness_majorant*bisectors).astype(np.int32)
 
@@ -220,6 +222,8 @@ def find_inside_contour(
     # recreate the missing measurement by linear interpolation
     missing_idx = np.nonzero(missing_mask)[0]
     measure_idx = np.nonzero(~missing_mask)[0]
+    if len(measure_idx) == 0:
+        return np.empty(0, dtype=np.int64), np.empty(0, dtype=np.float64)
     inside_contour_pts[missing_idx, 0] = np.interp(missing_idx, measure_idx, inside_contour_pts[measure_idx, 0])
     inside_contour_pts[missing_idx, 1] = np.interp(missing_idx, measure_idx, inside_contour_pts[measure_idx, 1])
     thickness[missing_idx] = np.interp(missing_idx, measure_idx, thickness[measure_idx])
@@ -267,13 +271,18 @@ def clean_inside_contour(
     clean_thickness: (m,)-array of float
         Cleaned thickness of the chip along its curve.
     """
+    clean_inside_contour_pts = inside_contour_pts.copy()
+    clean_thickness = thickness.copy()
+
     h, w = chip_bin_img.shape
     inside_contour_bin_img = np.zeros((h+8, w+8), dtype=np.uint8)
     for x, y in inside_contour_pts:
         inside_contour_bin_img[y, x] = 1
 
     # detect the noisy points by counting their neighbors
-    max_thickness = max(thickness)
+    if len(thickness) == 0:
+        return clean_inside_contour_pts, clean_thickness
+    max_thickness = np.max(thickness)
     noisy_measure_mask = np.zeros_like(thickness, dtype=bool)
     for measure_idx in range(len(thickness)):
         x, y = inside_contour_pts[measure_idx]
@@ -285,10 +294,10 @@ def clean_inside_contour(
             noisy_measure_mask[measure_idx] = True
 
     # replace the noisy points by linear interpolations
-    clean_inside_contour_pts = inside_contour_pts.copy()
-    clean_thickness = thickness.copy()
     noisy_idx = np.nonzero(noisy_measure_mask)[0]
     clean_idx = np.nonzero(~noisy_measure_mask)[0]
+    if len(clean_idx) == 0:
+        return clean_inside_contour_pts, clean_thickness
     clean_inside_contour_pts[noisy_idx, 0] = np.interp(noisy_idx, clean_idx, inside_contour_pts[clean_idx, 0])
     clean_inside_contour_pts[noisy_idx, 1] = np.interp(noisy_idx, clean_idx, inside_contour_pts[clean_idx, 1])
     clean_thickness[noisy_idx] = np.interp(noisy_idx, clean_idx, thickness[clean_idx])

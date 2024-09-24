@@ -74,8 +74,8 @@ def measure_peak_valley_thickness(
     """
     an = ThicknessAnalysis()
 
-    an.rough_thk = savgol_filter(thickness, window_length=45, polyorder=2)
-    an.smoothed_thk = savgol_filter(thickness, window_length=15, polyorder=2)
+    an.rough_thk = savgol_filter(thickness, window_length=45, polyorder=2) if len(thickness) >= 45 else thickness
+    an.smoothed_thk = savgol_filter(thickness, window_length=15, polyorder=2) if len(thickness) >= 15 else thickness
 
     an.rough_peak_indices, _ = find_peaks(an.rough_thk, prominence=0.08*tool_penetration)
     rough_period = np.mean(np.diff(an.rough_peak_indices))
