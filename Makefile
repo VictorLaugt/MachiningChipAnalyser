@@ -1,15 +1,15 @@
 SRC_DIR = ChipAnalyser
-IMG_DIR = imgs
+IMG_DIR = MachiningImages
 TEST_DIR = ChipAnalyser/tests
 TEST_SRC = $(wildcard $(TEST_DIR)/*.py)
 
 export PYTHONPATH += ChipAnalyser
 
-process_%: remove_outputs
-	python3 $(SRC_DIR) -i $(IMG_DIR)/$* -o outputs -r
+process_%: clean_outputs
+	python3 $(SRC_DIR) -i $(IMG_DIR)/$* -o outputs -s 3.5 -r
 
-no_render_process_%: remove_outputs
-	python3 $(SRC_DIR) -i $(IMG_DIR)/$* -o outputs
+process_without_render_%: clean_outputs
+	python3 $(SRC_DIR) -i $(IMG_DIR)/$* -o outputs -s 3.5
 
 test:
 	@$(foreach SCRIPT,$(TEST_SRC),\
@@ -20,10 +20,15 @@ test_%:
 	@printf "\n======= running $(TEST_DIR)/$*.py =======\n"
 	@python3 $(TEST_DIR)/test_$*.py
 
-clean: remove_outputs
+deployment_test:
+	./DeploymentTest/test_deployment.sh
+
+clean_python_cache:
 	find . -name __pycache__ -type d | while read -r pycachepath; do rm -rf $$pycachepath; done
 
-remove_outputs:
+clean_outputs:
 	rm -rf outputs outputs_* DeploymentTest/outputs DeploymentTest/results.txt
 
-.PHONY: test clean remove_outputs
+clean: clean_outputs clean_python_cache
+
+.PHONY: test deployment_test clean_outputs clean_python_cache clean
