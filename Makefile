@@ -6,19 +6,19 @@ TEST_SRC = $(wildcard $(TEST_DIR)/*.py)
 export PYTHONPATH += ChipAnalyser
 
 process_%: clean_outputs
-	python3 $(SRC_DIR) -i $(IMG_DIR)/$* -o outputs -s 3.5 -r
+	python $(SRC_DIR) -i $(IMG_DIR)/$* -o outputs -s 3.5 -r
 
 process_without_render_%: clean_outputs
-	python3 $(SRC_DIR) -i $(IMG_DIR)/$* -o outputs -s 3.5
+	python $(SRC_DIR) -i $(IMG_DIR)/$* -o outputs -s 3.5
 
 test:
 	@$(foreach SCRIPT,$(TEST_SRC),\
 		printf "\n======= running $(SCRIPT) =======\n";\
-		python3 $(SCRIPT);)
+		python $(SCRIPT);)
 
 test_%:
 	@printf "\n======= running $(TEST_DIR)/$*.py =======\n"
-	@python3 $(TEST_DIR)/test_$*.py
+	@python $(TEST_DIR)/test_$*.py
 
 deployment_test:
 	./DeploymentTest/test_deployment.sh
