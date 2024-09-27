@@ -118,7 +118,7 @@ class AnalysisRenderer(AbstractAnalysisRenderer):
         self.contact_vid_writer.writeFrame(contact_render)
 
         inside_render = cv.cvtColor(input_img, cv.COLOR_GRAY2RGB)
-        render_inside_features(self.frame_num, inside_render, main_ft, tip_ft, chip_ft.inside_ft)
+        render_inside_features(self.frame_num, inside_render, chip_ft.inside_ft, thk_an)
         self.inside_vid_writer.writeFrame(inside_render)
 
         thickness = self.scale * chip_ft.inside_ft.thickness

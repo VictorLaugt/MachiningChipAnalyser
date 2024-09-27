@@ -353,22 +353,27 @@ def extract_inside_features(
 def render_inside_features(
     frame_num: int,
     render: ColorImage,
-    _main_ft: MainFeatures,
-    _tip_ft: ToolTipFeatures,
-    inside_ft: InsideFeatures
+    inside_ft: InsideFeatures,
+    thk_an: ThicknessAnalysis
 ) -> None:
     assert render.ndim == 3 and render.shape[2] == 3
     # draw the detected inside contour of the chip
     for i in range(len(inside_ft.noised_inside_contour_pts)-1):
         pt0 = inside_ft.noised_inside_contour_pts[i]
         pt1 = inside_ft.noised_inside_contour_pts[i+1]
-        cv.line(render, pt0, pt1, colors.RED, thickness=2)
+        cv.line(render, pt0, pt1, colors.RED, thickness=1)
 
     # draw the denoised inside contour of the chip
     for i in range(len(inside_ft.inside_contour_pts)-1):
         pt0 = inside_ft.inside_contour_pts[i]
         pt1 = inside_ft.inside_contour_pts[i+1]
-        cv.line(render, pt0, pt1, colors.GREEN, thickness=2)
+        cv.line(render, pt0, pt1, colors.GREEN, thickness=1)
+
+    # draw the detected valley and peaks
+    for pt in inside_ft.inside_contour_pts[thk_an.peak_indices]:
+        cv.circle(render, pt, 4, colors.YELLOW, thickness=-1)
+    for pt in inside_ft.inside_contour_pts[thk_an.valley_indices]:
+        cv.circle(render, pt, 4, colors.YELLOW, thickness=-1)
 
     # write the frame number
     cv.putText(render, f"frame: {frame_num}", (20, render.shape[0]-20), cv.FONT_HERSHEY_SIMPLEX, 0.5, colors.WHITE)
