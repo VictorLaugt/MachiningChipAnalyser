@@ -1,14 +1,10 @@
 import argparse
 from pathlib import Path
 
-from dataclasses import dataclass
-
 import csv
 import numpy as np
-import matplotlib.pyplot as plt
-
-import numpy as np
 from numpy.polynomial import Polynomial
+import matplotlib.pyplot as plt
 
 
 def comp_graph(ax, automatic, manual, title):
@@ -96,4 +92,3 @@ if __name__ == '__main__':
         print(f"erreur relative = {erreur_relative}")
 
     plt.show()
-
