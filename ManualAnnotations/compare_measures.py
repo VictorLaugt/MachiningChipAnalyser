@@ -35,27 +35,6 @@ def read_measures(measure_file_path):
     }
 
 
-def courbe_etalonnage(ax, automatic, manual, name):
-    ax.set_title(f"courbe d'étalonnage: {name}")
-
-    ax.plot(manual, automatic, '+')
-
-    linear_reg = Polynomial.fit(manual, automatic, 1)
-
-    linear_reg_x = np.array((manual.min(), manual.max()))
-    linear_reg_y = linear_reg(linear_reg_x)
-    ax.plot(linear_reg_x, linear_reg_y, '-')
-
-    # ax.set_xlim(0, manual.max())
-    # ax.set_ylim(0, automatic.max())
-
-    ax.set_xlabel("mesure manuelle")
-    ax.set_ylabel("mesure automatique")
-    ax.grid()
-
-    return linear_reg
-
-
 def etalonnage(measure, real, name):
     calibration = Polynomial.fit(real, measure, 1)
     b, a =  calibration.convert().coef
