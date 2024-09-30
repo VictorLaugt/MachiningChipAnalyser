@@ -12,7 +12,6 @@ def plot_measures(ax, automatic, manual, title):
     ax.set_title(title)
     ax.plot(automatic, label="automatic measure")
     ax.plot(manual, label="manual measure")
-    # ax.set_ylim(0, max(automatic.max(), manual.max()))
     ax.legend()
     ax.grid()
 
@@ -68,10 +67,10 @@ def etalonnage(measure, real, name):
     calibration_x = np.array((real.min(), real.max()))
     calibration_y = calibration(calibration_x)
     ax[0].set_title("étalonnage")
-    ax[0].plot(real, measure, 'b+', label=f"mesures non corrigées, dispersées autour de y = {a:.3f}x + {b:.3f}")
-    ax[0].plot(real, corrected, 'r+', label=f"mesures corrigées, dispersées autour de y = x")
-    ax[0].plot(calibration_x, calibration_y, 'b-')
-    ax[0].plot(calibration_x, calibration_x, 'r-')
+    ax[0].plot(real, measure, 'r+', label=f"mesures non corrigées, dispersées autour de y = {a:.3f}x + {b:.3f}")
+    ax[0].plot(real, corrected, 'b+', label=f"mesures corrigées, dispersées autour de y = x")
+    ax[0].plot(calibration_x, calibration_y, 'r-')
+    ax[0].plot(calibration_x, calibration_x, 'b-')
     ax[0].set_xlabel("mesure manuelle")
     ax[0].set_ylabel("mesure automatique")
     ax[0].legend()
@@ -84,12 +83,11 @@ def etalonnage(measure, real, name):
         bins=15,
         density=True,
         align='mid',
-        color='red',
-        alpha=0.3
-        # width=0.7*(x[-1]-x[0])/(15)
+        color='b',
+        alpha=0.5
     )
     ax[1].plot(
-        x, gaussian(x, mu=expected_error, sigma=standard_deviation), 'r-',
+        x, gaussian(x, mu=expected_error, sigma=standard_deviation), 'b-',
         label=f"densité de la loi normale centrée d'écart-type {standard_deviation:.3f}",
     )
     ax[1].set_xlabel("différence entre la mesure automatique corrigée et la mesure manuelle")
