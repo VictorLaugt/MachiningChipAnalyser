@@ -7,30 +7,12 @@ from numpy.polynomial import Polynomial
 import matplotlib.pyplot as plt
 
 
-def comp_graph(ax, automatic, manual, title):
+def plot_measures(ax, automatic, manual, title):
     ax.set_title(title)
     ax.plot(automatic, label="automatic measure")
     ax.plot(manual, label="manual measure")
     # ax.set_ylim(0, max(automatic.max(), manual.max()))
     ax.legend()
-    ax.grid()
-
-
-def courbe_etalonnage(ax, automatic, manual, name):
-    ax.set_title(f"courbe d'étalonnage: {name}")
-
-    ax.plot(manual, automatic, '+')
-
-    linear_reg = Polynomial.fit(manual, automatic, 1)
-    linear_reg_x = np.array((manual.min(), manual.max()))
-    linear_reg_y = linear_reg(linear_reg_x)
-    ax.plot(linear_reg_x, linear_reg_y, '-')
-
-    # ax.set_xlim(0, manual.max())
-    # ax.set_ylim(0, automatic.max())
-
-    ax.set_xlabel("mesure manuelle")
-    ax.set_ylabel("mesure automatique")
     ax.grid()
 
 
@@ -53,6 +35,81 @@ def read_measures(measure_file_path):
     }
 
 
+def courbe_etalonnage(ax, automatic, manual, name):
+    ax.set_title(f"courbe d'étalonnage: {name}")
+
+    ax.plot(manual, automatic, '+')
+
+    linear_reg = Polynomial.fit(manual, automatic, 1)
+
+    linear_reg_x = np.array((manual.min(), manual.max()))
+    linear_reg_y = linear_reg(linear_reg_x)
+    ax.plot(linear_reg_x, linear_reg_y, '-')
+
+    # ax.set_xlim(0, manual.max())
+    # ax.set_ylim(0, automatic.max())
+
+    ax.set_xlabel("mesure manuelle")
+    ax.set_ylabel("mesure automatique")
+    ax.grid()
+
+    return linear_reg
+
+
+def etalonnage(measure, real, name):
+    calibration = Polynomial.fit(real, measure, 1)
+    b, a =  calibration.convert().coef
+    corrected = (measure - b) / a
+
+    error = real - corrected
+    expected_error = np.mean(error)
+    standard_deviation = np.sqrt(np.mean((error - expected_error) ** 2))
+    uncertainty_80 = 1.28 * standard_deviation
+    uncertainty_90 = 1.65 * standard_deviation
+    uncertainty_95 = 1.96 * standard_deviation
+
+    print(f"Mesure de la grandeur \"{name}\"")
+    print(f"droite d'étalonnage: a = {a}, b = {b}")
+    print(
+        "différence entre les mesures corrigées et les valeurs réelles: "
+        f"espérance = {expected_error}, écart-type = {standard_deviation}"
+    )
+    print(f"incertitude à un niveau de confiance de 80% = {uncertainty_80}")
+    print(f"incertitude à un niveau de confiance de 90% = {uncertainty_90}")
+    print(f"incertitude à un niveau de confiance de 95% = {uncertainty_95}")
+    print()
+
+    fig, ax = plt.subplots(figsize=(10, 10))
+    ax.set_title(f"étalonnage: {name}")
+
+    calibration_x = np.array((real.min(), real.max()))
+    calibration_y = calibration(calibration_x)
+    ax.plot(real, measure, 'b+', label="mesures non corrigéesc")
+    ax.plot(calibration_x, calibration_y, 'b-')
+
+    ax.plot(real, corrected, 'r+', label="mesures corrigées")
+    ax.plot(calibration_x, calibration_x, 'r-')
+
+    ax.set_xlabel("mesure manuelle")
+    ax.set_ylabel("mesure automatique")
+    ax.legend()
+    ax.grid()
+
+    fig, ax = plt.subplots()
+    ax.set_title(f"distributions des erreurs de mesure: {name}")
+    x = np.linspace(error.min(), error.max(), 1000)
+    ax.hist(
+        error,
+        bins=15,
+        density=True,
+        align='mid',
+        # width=0.7*(x[-1]-x[0])/(15)
+    )
+    ax.plot(x, 1/(standard_deviation*np.sqrt(2*np.pi)) * np.exp(-1/2 * ((x - expected_error)/standard_deviation)**2))
+
+    plt.show()
+
+
 if __name__ == '__main__':
     def existing_directory(arg):
         try:
@@ -70,25 +127,19 @@ if __name__ == '__main__':
     auto_measures = read_measures(args.input_dir.joinpath('automatic_measures.csv'))
     manu_measures = read_measures(args.input_dir.joinpath('manual_measures.csv'))
 
+    # Affiche les valeurs mesurées et les valeurs réelles
     fig, axes = plt.subplots(3, 1, figsize=(10, 10))
     for ax, name in zip(
         axes,
         ("contact length", "mean peak thickness", "mean valley thickness")
     ):
-        comp_graph(ax, auto_measures[name], manu_measures[name], name)
+        plot_measures(ax, auto_measures[name], manu_measures[name], name)
     plt.show()
 
+    # Effectue l'étalonnage de l'appareil de mesure
     for name in ("contact length", "mean peak thickness", "mean valley thickness"):
-        fig, ax = plt.subplots(figsize=(10, 10))
         auto = auto_measures[name]
         manu = manu_measures[name]
-        courbe_etalonnage(ax, auto, manu, name)
-
-        erreur_absolue = np.mean(auto - manu)
-        erreur_relative = np.mean(erreur_absolue / np.abs(manu))
-
-        print(f"\n{name}:")
-        print(f"erreur absolue = {erreur_absolue}")
-        print(f"erreur relative = {erreur_relative}")
+        etalonnage(auto, manu, name)
 
     plt.show()
