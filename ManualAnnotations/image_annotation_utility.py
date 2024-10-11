@@ -82,6 +82,11 @@ def draw_valley_and_peaks(render, inside_ft, thickness_analysis):
         cv.circle(render, pt, 3, colors.GREEN, thickness=-1)
 
 
+def draw_automatic_measures_legend(render):
+    cv.line(render, (20, 36), (30, 36), colors.GREEN, 2)
+    cv.putText(render, "automatic measures", (40, 40), cv.FONT_HERSHEY_SIMPLEX, 0.5, colors.WHITE)
+
+
 # ---- draw labels
 
 def draw_labels(render, label_path: Path, manual_measures_path: Path):
@@ -124,8 +129,13 @@ def draw_labels(render, label_path: Path, manual_measures_path: Path):
     else:
         mean_valley_thk = np.nan
 
+    cv.line(render, (20, 16), (30, 16), colors.RED, 2)
+    cv.putText(render, "manual measures", (40, 20), cv.FONT_HERSHEY_SIMPLEX, 0.5, colors.WHITE)
+
     write_measures(manual_measures_path, contact_len, mean_peak_thk, mean_valley_thk)
 
+
+# ---- main loop
 
 def copy(
     input_dir: Path,
@@ -210,6 +220,7 @@ def copy_and_measure(
             # draw_fitting_pts(out_img, chip_ft.contact_ft)
             draw_contact_length(out_img, main_ft, tip_ft, chip_ft.contact_ft)
             draw_valley_and_peaks(out_img, chip_ft.inside_ft, thickness_analysis)
+            draw_automatic_measures_legend(out_img)
             draw_frame_number(out_img, img_num)
             cv.imwrite(str(out_img_path), cv.cvtColor(out_img, cv.COLOR_RGB2BGR))
 
