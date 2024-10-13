@@ -6,10 +6,10 @@ TEST_SRC = $(wildcard $(TEST_DIR)/*.py)
 export PYTHONPATH += ChipAnalyser
 
 process_%: clean_outputs
-	python $(SRC_DIR) -i $(IMG_DIR)/$* -o outputs -s 3.5 -r
+	python $(SRC_DIR) -i $(IMG_DIR)/$* -o outputs_$* -s 3.5 -r
 
 process_without_render_%: clean_outputs
-	python $(SRC_DIR) -i $(IMG_DIR)/$* -o outputs -s 3.5
+	python $(SRC_DIR) -i $(IMG_DIR)/$* -o outputs_$* -s 3.5
 
 test:
 	@$(foreach SCRIPT,$(TEST_SRC),\
