@@ -6,7 +6,8 @@ ChipAnalyser is an image-processing program designed to analyze machining chips 
 - Tool-chip contact length
 - Average peak thickness
 - Average valley thickness
-Measurement results are saved in a CSV file. Additionally, the program can generate graphical renderings to illustrate the measurement process.
+
+Measurement results are saved in a CSV file. Additionally, the program can generate graphical renderings to illustrate the measurement process:
 
 ![Watch the demo video](demo.gif)
 
